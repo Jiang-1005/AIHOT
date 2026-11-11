@@ -8,7 +8,7 @@ export const VISIBILITY_LABEL: Record<string, string> = { public: "公开", "sum
 export const FEEDBACK_STATUS: Record<string, string> = { new: "新反馈", triaged: "处理中", replied: "已回复", resolved: "已解决", spam: "垃圾信息" };
 export const FEEDBACK_KIND: Record<string, string> = { bug: "BUG", suggestion: "建议", question: "提问", other: "其他" };
 export const TIER_LABEL: Record<string, string> = { T1: "T1", T1_5: "T1.5", T2: "T2", EXCLUDE_MP: "排除公众号" };
-/** The industry pack's source classes, each with the threshold floor it sets. */
+/** The industry pack's source classes (labels only; they no longer raise the 精选 threshold). */
 export const SELECTION_CLASS_LABEL: Record<string, string> = Object.fromEntries(
-  Object.entries(SELECTION.classes).map(([k, c]) => [k, `${c.label}（门槛不低于 ${c.threshold}）`]),
+  Object.entries(SELECTION.classes).map(([k, c]) => [k, c.label]),
 );

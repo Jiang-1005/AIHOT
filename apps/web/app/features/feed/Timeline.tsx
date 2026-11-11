@@ -15,7 +15,7 @@ import { beijingDate, beijingTime, beijingWeekday, monthDay } from "@aihot/contr
 import { byBeijingDay, weekdayShort } from "../../lib/format";
 import { isHydrated } from "../../lib/hydration";
 import { markRead, setUnreadOnly, useReadSet, useUnreadOnly } from "../../lib/local-state";
-import { filterParams, listPath } from "../../lib/seo";
+import { listPath, timelineApiParams } from "../../lib/seo";
 import { isReload, readSnapshot, restoreAnchor, saveSnapshot, useSaveOnLeave } from "../../lib/restore";
 
 const AUTO_BATCHES = 3;
@@ -107,7 +107,15 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
  * One dated slot: the time, the rail (desktop) and the item. As on the original timeline, the rail is a
  * 1px line from this node's centre to the next one's, so the day reads as one continuous thread.
  */
+/** Clock for the rail. A calendar date alone must not become 08:00 (UTC midnight). */
+export function slotClock(at: string | null | undefined): string | null {
+  if (!at) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(at.trim())) return null;
+  return beijingTime(at);
+}
+
 export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }: { at: string; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string }) {
+  const clock = slotClock(at);
   return (
     <li
       data-card-key={dataKey}
@@ -117,7 +125,7 @@ export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
       <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-3.5 group-last/slot:border-b-0 lg:grid-cols-[64px_22px_minmax(0,1fr)] lg:border-b-0 lg:py-0 lg:pb-3 lg:group-last/slot:pb-0">
         <time dateTime={at} className="mono hidden text-ink-3 lg:block lg:pt-[17px] lg:text-[12.5px] lg:font-semibold lg:leading-6">
-          {beijingTime(at)}
+          {clock ?? ""}
         </time>
         <span aria-hidden="true" className="relative hidden lg:block">
           <span className="absolute -bottom-[41px] left-[10.5px] top-[29px] w-px bg-line-strong group-last/slot:hidden" />
@@ -129,7 +137,7 @@ export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }
   );
 }
 
-export function Timeline({ initial, filters }: { initial: TimelineResponse; filters: TimelineFilters }) {
+export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnread = false }: { initial: TimelineResponse; filters: TimelineFilters; emptyTitle?: string; emptyHint?: string; hidePhoneUnread?: boolean }) {
   const location = useLocation();
   const navigation = useNavigation();
   const readSet = useReadSet();
@@ -155,7 +163,7 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
   // Filters (i.e. the loader data) changed. A page still loading for the old filters is cancelled, and a
   // response that arrives anyway is dropped (it belongs to another list and cursor). Back or forward to a
   // filter already visited restores what that history entry had loaded and folded; a new one starts over.
-  const filterKey = listPath("/api/site/timeline", filterParams(filters));
+  const filterKey = listPath("/api/site/timeline", timelineApiParams(filters));
   const lastFilterKey = useRef(filterKey);
   const pageRequest = useRef<AbortController | null>(null);
   useEffect(() => () => pageRequest.current?.abort(), []);
@@ -217,14 +225,14 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
   const loadMore = useCallback(async () => {
     const s = stateRef.current;
     if (!s.nextCursor || pageRequest.current) return;
-    const key = listPath("/api/site/timeline", filterParams(filters));
+    const key = listPath("/api/site/timeline", timelineApiParams(filters));
     const controller = new AbortController();
     pageRequest.current = controller;
     const current = () => lastFilterKey.current === key && !controller.signal.aborted;
     setLoadingMore(true);
     setLoadError(false);
     try {
-      const res = await fetch(listPath("/api/site/timeline", { ...filterParams(filters), cursor: s.nextCursor }), { signal: controller.signal });
+      const res = await fetch(listPath("/api/site/timeline", { ...timelineApiParams(filters), cursor: s.nextCursor }), { signal: controller.signal });
       if (res.status === 400) {
         // Cursor no longer fits: start over from the head.
         const head = await fetch(key, { signal: controller.signal });
@@ -304,7 +312,9 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
   return (
     <div className="relative">
       {/* Desktop puts it on the first date row; phones, and a list the filter left empty, keep its own row. */}
-      <div className={`mb-2 flex justify-end ${days.length ? "lg:hidden" : ""}`}>{unreadToggle}</div>
+      {!hidePhoneUnread && (
+        <div className={`mb-2 flex justify-end ${days.length ? "lg:hidden" : ""}`}>{unreadToggle}</div>
+      )}
 
       {days.length === 0 && !loadingMore && (
         <div className="lg:card">
@@ -315,7 +325,7 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
               <EmptyState title="没有未读的精选内容">关掉「只看未读」可以看到全部内容。</EmptyState>
             )
           ) : (
-            <EmptyState title="这个筛选下还没有精选内容">换个类别看看，或者去全部动态里找找。</EmptyState>
+            <EmptyState title={emptyTitle ?? "这个筛选下还没有精选内容"}>{emptyHint ?? "换个类别看看，或者去全部动态里找找。"}</EmptyState>
           )}
         </div>
       )}

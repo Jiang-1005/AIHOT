@@ -27,6 +27,16 @@ export const PRESETS: Record<string, ModelPreset> = {
   "deepseek-flash-think": {
     service: "deepseek", model: "deepseek-flash", baseUrlEnv: "DEEPSEEK_BASE_URL", apiKeyEnv: "DEEPSEEK_API_KEY", reasoningTokens: 4000, jsonMode: true,
   },
+  // Official DeepSeek Chat (V3); this site's default via LLM_* can also be pointed here.
+  "deepseek-chat": {
+    service: "deepseek", model: "deepseek-chat", baseUrlEnv: "DEEPSEEK_BASE_URL", apiKeyEnv: "DEEPSEEK_API_KEY",
+    jsonMode: true,
+  },
+  // Paid OpenRouter fallback for the same official family, used only when chosen or if LLM_* is switched.
+  "openrouter-deepseek-flash": {
+    service: "openrouter", model: "deepseek/deepseek-v4.1-flash", baseUrlEnv: "OPENROUTER_BASE_URL", apiKeyEnv: "OPENROUTER_API_KEY",
+    jsonMode: true,
+  },
   "qwen3.7-flash": {
     service: "dashscope", model: "qwen3.7-flash", baseUrlEnv: "DASHSCOPE_BASE_URL", apiKeyEnv: "DASHSCOPE_API_KEY",
     extra: { enable_thinking: false }, jsonMode: true,

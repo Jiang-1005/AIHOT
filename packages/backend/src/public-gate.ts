@@ -1,6 +1,6 @@
 // Optional public-site password gate. Off unless EDU_HOT_GATE_ENABLED=true.
 // The password is read from EDU_HOT_GATE_PASSWORD and is never logged or returned.
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { SITE } from "@aihot/site";
 
 export const GATE_COOKIE = "edu_hot_gate";
@@ -22,9 +22,18 @@ export function gateMisconfigured(): boolean {
   return gateEnabled() && !gatePassword();
 }
 
+/**
+ * The cookie is signed with SESSION_SECRET, or with the gate password when that is not set. There is no
+ * built-in fallback: without either the gate is either off or misconfigured (the process refuses to start).
+ */
 function signingSecret(): string {
-  return process.env.SESSION_SECRET || process.env.EDU_HOT_GATE_PASSWORD || "edu-hot-gate-unconfigured";
+  const secret = process.env.SESSION_SECRET || gatePassword();
+  if (!secret) throw new Error("public gate: no SESSION_SECRET or EDU_HOT_GATE_PASSWORD to sign the cookie");
+  return secret;
 }
+
+/** Only for the constant-time dummy comparison below; never signs anything. */
+const DUMMY_KEY = randomBytes(32);
 
 export function gateCookieValue(): string {
   return createHmac("sha256", signingSecret()).update(TOKEN_PURPOSE).digest("hex");
@@ -46,7 +55,7 @@ function equal(a: string, b: string): boolean {
   const left = Buffer.from(a);
   const right = Buffer.from(b);
   if (left.length !== right.length) {
-    timingSafeEqual(createHmac("sha256", signingSecret()).update(a).digest(), createHmac("sha256", signingSecret()).update(a).digest());
+    timingSafeEqual(createHmac("sha256", DUMMY_KEY).update(a).digest(), createHmac("sha256", DUMMY_KEY).update(a).digest());
     return false;
   }
   return timingSafeEqual(left, right);

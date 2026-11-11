@@ -16,6 +16,7 @@ import { ENTITIES, entityNames } from "../editorial/vocabulary.ts";
 import { cached, type Cached } from "../lib/cache.ts";
 import { sha256, stableJson } from "../lib/ids.ts";
 import { serverModules } from "../modules.ts";
+import { publicCopy } from "@aihot/site/public-copy";
 import { ITEM_COLUMNS, ITEM_FROM, toFeedItemSummary, type ItemRow } from "./items.ts";
 import { evidenceCondition, listedCondition, ownFactEvidenceCondition, seatedCondition, selectedCondition, storyReportCondition } from "./scope.ts";
 
@@ -68,7 +69,17 @@ export const TOPICS: Topic[] = file.topics.map((t) => ({
 
 const BY_SLUG = new Map(TOPICS.map((t, position) => [t.slug, { topic: t, position }]));
 
+export function isPublicTopic(t: { slug: string; entityId: string | null; name: string }): boolean {
+  return publicCopy(t.name) === t.name.trim();
+}
+
 export function findTopic(slug: string): Topic | null {
+  const topic = BY_SLUG.get(slug)?.topic ?? null;
+  return topic && isPublicTopic(topic) ? topic : null;
+}
+
+/** Internal membership still sees every topic, including ones held off public pages. */
+function findTopicInternal(slug: string): Topic | null {
   return BY_SLUG.get(slug)?.topic ?? null;
 }
 
@@ -88,13 +99,15 @@ const TAG_TOPIC = new Map(TOPICS.flatMap((t) => {
 export function tagTopics(tags: string[]): Record<string, string> {
   return Object.fromEntries(tags.flatMap((tag) => {
     const slug = TAG_TOPIC.get(tag);
-    return slug ? [[tag, slug]] : [];
+    if (!slug) return [];
+    const topic = BY_SLUG.get(slug)?.topic;
+    return topic && isPublicTopic(topic) ? [[tag, slug]] : [];
   }));
 }
 
 /** Stable browse links in the same order as the topic directory, without its counts or modules. */
 export function topicBrowseLinks() {
-  return TOPICS.map(({ slug, name, group }) => ({ slug, name, group }));
+  return TOPICS.filter(isPublicTopic).map(({ slug, name, group }) => ({ slug, name, group }));
 }
 
 /** One membership rule for topic discovery and a single topic's page and count. */
@@ -284,7 +297,7 @@ function summarize(t: Topic, seats: TopicMember[], now: Date, brands: Map<string
 export async function listTopicSummaries(): Promise<TopicsResponse> {
   const [index, brands] = await Promise.all([topicIndex(), companyBrands()]);
   const live = await currentSeats(TOPICS.flatMap((t) => index.bySlug.get(t.slug)!.slice(0, LATEST_CANDIDATES).map((s) => s.id)), new Date());
-  return { groups: TOPIC_GROUPS, topics: TOPICS.map((t) => summarize(t, index.bySlug.get(t.slug)!, index.at, brands, live)) };
+  return { groups: TOPIC_GROUPS, topics: TOPICS.filter(isPublicTopic).map((t) => summarize(t, index.bySlug.get(t.slug)!, index.at, brands, live)) };
 }
 
 export interface TopicCount {
@@ -299,7 +312,7 @@ export interface TopicCount {
 export async function topicPageCounts(now?: Date, revisions = false): Promise<TopicCount[]> {
   const index = await topicIndex(now);
   const brands = revisions ? await companyBrands() : null;
-  return TOPICS.map((t) => {
+  return TOPICS.filter(isPublicTopic).map((t) => {
     const seats = index.bySlug.get(t.slug)!;
     let revision: string | undefined;
     if (revisions) {

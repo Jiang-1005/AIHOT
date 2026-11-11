@@ -1,132 +1,157 @@
-import { useLoaderData } from "react-router";
-import { SITE, subjectAfter, withSubject } from "@aihot/site";
+import { useState } from "react";
+import { Link, useLoaderData, useNavigate, useSearchParams } from "react-router";
+import { SITE } from "@aihot/site";
+import { Wordmark } from "@aihot/site/brand/Logo.tsx";
 import type { Route } from "./+types/topics";
-import type { TopicSummary, TopicsResponse } from "@aihot/contracts/site";
-import { apiGet, cachedPage } from "../lib/api.server";
+import type { TimelineResponse } from "@aihot/contracts/site";
+import { apiGet, cachedPage, loadOr404 } from "../lib/api.server";
 import { pageReuse } from "../lib/page-reuse";
-import { breadcrumbLd, pageMeta, siteUrl } from "../lib/seo";
-import { relativeTime } from "../lib/format";
-import { IconChevronRight } from "../components/icons";
-import { IntentLink } from "../components/ui/IntentLink";
-import { BrandMark } from "../components/BrandMark";
-import { PhoneBar } from "../components/shell/PhoneBar";
-import { navUp } from "../components/shell/nav";
+import { facetParams, filterParams, hasFeedFilters, itemListLd, listPath, pageMeta, readFilters, timelineApiParams } from "../lib/seo";
 import type { Screen } from "../components/shell/screens";
+import { navUp } from "../components/shell/nav";
+import { PhoneBar } from "../components/shell/PhoneBar";
+import type { FacetsMeta } from "../components/facets/FacetChips";
+import { EMPTY_FACETS, FacetChipRows, SelectedFacetBars, facetsEqualEmpty, facetsFromRecord } from "../components/facets/FacetChips";
+import { Timeline } from "../features/feed/Timeline";
+import { ToggleChip } from "../components/ui/Controls";
+import { setUnreadOnly, useUnreadOnly } from "../lib/local-state";
 
 export const handle: Screen = { home: navUp("/topics").tab, name: "主题" };
 export { pageHeaders as headers } from "../lib/api.server";
 export const { clientLoader, shouldRevalidate } = pageReuse<typeof loader>();
 
-export async function loader({ request }: { request: Request }) {
-  return cachedPage(300, await apiGet<TopicsResponse>("/api/site/topics", { signal: request.signal }));
+export async function loader({ request }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const filters = { ...readFilters(url.searchParams), slot: (url.searchParams.get("slot") === "archive" ? "archive" : "featured") as "featured" | "archive" };
+  const upstream = new Headers();
+  const [data, facets] = await Promise.all([
+    loadOr404<TimelineResponse>(listPath("/api/site/timeline", timelineApiParams(filters)), { responseHeaders: upstream, signal: request.signal }),
+    apiGet<FacetsMeta>("/api/site/facets", { responseHeaders: upstream, signal: request.signal }),
+  ]);
+  return cachedPage(60, { data, filters, facets }, upstream);
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  if (!loaderData) return pageMeta({ title: SITE.topicsTitle, path: "/topics", image: "/og/pages/topics.png" });
-  const { groups, topics } = loaderData;
-  const by = groups.map((g) => g.name).join("、");
-  const indexed = topics.filter((t) => t.indexable);
-  const named = indexed.slice(0, 6).map((t) => t.name.split(" / ")[0]).join("、");
-  const base = siteUrl();
+  const filters = loaderData?.filters;
+  const path = listPath("/topics", filters ? { ...filterParams(filters), slot: filters.slot === "archive" ? "archive" : null } : {});
+  const titles = loaderData?.data.cards.map((c) => c.item.title) ?? [];
   return pageMeta({
-    title: SITE.topicsTitle,
-    description: `按${by}${subjectAfter("追踪", "最新动态")}：${named ? `${named}等 ` : ""}${topics.length} 个主题，浏览最新精选与重要进展，持续更新。`,
-    path: "/topics",
-    image: "/og/pages/topics.png",
-    jsonLd: [
-      {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "@id": `${base}/topics#collection`,
-        url: `${base}/topics`,
-        name: withSubject("主题"),
-        inLanguage: SITE.locale,
-        isPartOf: { "@id": `${base}/#website` },
-        mainEntity: {
-          "@type": "ItemList",
-          numberOfItems: indexed.length,
-          itemListElement: indexed.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name, url: `${base}/topics/${t.slug}` })),
-        },
-      },
-      breadcrumbLd([{ name: SITE.name, path: "/" }, { name: "主题", path: "/topics" }]),
-    ],
+    title: SITE.topicsTitle ?? "主题",
+    description: "按主题、学科能力、公司与产品、形态和内容类型浏览媒体精选与往期报道。",
+    path,
+    noindex: hasFeedFilters(filters) || filters?.slot === "archive",
+    jsonLd: path === "/topics" ? itemListLd("/topics", "主题", titles) : undefined,
   });
 }
 
-/** Phones: a row per topic in a grouped list; wider screens: a card per topic. */
-function TopicCard({ t }: { t: TopicSummary }) {
-  return (
-    <IntentLink
-      viewTransition
-      to={`/topics/${t.slug}`}
-      className="group flex items-center gap-3 py-3 pl-4 pr-3 transition-colors active:bg-bg-sunk lg:card lg:card-hover lg:h-full lg:flex-col lg:items-stretch lg:gap-0 lg:px-5 lg:py-4 lg:active:bg-surface"
-    >
-      {t.brand && (
-        <span className="flex shrink-0 lg:hidden">
-          <BrandMark brand={t.brand} size={30} />
-        </span>
-      )}
-      <span className="min-w-0 flex-1 lg:flex lg:flex-col">
-        <span className="flex items-center gap-2.5 text-[15.5px] font-semibold text-ink transition-colors group-hover:text-accent lg:text-[15px] lg:font-bold">
-          {t.brand && (
-            <span className="hidden lg:flex">
-              <BrandMark brand={t.brand} size={22} />
-            </span>
-          )}
-          {t.name}
-        </span>
-        <span className="mt-0.5 line-clamp-1 text-[12.5px] leading-[1.6] text-ink-4 lg:mt-1.5 lg:line-clamp-2 lg:flex-1 lg:text-[13px] lg:leading-[1.65] lg:text-ink-2">
-          {t.latest?.title ?? t.definition}
-        </span>
-        <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] text-ink-4 lg:mt-3 lg:justify-between">
-          {t.latest && <time dateTime={t.latest.at} suppressHydrationWarning>{relativeTime(t.latest.at)}</time>}
-          <span>
-            {t.recent > 0 ? (
-              <>
-                近 30 天 <span className="num font-semibold text-ink-3">{t.recent}</span> 条
-              </>
-            ) : (
-              "近 30 天暂无新精选"
-            )}
-          </span>
-        </span>
-      </span>
-      <IconChevronRight size={16} className="shrink-0 text-ink-4 lg:hidden" />
-    </IntentLink>
-  );
+function hrefWith(base: string, params: URLSearchParams, patch: Record<string, string | null>) {
+  const sp = new URLSearchParams(params);
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === null || v === "") sp.delete(k);
+    else sp.set(k, v);
+  }
+  sp.delete("page");
+  sp.delete("cursor");
+  const s = sp.toString();
+  return s ? `${base}?${s}` : base;
 }
 
 export default function TopicsPage() {
-  const { groups, topics } = useLoaderData<typeof loader>();
+  const { data, filters, facets } = useLoaderData<typeof loader>();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const slot = filters.slot === "archive" ? "archive" : "featured";
+  const value = facetsFromRecord(filters);
+  const selected = !facetsEqualEmpty(value);
+  const [sheet, setSheet] = useState(false);
+  const unreadOnly = useUnreadOnly();
+  const chip = (on: boolean) => `inline-flex rounded-full px-2.5 py-1 text-[12px] ${on ? "bg-ink text-white" : "bg-bg-sunk text-ink-2"}`;
+
+  const facetRows = (
+    <FacetChipRows
+      vocab={facets.vocab}
+      value={value}
+      onChange={(next) => navigate(hrefWith("/topics", params, facetParams(next)), { preventScrollReset: true })}
+      counts={facets.counts}
+      logos={facets.logos?.index}
+      headCompanies={facets.headCompanies}
+    />
+  );
+
   return (
-    <div className="pb-10">
-      <PhoneBar back={{ to: "/more", label: "我的" }} title="主题" />
+    <div className="pb-6">
+      <PhoneBar
+        leading={
+          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-2.5 pr-2 text-ink">
+            <Wordmark size={17} />
+          </Link>
+        }
+        title="主题"
+      />
       <header className="pb-2 pt-3 lg:pt-1">
-        <h1 data-page-title="" className="text-[24px] font-semibold leading-[1.3] text-ink">{subjectAfter("按主题看")}</h1>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-ink-3">
-          {`按${groups.map((g) => g.name).join("、")}浏览 `}
-          <span className="num">{topics.length}</span> 个主题，追踪最新精选与重要进展。
-        </p>
+        <h1 data-page-title="" className="text-[24px] font-semibold leading-[1.3] text-ink">主题</h1>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-ink-3">按五组标签浏览媒体精选与往期报道。</p>
       </header>
-      {groups.map((g) => (
-        <section key={g.key} aria-labelledby={`topics-${g.key}`} className="pt-8">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-            <h2 id={`topics-${g.key}`} className="text-[15px] font-bold text-ink">
-              {g.name}
-            </h2>
-            <p className="text-[12px] text-ink-4">{g.blurb}</p>
+
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          className={chip(slot === "featured")}
+          onClick={() => navigate(hrefWith("/topics", params, { slot: null }), { preventScrollReset: true })}
+        >
+          精选
+        </button>
+        <button
+          type="button"
+          className={chip(slot === "archive")}
+          onClick={() => navigate(hrefWith("/topics", params, { slot: "archive" }), { preventScrollReset: true })}
+        >
+          往期
+        </button>
+        <div className="md:hidden">
+          <ToggleChip size="sm" on={unreadOnly} onToggle={() => setUnreadOnly(!unreadOnly)}>只看未读</ToggleChip>
+        </div>
+        <button
+          type="button"
+          className={`md:hidden ${chip(sheet || selected)}`}
+          onClick={() => setSheet(true)}
+        >
+          筛选
+        </button>
+      </div>
+
+      {selected && (
+        <div className="mb-3">
+          <SelectedFacetBars
+            value={value}
+            onToggle={(key, name) => navigate(hrefWith("/topics", params, facetParams({ ...value, [key]: value[key].filter((v) => v !== name) })), { preventScrollReset: true })}
+            onClearAll={() => navigate(hrefWith("/topics", params, facetParams(EMPTY_FACETS)), { preventScrollReset: true })}
+          />
+        </div>
+      )}
+
+      <div className="mb-5 hidden md:block">{facetRows}</div>
+
+      {sheet && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button type="button" className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={() => setSheet(false)} />
+          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface p-4 pb-8 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-[16px] font-semibold text-ink">筛选</h2>
+              <button type="button" className="text-[13px] text-ink-3" onClick={() => setSheet(false)}>完成</button>
+            </div>
+            {facetRows}
           </div>
-          <ul className="mt-3 divide-y divide-line-soft overflow-hidden rounded-card border border-line bg-surface lg:mt-3.5 lg:grid lg:grid-cols-3 lg:gap-3 lg:divide-y-0 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent xl:grid-cols-4">
-            {topics
-              .filter((t) => t.group === g.key)
-              .map((t) => (
-                <li key={t.slug}>
-                  <TopicCard t={t} />
-                </li>
-              ))}
-          </ul>
-        </section>
-      ))}
+        </div>
+      )}
+
+      <Timeline
+        initial={data}
+        filters={filters}
+        hidePhoneUnread
+        emptyTitle="没有符合筛选的报道"
+        emptyHint="试试去掉部分标签，或换到另一段（精选 / 往期）。"
+      />
     </div>
   );
 }

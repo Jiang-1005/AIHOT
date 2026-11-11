@@ -2,7 +2,9 @@
 // manual overrides and grouping, then record selected-set changes in the sync ledger.
 // Rebuilding only re-reads stored results; it never calls a model.
 import { toPublicApiCategory } from "@aihot/contracts/taxonomy";
+import { publicCopy, publicText } from "@aihot/site/public-copy";
 import { SITE } from "@aihot/site";
+import { featuredDatelineDay, featuredSlot } from "@aihot/industry/selection";
 import { one, sql, type Tx } from "../db.ts";
 import { sha256, stableJson } from "../lib/ids.ts";
 import { collapseWhitespace, isChineseText } from "../lib/text.ts";
@@ -24,6 +26,7 @@ interface ArticleRow {
   title: string;
   language: string | null;
   published_at: Date | null;
+  publication_time: string | null;
   discovered_at: Date;
   timeline_at: Date;
   backfill: boolean;
@@ -135,7 +138,7 @@ export function v1Payload(p: {
   publishedAt: Date | null; discoveredAt: Date; category: string | null; score: number | null; selected: boolean; reason: string | null;
 }): V1ItemPayload {
   const aihot = itemUrl(p.articleId);
-  return {
+  return publicV1Item({
     id: p.articleId,
     title: p.title,
     originalTitle: p.originalTitle,
@@ -149,6 +152,26 @@ export function v1Payload(p: {
     selected: p.selected,
     reason: p.selected ? p.reason : null,
     attribution: { name: SITE.name, url: aihot },
+  });
+}
+
+/** Whitelist + scrub a stored or freshly built v1 item so ledger history cannot leak internal copy. */
+export function publicV1Item(p: V1ItemPayload): V1ItemPayload {
+  const aihot = p.links?.aihot ?? itemUrl(p.id);
+  return {
+    id: p.id,
+    title: publicCopy(p.title) || p.title,
+    originalTitle: publicText(p.originalTitle),
+    summary: publicText(p.summary),
+    source: { name: publicSourceName(p.source?.name ?? "") },
+    links: { aihot, original: p.links?.original ?? "" },
+    publishedAt: p.publishedAt,
+    discoveredAt: p.discoveredAt,
+    category: p.category,
+    score: p.score,
+    selected: p.selected,
+    reason: p.selected ? publicText(p.reason) : null,
+    attribution: { name: SITE.name, url: p.attribution?.url ?? aihot },
   };
 }
 
@@ -239,7 +262,7 @@ export async function republishTx(tx: Tx, articleId: string, options: PublishOpt
 
 export async function publishArticleTx(tx: Tx, articleId: string, options: PublishOptions = {}): Promise<PublishResult | null> {
   const [article] = await tx<ArticleRow[]>`
-    SELECT id, source_id, url, title, language, published_at, discovered_at, timeline_at, backfill, body_status,
+    SELECT id, source_id, url, title, language, published_at, publication_time, discovered_at, timeline_at, backfill, body_status,
            body_text, x_post, x_article, grouped_at, grouping_status, selection_adds_value
     FROM articles WHERE id = ${articleId} FOR UPDATE`;
   if (!article) return null;
@@ -258,7 +281,10 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
   const [membership] = await tx<{ fact_id: number; story_id: number | null }[]>`
     SELECT fa.fact_id, f.story_id FROM fact_articles fa JOIN facts f ON f.id = fa.fact_id
     LEFT JOIN stories s ON s.id = f.story_id
-    WHERE fa.article_id = ${articleId} AND NOT ${latestCompositeCondition(sql`${articleId}`)} AND fa.role IN ('primary', 'report') AND (s.id IS NULL OR s.merged_into IS NULL)
+    WHERE fa.article_id = ${articleId}
+      AND fa.role IN ('primary', 'report')
+      AND (s.id IS NULL OR s.merged_into IS NULL)
+      AND (fa.manual IS TRUE OR NOT ${latestCompositeCondition(sql`${articleId}`)})
     ORDER BY (fa.role = 'primary') DESC, fa.created_at LIMIT 1`;
   const [previous] = await tx<PublicationRow[]>`SELECT * FROM publications WHERE article_id = ${articleId}`;
   // The seats of this article's facts (before and after) are settled in this transaction: take the
@@ -295,8 +321,13 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
   // Nothing releases a candidate without one: a timeout, a missing or invalid answer is no evidence the
   // report is new, so it waits (readable in the pool) rather than risk a repeat in the selection and its push.
   // A historical import already has its public decision. Preserve that confirmed state on rebuild.
+  const datelineDay = featuredDatelineDay({ url: article.url, publicationTime: article.publication_time, publishedAt: article.published_at });
+  // p.selected covers both homepage 精选 (≤ 7 days) and the 往期 view (7–30 days).
+  // The homepage and /archive timelines filter by slot; items older than archiveMaxAgeDays stay out.
+  const inArchiveSet = featuredSlot(datelineDay) !== "无";
   const selected = selectionCandidate && article.grouping_status === "complete"
-    && (f.selected === true || article.selection_adds_value !== false);
+    && (f.selected === true || article.selection_adds_value !== false)
+    && inArchiveSet;
   const reason = selected ? pickString(f.reason, original ? null : analysis?.reason_zh ?? null) : null;
   const hasXPost = !!article.x_post;
   const channel = channelOf(source.kind, hasXPost);

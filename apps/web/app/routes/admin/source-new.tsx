@@ -75,9 +75,9 @@ export default function NewSource() {
                 {Object.entries(TIER_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </Select>
             </Field>
-            <Field label="类别" hint="抬高精选门槛，一手身份不变">
+            <Field label="类别" hint="仅作标注，不再抬高精选门槛">
               <Select value={form.selection_class} onChange={(e) => setForm({ ...form, selection_class: e.target.value })}>
-                <option value="">无（按等级）</option>
+                <option value="">无</option>
                 {Object.entries(SELECTION_CLASS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </Select>
             </Field>

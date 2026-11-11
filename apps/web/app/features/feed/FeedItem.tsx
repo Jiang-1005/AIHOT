@@ -9,6 +9,7 @@ import { IntentLink } from "../../components/ui/IntentLink";
 import type { GroupInfo, FeedItemSummary, TimelineFilters } from "@aihot/contracts/site";
 import { CATEGORY_LABELS } from "@aihot/contracts/taxonomy";
 import { ITEM_COPY } from "@aihot/site";
+import { publicCopy } from "../../lib/public-copy";
 import { SameEventBadge, SelectedBadge } from "../../components/ui/Badge";
 import { ScoreLabel } from "../../components/ui/Score";
 import { beijingTime } from "@aihot/contracts/time";
@@ -116,7 +117,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
 
       {item.reason && (
         <div className="mt-1 lg:mt-3 lg:border-t lg:border-line-soft lg:pt-3">
-          <p className="line-clamp-1 text-[13px] leading-[1.65] text-note lg:line-clamp-none lg:leading-[1.75]">{`${ITEM_COPY.reasonLabel}：`}{item.reason}</p>
+          <p className="line-clamp-1 text-[13px] leading-[1.65] text-note lg:line-clamp-none lg:leading-[1.75]">{`${ITEM_COPY.reasonLabel}：`}{publicCopy(item.reason)}</p>
         </div>
       )}
 

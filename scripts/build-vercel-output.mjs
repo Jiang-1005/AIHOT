@@ -126,12 +126,15 @@ for (const rel of [
   "industry/topics.json",
   "industry/prompts",
   "assets/og-fonts",
+  // Optional company logos (sources.json + images); not shipped in this repository.
   "static/logos",
   "apps/web/public/logos",
 ]) {
   const src = path.join(ROOT, rel);
   const dest = path.join(apiRoot, rel);
-  if (statSync(src, { throwIfNoEntry: false })?.isDirectory()) copyDir(src, dest);
+  const st = statSync(src, { throwIfNoEntry: false });
+  if (!st) continue;
+  if (st.isDirectory()) copyDir(src, dest);
   else copyFile(src, dest);
 }
 

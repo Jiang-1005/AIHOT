@@ -8,6 +8,7 @@ import { isChineseText } from "../lib/text.ts";
 import { isEmptyOrLinkOnly, withXArticle } from "../content/posts.ts";
 import { proxiedImage, proxiedImageSet } from "../media/imgproxy.ts";
 import { sourceOwnsPost } from "../sources/account.ts";
+import { publicCopy, publicTags, publicText } from "@aihot/site/public-copy";
 import { displayTags, publicSourceName } from "./rules.ts";
 import { foldableSelectionCondition, seatedCondition, storyReportCondition } from "./scope.ts";
 
@@ -192,21 +193,21 @@ export function eventPageCondition(now: Date) {
 export function toItemSummary(row: ItemRow): ItemSummary {
   return {
     id: row.id,
-    title: row.title,
-    originalTitle: row.original_title,
-    summary: row.summary,
-    reason: row.selected ? row.reason : null,
+    title: publicCopy(row.title) || row.title,
+    originalTitle: publicText(row.original_title),
+    summary: publicText(row.summary),
+    reason: row.selected ? publicText(row.reason) : null,
     source: { name: publicSourceName(row.source_name) },
     links: { original: row.url },
     publishedAt: row.published_at?.toISOString() ?? null,
     discoveredAt: row.discovered_at.toISOString(),
     timelineAt: row.timeline_at.toISOString(),
     category: (row.category as CategoryKey | null) ?? null,
-    tags: displayTags(row.tags),
+    tags: publicTags(displayTags(row.tags)),
     score: row.score === null ? null : Math.round(Number(row.score)),
     selected: row.selected,
     channel: row.channel,
-    story: row.story_public_id ? { publicId: row.story_public_id, title: row.story_title ?? "" } : null,
+    story: row.story_public_id ? { publicId: row.story_public_id, title: publicCopy(row.story_title) || row.story_title || "" } : null,
   };
 }
 

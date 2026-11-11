@@ -4,10 +4,11 @@ import type { Route } from "./+types/all";
 import type { PoolResponse } from "@aihot/contracts/site";
 import { SEO_TITLES, SITE, subjectAfter } from "@aihot/site";
 import { beijingTime } from "@aihot/contracts/time";
-import { cachedPage, loadOr404 } from "../lib/api.server";
+import { apiGet, cachedPage, loadOr404 } from "../lib/api.server";
 import { pageReuse } from "../lib/page-reuse";
 import { filterParams, hasFeedFilters, itemListLd, listPath, pageMeta, readFilters } from "../lib/seo";
-import { ActiveFilters, CategoryTabs, FeedBar, SearchField } from "../features/feed/Filters";
+import type { FacetsMeta } from "../components/facets/FacetChips";
+import { ActiveFilters, DesktopFacetBlock, FeedBar, SearchField } from "../features/feed/Filters";
 import { PillTabs } from "../components/ui/Tabs";
 import { DayList, Pagination } from "../features/feed/DayList";
 import { EmptyState } from "../components/ui/Page";
@@ -29,14 +30,18 @@ export async function loader({ request }: Route.LoaderArgs) {
   const tab = url.searchParams.get("tab") === "relevance" ? "relevance" : null;
   // Older deep-paging parameters (deep, anchorAt) still open a normal page.
   const page = Math.min(Math.max(Number.parseInt(url.searchParams.get("page") ?? "1", 10) || 1, 1), 50);
-  const data = await loadOr404<PoolResponse>(
-    listPath("/api/site/pool", { ...filterParams(readFilters(url.searchParams)), q, tab, page: page > 1 ? page : null }),
-    // The busy page keeps the search, so it can be tried again as it was.
-    { signal: request.signal, busyRedirect: `/all/search-busy${url.search}` },
-  );
+  const filters = readFilters(url.searchParams);
+  const [data, facets] = await Promise.all([
+    loadOr404<PoolResponse>(
+      listPath("/api/site/pool", { ...filterParams(filters), q, tab, page: page > 1 ? page : null }),
+      // The busy page keeps the search, so it can be tried again as it was.
+      { signal: request.signal, busyRedirect: `/all/search-busy${url.search}` },
+    ),
+    apiGet<FacetsMeta>("/api/site/facets", { signal: request.signal }),
+  ]);
   // Past the last page of what there is: the last page, with the same search and filters.
   if (data.total > 0 && data.page > data.pageCount) throw redirect(pageHref(url.searchParams, data.pageCount));
-  return cachedPage(60, { data });
+  return cachedPage(60, { data, facets });
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -70,7 +75,7 @@ function pageHref(params: URLSearchParams, page: number) {
 }
 
 export default function AllPage() {
-  const { data } = useLoaderData<typeof loader>();
+  const { data, facets } = useLoaderData<typeof loader>();
   const [params] = useSearchParams();
   const navigation = useNavigation();
   const f = data.filters;
@@ -109,18 +114,17 @@ export default function AllPage() {
           }
         />
       ) : (
-        <FeedBar base="/all" category={f.category} channel={f.channel} />
+        <FeedBar base="/all" category={f.category} channel={f.channel} meta={facets} />
       )}
       <ActiveFilters base="/all" category={f.category} channel={f.channel} tag={f.tag} />
 
       {/* Desktop, as on 精选: the title, then one filter row with the search field aligned on the right. */}
-      <div className="hidden lg:block">
-        <h1 className="text-[24px] font-semibold leading-[1.3] text-ink">{title ?? ALL_TITLE}</h1>
-        <div className="mb-5 mt-4 flex items-center justify-between gap-4">
-          <CategoryTabs base="/all" category={f.category} channel={f.channel} layoutId="all-cat-desk" className="min-w-0" />
-          <SearchField defaultValue={f.q ?? ""} keep={keep} />
-        </div>
-      </div>
+      <DesktopFacetBlock
+        base="/all"
+        title={title ?? ALL_TITLE}
+        meta={facets}
+        search={<SearchField defaultValue={f.q ?? ""} keep={keep} />}
+      />
 
       {f.q && (
         <div className="mb-3 mt-1 flex flex-wrap items-center justify-between gap-2 lg:mt-0">

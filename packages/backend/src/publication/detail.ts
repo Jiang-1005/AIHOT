@@ -1,5 +1,6 @@
 // Item detail and Markdown export, both behind the same visibility and licence rules.
 import type { OutlineEntry, SiteItemDetail, StoryRef } from "@aihot/contracts/site";
+import { publicCopy, publicText } from "@aihot/site/public-copy";
 import { ITEM_COPY, SITE } from "@aihot/site";
 import { bodyToMarkdown } from "../content/markdown.ts";
 import { withCover, type Cover } from "../content/cover.ts";
@@ -222,15 +223,15 @@ export async function exportMarkdown(id: string): Promise<{ filename: string; bo
   const row = await loadRow(id);
   if (!row || !markdownAvailable(row)) return null;
   const lines: string[] = [];
-  lines.push(`# ${row.title}`, "");
-  if (row.original_title) lines.push(`> 原标题：${row.original_title}`, "");
+  lines.push(`# ${publicCopy(row.title) || row.title}`, "");
+  if (row.original_title) lines.push(`> 原标题：${publicCopy(row.original_title) || row.original_title}`, "");
   lines.push(`- 来源：${publicSourceName(row.source_name)}`);
   // Without a reliable date from the original, the time it was collected says so.
   lines.push(row.published_at ? `- 发布时间：${row.published_at.toISOString()}` : `- 收录时间：${row.discovered_at.toISOString()}`);
   lines.push(`- ${SITE.name}：${itemUrl(row.id)}`);
   lines.push(`- 原文：${row.url}`, "");
-  if (row.summary) lines.push("## 摘要", "", row.summary, "");
-  if (row.selected && row.seat && row.reason) lines.push(`## ${ITEM_COPY.reasonLabel}`, "", row.reason, "");
+  if (publicText(row.summary)) lines.push("## 摘要", "", publicText(row.summary)!, "");
+  if (row.selected && row.seat && publicText(row.reason)) lines.push(`## ${ITEM_COPY.reasonLabel}`, "", publicText(row.reason)!, "");
   if (showsPost(row) && row.x_post) {
     const post = xView(row);
     if (row.x_article_html) {

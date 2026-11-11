@@ -2,14 +2,15 @@ import { redirect, useLoaderData } from "react-router";
 import { SITE } from "@aihot/site";
 import type { Route } from "./+types/home";
 import type { TimelineResponse } from "@aihot/contracts/site";
-import { cachedPage, loadOr404 } from "../lib/api.server";
+import { apiGet, cachedPage, loadOr404 } from "../lib/api.server";
 import { pageReuse } from "../lib/page-reuse";
-import { filterParams, hasFeedFilters, itemListLd, listPath, pageMeta, readFilters, siteLd } from "../lib/seo";
+import { filterParams, hasFeedFilters, itemListLd, listPath, pageMeta, readFilters, siteLd, timelineApiParams } from "../lib/seo";
 import { inNav } from "../components/shell/nav";
 import type { Screen } from "../components/shell/screens";
+import type { FacetsMeta } from "../components/facets/FacetChips";
 import { Timeline } from "../features/feed/Timeline";
 import { HotTopics } from "../features/feed/HotTopics";
-import { ActiveFilters, CategoryTabs, FeedBar, SearchField } from "../features/feed/Filters";
+import { ActiveFilters, DesktopFacetBlock, FeedBar, SearchField } from "../features/feed/Filters";
 
 export const handle: Screen = { tab: "featured", name: "精选" };
 export { pageHeaders as headers } from "../lib/api.server";
@@ -20,11 +21,14 @@ export async function loader({ request }: Route.LoaderArgs) {
   const q = url.searchParams.get("q");
   // Search lives on /all; keep the parameters so old links still land on results.
   if (q && q.trim()) throw redirect(`/all${url.search}`);
-  const filters = readFilters(url.searchParams);
+  const filters = { ...readFilters(url.searchParams), slot: "featured" as const };
   const upstream = new Headers();
-  const data = await loadOr404<TimelineResponse>(listPath("/api/site/timeline", filterParams(filters)), { responseHeaders: upstream, signal: request.signal });
+  const [data, facets] = await Promise.all([
+    loadOr404<TimelineResponse>(listPath("/api/site/timeline", timelineApiParams(filters)), { responseHeaders: upstream, signal: request.signal }),
+    apiGet<FacetsMeta>("/api/site/facets", { responseHeaders: upstream, signal: request.signal }),
+  ]);
   // A minute at most, here and on /all: new selections must not wait longer at the edge or in a browser.
-  return cachedPage(60, { data, filters }, upstream);
+  return cachedPage(60, { data, filters, facets }, upstream);
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -37,24 +41,17 @@ export function meta({ loaderData }: Route.MetaArgs) {
 }
 
 export default function Home() {
-  const { data, filters } = useLoaderData<typeof loader>();
+  const { data, filters, facets } = useLoaderData<typeof loader>();
   const title = filters.tag ? `#${filters.tag}` : "精选";
   return (
     <div className="pb-6">
-      {/* Phones: the bar (精选 | 全部, filter, search), the filter in use, today's hot topics, the feed. */}
-      <FeedBar base="/" category={filters.category} channel={filters.channel} />
+      <FeedBar base="/" category={filters.category} channel={filters.channel} meta={facets} />
       <ActiveFilters base="/" category={filters.category} channel={filters.channel} tag={filters.tag} />
-      <div className="hidden lg:block">
-        <h1 className="text-[24px] font-semibold leading-[1.3] text-ink">{title}</h1>
-        <div className="mb-5 mt-4 flex items-center justify-between gap-4">
-          <CategoryTabs base="/" category={filters.category} channel={filters.channel} layoutId="home-cat-desk" className="min-w-0" />
-          <SearchField keep={{ category: filters.category }} />
-        </div>
-      </div>
+      <DesktopFacetBlock base="/" title={title} meta={facets} search={<SearchField keep={{ category: filters.category }} />} />
 
       {data.hot && inNav("/hot") && <HotTopics entries={data.hot} />}
 
-      <Timeline initial={data} filters={data.filters} />
+      <Timeline initial={data} filters={filters} />
     </div>
   );
 }

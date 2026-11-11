@@ -1,3 +1,20 @@
+> **关于这个仓库**
+>
+> 本仓库是基于 [KKKKhazix/AIHOT](https://github.com/KKKKhazix/AIHOT)（MIT）修改的教育行业版，**非官方，与 AIHOT 及其作者无关联**。公开版站名先用占位名「EduHot」（`site/site.ts` 的 `SITE_NAME`）；AIHOT 的名字和 Logo 不在 MIT 许可范围内（见 [NOTICE](NOTICE)），本仓库不使用。上游的 [LICENSE](LICENSE) 和 [NOTICE](NOTICE) 原样保留。
+>
+> 相对上游，主要改了这些（以代码为准）：
+>
+> - **行业包换成 AI+教育**：`industry/` 里的分类、主题、示范信源、公司名单和筛选/打分提示词；评分不再按信源分档，所有参与精选的信源共用一个门槛（`docs/selection.md`）。可选的「关注机构」相关性加分默认关闭（`industry/prompts/focus-relevance.md`）。
+> - **新增栏目**：`/companies` 国内公司动态（按时间混排或按公司看，最近 90 天）、`/policies` 国内政策（最近 90 天，标明征求意见稿）、`/voices` 社区热帖（家长、老师、学生的公开帖，和媒体精选分开）、`/archive` 往期（超过 7 天、不超过 30 天的精选）；以及媒体文章和社区帖共用的标签筛选。
+> - **Vercel + Neon 部署**：`api/`、`vercel.json`、`scripts/build-vercel-output.mjs` 等；本地 Docker 仍负责采集和打分，再用 `scripts/sync-to-neon.sh` 把数据同步到 Neon、按标签清 Vercel CDN。可选的应用内访问密码门（`packages/backend/src/public-gate.ts`）。详见 [DEPLOY-VERCEL.md](DEPLOY-VERCEL.md)。
+> - **访问密码门（可选，默认关）**：只有 `EDU_HOT_GATE_ENABLED=true` 时才启用，并且必须同时设置 `EDU_HOT_GATE_PASSWORD`，否则 API 和网页进程拒绝启动；没有写死的默认密钥，cookie 用 `SESSION_SECRET` 签名，没设时用门禁密码签名。不设 `EDU_HOT_GATE_ENABLED` 就是不开门禁。
+> - **数据库 TLS**：连 Neon 或设了 `DATABASE_SSL=true` 时默认校验证书；只有设置 `DATABASE_SSL_INSECURE=1` 才关闭校验（见 `.env.example`）。
+> - **公司图标**：仓库里不带第三方公司 Logo，页面显示公司名首字母。要加图标，把图片和 `sources.json`（`index` 为「公司名 → /logos/图片名」）放进 `apps/web/public/logos/`。
+> - **补录导入**：`scripts/import-company-backfill.ts` 读 `items-backfill*.csv` / `policy-backfill*.csv`，写入公司动态和政策栏目。
+> - 社区热帖的数据（`voices.json`）由站外流程生成，生成脚本不在本仓库里。
+>
+> 下面是上游 README 原文。
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.png">

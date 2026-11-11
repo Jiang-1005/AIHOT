@@ -20,6 +20,10 @@ import { registerFeedback } from "./feedback.ts";
 import { loadHot, loadStoryDetail, resolveStory } from "@aihot/backend/publication/stories";
 import { listReports, loadReport, reportNavigation, loadReportNavigation, loadReportMonth, type ReportKind } from "@aihot/backend/publication/reports";
 import { looseQuery, QueryError, sendJsonWithEtag, sendProblem } from "../http/respond.ts";
+import { loadVoicesPage } from "@aihot/backend/publication/voices";
+import { loadCompanyUpdatesPage } from "@aihot/backend/publication/company-updates";
+import { loadPolicyUpdatesPage } from "@aihot/backend/publication/policy-updates";
+import { loadFacetsMeta, parseFacetQuery, facetsActive } from "@aihot/backend/publication/facets";
 
 type Handler = (req: FastifyRequest, reply: FastifyReply) => Promise<unknown>;
 
@@ -46,6 +50,7 @@ export interface FilterParams {
   channel: ChannelKey;
   category: CategoryKey | null;
   tag: string | null;
+  slot?: "featured" | "archive";
 }
 
 export function parseFilters(q: Record<string, string>): FilterParams {
@@ -54,7 +59,8 @@ export function parseFilters(q: Record<string, string>): FilterParams {
   const category = q.category ?? null;
   if (category !== null && !isCategoryKey(category)) throw new BadRequest("invalid category");
   const tag = q.tag?.trim() ? q.tag.trim().slice(0, 60) : null;
-  return { channel, category: category as CategoryKey | null, tag };
+  const slot = q.slot === "archive" ? "archive" : q.slot === "featured" ? "featured" : undefined;
+  return { channel, category: category as CategoryKey | null, tag, ...(slot ? { slot } : {}) };
 }
 
 export function registerSite(app: FastifyInstance) {
@@ -62,13 +68,31 @@ export function registerSite(app: FastifyInstance) {
     return sendJsonWithEtag(req, reply, siteMeta(), { etagPrefix: "meta", cacheControl: "public, max-age=60, s-maxage=60" });
   }));
 
+  app.get("/api/site/voices", siteHandler(async (req, reply) => {
+    return sendJsonWithEtag(req, reply, loadVoicesPage(), { etagPrefix: "voices", cacheControl: "public, max-age=60, s-maxage=60" });
+  }));
+
+  app.get("/api/site/company-updates", siteHandler(async (req, reply) => {
+    return sendJsonWithEtag(req, reply, await loadCompanyUpdatesPage(), { etagPrefix: "company-updates", cacheControl: "public, max-age=60, s-maxage=60" });
+  }));
+
+  app.get("/api/site/policy-updates", siteHandler(async (req, reply) => {
+    return sendJsonWithEtag(req, reply, await loadPolicyUpdatesPage(), { etagPrefix: "policy-updates", cacheControl: "public, max-age=60, s-maxage=60" });
+  }));
+
+  app.get("/api/site/facets", siteHandler(async (req, reply) => {
+    return sendJsonWithEtag(req, reply, loadFacetsMeta(), { etagPrefix: "facets", cacheControl: "public, max-age=60, s-maxage=60" });
+  }));
+
+
   app.get("/api/site/timeline", siteHandler(async (req, reply) => {
     const q = looseQuery(req);
     const filters = parseFilters(q);
     const limit = Math.min(Math.max(Number(q.limit) || 20, 1), 40);
-    const unfiltered = filters.channel === "all" && !filters.category && !filters.tag && !q.cursor;
+    const facets = parseFacetQuery(q);
+    const unfiltered = filters.channel === "all" && !filters.category && !filters.tag && filters.slot !== "archive" && !q.cursor && !facetsActive(facets);
     const [data, hot] = await Promise.all([
-      loadTimeline({ ...filters, cursor: q.cursor || null, limit }),
+      loadTimeline({ ...filters, ...facets, cursor: q.cursor || null, limit }),
       unfiltered ? loadHotStrip() : null,
     ]);
     // Any cache in front and the home page built from this answer share one absolute deadline.
@@ -79,10 +103,11 @@ export function registerSite(app: FastifyInstance) {
   app.get("/api/site/pool", siteHandler(async (req, reply) => {
     const q = looseQuery(req);
     const filters = parseFilters(q);
+    const facets = parseFacetQuery(q);
     const page = Math.min(Math.max(Number(q.page) || 1, 1), 50);
     const search = q.q?.trim() ? q.q.trim().slice(0, 200) : null;
     const tab = q.tab === "relevance" ? "relevance" : "time";
-    return sendJsonWithEtag(req, reply, await loadPool({ ...filters, q: search, tab, page }), { etagPrefix: "pool", cacheControl: "public, max-age=60, s-maxage=60" });
+    return sendJsonWithEtag(req, reply, await loadPool({ ...filters, ...facets, q: search, tab, page }), { etagPrefix: "pool", cacheControl: "public, max-age=60, s-maxage=60" });
   }));
 
   app.get("/api/site/items/:id", siteHandler(async (req, reply) => {

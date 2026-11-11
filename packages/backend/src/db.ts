@@ -14,6 +14,9 @@ const databaseUrl = config.databaseUrl;
 const neonHost = /neon\.tech(?:[:/?]|$)|-pooler\./i.test(databaseUrl);
 const pooled = neonHost || process.env.DATABASE_PREPARE === "false";
 const useSsl = onVercel || neonHost || process.env.DATABASE_SSL === "true";
+// Certificates are verified by default. DATABASE_SSL_INSECURE=1 turns verification off (only for a provider
+// whose chain the runtime cannot verify; prefer fixing the CA instead).
+const insecureSsl = process.env.DATABASE_SSL_INSECURE === "1";
 
 export const sql = postgres(databaseUrl, {
   max: Number(process.env.DATABASE_POOL_MAX || (onVercel ? 1 : 10)),
@@ -22,7 +25,7 @@ export const sql = postgres(databaseUrl, {
   connect_timeout: 10,
   // Neon transaction poolers cannot use prepared statements.
   prepare: !pooled,
-  ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+  ssl: useSsl ? { rejectUnauthorized: !insecureSsl } : undefined,
   onnotice: () => {},
   // Prepared statements keep PostgreSQL's plan cache: planning a detail read took longer than running
   // it. Searches plan every execution instead (withCustomPlans). JIT compilation costs more than

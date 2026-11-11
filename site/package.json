@@ -5,6 +5,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./site.ts",
+    "./public-copy": "./public-copy.ts",
     "./models": "./models.ts",
     "./modules": "./modules/index.ts",
     "./modules/server": "./modules/server.ts",
