@@ -1,5 +1,5 @@
 // The judging and writing steps (editorial/analyze.ts): the prefilter decides relevance, two scores
-// against the source's threshold (its tier's, raised by its class) decide 精选, selected and near-selected items are written by the content
+// against the industry's single threshold decide 精选, selected and near-selected items are written by the content
 // understanding and the rest by the title/summary translation, a structure step gives the category,
 // subjects and fact. Material with only a feed summary has its page fetched first.
 import { pointModels, Reply, stub, tag } from "./setup.ts";
@@ -25,18 +25,17 @@ const CLASSED_SOURCE = `test-analyze-classed-${T}`;
 interface Req { step: AnalysisStep; marker: string; user: string }
 const requests: Req[] = [];
 const MARKERS = ["CLEAR", "RESCUE", "LOW", "OFFTOPIC", "BARE", "VAGUE", "THIN", "SENSITIVE", "推文", "WORDY", "REFUSAL", "RENUMBER", "UNMENDED", "ECOSYS"];
-// The scores sit a few points around the pack's T1 threshold and understand floor, so each case means
-// the same after a site recalibrates them: selected when the two add up to 2 × T1, written like a
+// The scores sit a few points around the pack's single threshold and understand floor, so each case means
+// the same after a site recalibrates them: selected when the two add up to 2 × threshold, written like a
 // selected item when they add up to more than 2 × FLOOR, translated otherwise.
 const T1 = selectionThreshold({ tier: "T1" })!;
 const T2 = selectionThreshold({ tier: "T2" })!;
 const FLOOR = UNDERSTAND_FLOOR;
-// A pack class whose floor lies between the official and the media threshold: it raises the first, not the second.
-const [CLASS, CLASS_FLOOR] = Object.entries(SELECTION.classes).map(([key, c]) => [key, c.threshold] as const).find(([, t]) => t > T1 && t < T2) ?? [undefined, NaN];
+const CLASS = Object.keys(SELECTION.classes)[0];
 const scoreAnswers: Record<string, number[]> = {
   CLEAR: [T1 + 3, T1 - 1], RESCUE: [FLOOR + 1, FLOOR], LOW: [FLOOR, FLOOR - 1], THIN: [T1, T1], SENSITIVE: [T1, T1], 推文: [FLOOR, FLOOR],
   BARE: [FLOOR - 2, FLOOR - 4], VAGUE: [T1, T1 + 2], WORDY: [T1, T1], REFUSAL: [T1, T1], RENUMBER: [T1, T1], UNMENDED: [T1, T1],
-  ECOSYS: [CLASS_FLOOR, CLASS_FLOOR - 1],
+  ECOSYS: [T1 + 3, T1 - 1],
 };
 
 const WORDY = ["WORDY", "REFUSAL", "RENUMBER", "UNMENDED"];
@@ -257,16 +256,16 @@ test("guards: a company the input does not name is not written in; long summarie
   assert.equal(parseTranslateOutput("title_zh: 标题\nbody_zh: 我们懂你。\n\n来源：X：PixVerse (@PixVerse)").bodyZh, "我们懂你。", "a repeated prompt line is dropped");
 });
 
-test("a source class raises its tier's threshold to the class floor and never lowers one", () => {
-  assert.ok(CLASS && CLASS_FLOOR - 1 >= T1, "the cases need a pack class whose floor lies above the official threshold and below the media one");
-  assert.equal(selectionThreshold({ tier: "T1", selectionClass: null }), T1);
-  assert.equal(selectionThreshold({ tier: "T1", selectionClass: CLASS }), CLASS_FLOOR);
-  assert.equal(selectionThreshold({ tier: "T2", selectionClass: CLASS }), T2, "a media source keeps its own, higher threshold");
-  assert.equal(selectionThreshold({ tier: "EXCLUDE_MP", selectionClass: CLASS }), null, "a tier without a threshold stays out of 精选");
+test("every scored tier shares one threshold; a source class does not change it", () => {
+  assert.equal(T1, SELECTION.threshold);
+  assert.equal(T2, SELECTION.threshold);
+  assert.equal(selectionThreshold({ tier: "T1", selectionClass: null }), SELECTION.threshold);
+  assert.equal(selectionThreshold({ tier: "T1", selectionClass: CLASS ?? null }), SELECTION.threshold);
+  assert.equal(selectionThreshold({ tier: "T2", selectionClass: CLASS ?? null }), SELECTION.threshold);
+  assert.equal(selectionThreshold({ tier: "EXCLUDE_MP", selectionClass: CLASS ?? null }), null, "a tier without a threshold stays out of 精选");
 });
 
-test("after the admin gives a source a class, analysing again holds the paid scores against the class floor", async () => {
-  // Scores that select from an ordinary official source and stay under the class floor.
+test("after the admin gives a source a class, analysing again keeps the same threshold and paid answers", async () => {
   const id = await article("ECOSYS", { sourceId: CLASSED_SOURCE });
   const first = await analyzeArticle(id);
   assert.deepEqual([first!.output!.selected, (await row(id)).output.threshold], [true, T1]);
@@ -276,7 +275,7 @@ test("after the admin gives a source a class, analysing again holds the paid sco
   const hits = provider.hits();
   const again = await analyzeArticle(id);
   assert.equal(provider.hits(), hits, "the same paid answers: the class is not part of any model input");
-  assert.deepEqual([again!.output!.selected, again!.output!.score, (await row(id)).output.threshold], [false, CLASS_FLOOR - 1, CLASS_FLOOR]);
+  assert.deepEqual([again!.output!.selected, (await row(id)).output.threshold], [true, T1], "class is a label only");
   const created = await createSource({ id: `test-classed-new-${T}`, name: "Created with a class", kind: "rss", config: { feedUrl: `https://example.com/feed-${T}.xml` }, tier: "T1", selection_class: CLASS }, "test");
   assert.equal(created.created && created.source.selection_class, CLASS, "a new source can start with a class");
 });
