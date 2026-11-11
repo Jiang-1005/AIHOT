@@ -1,0 +1,10 @@
+import { closeDb } from "@aihot/backend/db";
+import { stopBoss } from "@aihot/backend/jobs/queue";
+import { installModules } from "@aihot/backend/modules";
+import { checkAlerts } from "@aihot/backend/operations/alerts";
+import { SERVER_MODULES } from "@aihot/site/modules/server";
+installModules(SERVER_MODULES);
+const r = await checkAlerts();
+console.log(JSON.stringify(r ?? { ok: true }));
+await stopBoss();
+await closeDb();

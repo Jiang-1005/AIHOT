@@ -9,11 +9,20 @@ const numberType = (oid: number) => ({
   parse: (value: string) => Number(value),
 });
 
-export const sql = postgres(config.databaseUrl, {
-  max: Number(process.env.DATABASE_POOL_MAX || 10),
-  // Keep connections through quiet minutes: a reconnect costs a SCRAM exchange on the next request.
-  idle_timeout: 600,
+const onVercel = !!process.env.VERCEL;
+const databaseUrl = config.databaseUrl;
+const neonHost = /neon\.tech(?:[:/?]|$)|-pooler\./i.test(databaseUrl);
+const pooled = neonHost || process.env.DATABASE_PREPARE === "false";
+const useSsl = onVercel || neonHost || process.env.DATABASE_SSL === "true";
+
+export const sql = postgres(databaseUrl, {
+  max: Number(process.env.DATABASE_POOL_MAX || (onVercel ? 1 : 10)),
+  // Keep connections through quiet minutes locally; serverless should release them quickly.
+  idle_timeout: onVercel ? 20 : 600,
   connect_timeout: 10,
+  // Neon transaction poolers cannot use prepared statements.
+  prepare: !pooled,
+  ssl: useSsl ? { rejectUnauthorized: false } : undefined,
   onnotice: () => {},
   // Prepared statements keep PostgreSQL's plan cache: planning a detail read took longer than running
   // it. Searches plan every execution instead (withCustomPlans). JIT compilation costs more than

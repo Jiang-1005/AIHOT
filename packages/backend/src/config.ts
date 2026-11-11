@@ -55,7 +55,8 @@ export const config = {
   baiduPushToken: env.BAIDU_PUSH_TOKEN || null,
   /** Optional directory of per-group dotenv files (models.env, collectors.env, …); normally everything is in .env. */
   credentialsDir: credentialsDir ? path.resolve(REPO_ROOT, credentialsDir) : null,
-  dataDir: str("AIHOT_DATA_DIR", path.join(REPO_ROOT, ".data")),
+  // On Vercel the image is read-only except /tmp; catalogs are hydrated from Postgres into this dir.
+  dataDir: str("AIHOT_DATA_DIR", process.env.VERCEL ? "/tmp/edu-hot-data" : path.join(REPO_ROOT, ".data")),
   // Name of this deployment in alerts ("production" sends them without a prefix).
   environmentName: str("AIHOT_ENVIRONMENT", isProduction ? "production" : "development"),
   // External-action valve: off unless the environment turns it on, like COLLECT_ENABLED (read by the

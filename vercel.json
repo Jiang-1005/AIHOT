@@ -1,0 +1,95 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run build -w @aihot/web",
+  "installCommand": "npm ci",
+  "outputDirectory": "apps/web/build/client",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/feed",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/feed/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/rss",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/rss.xml",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/atom.xml",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/openapi-v1.json",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/llms.txt",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/sitemaps/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/.well-known/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/og/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/contact/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/items/:id/markdown",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!assets/).*)",
+      "destination": "/api/ssr"
+    }
+  ],
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "{apps,packages,site,industry,modules,database}/**"
+    },
+    "api/ssr.ts": {
+      "includeFiles": "apps/web/build/**"
+    }
+  },
+  "regions": [
+    "sin1"
+  ]
+}

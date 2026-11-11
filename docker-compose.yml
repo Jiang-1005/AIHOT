@@ -1,6 +1,6 @@
 # docker compose up -d --build     → http://localhost:3000   (the admin is at /admin)
 # docker compose --profile https up -d --build   → HTTPS for SITE_DOMAIN through Caddy
-name: aihot
+name: edu-hot
 
 x-app: &app
   build: .
