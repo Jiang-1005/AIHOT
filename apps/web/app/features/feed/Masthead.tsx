@@ -16,16 +16,19 @@ export function Masthead({ today, issue, todayCount }: { today: string; issue: M
   const noon = beijingAt(today, "12:00").getTime();
   const date = monthDay(today, noon);
   return (
-    // Phones: one row (the name, then the issue line) over a single rule, to keep the first screen for the list.
-    // Desktop: centred, the tagline over the name, the issue line under a hairline, all over a double rule.
-    <header className="mb-2 mt-3 flex items-baseline justify-between gap-x-3 border-b border-ink pb-2 lg:mb-6 lg:mt-1 lg:block lg:border-b-[3px] lg:border-double lg:pb-4 lg:text-center">
+    // Phones: one row that never wraps from 320 to 390 wide (the name, then "5期 · 11月14日 · 今日1条" in a smaller
+    // size, without the spaces and the weekday) over a single rule, to keep the first screen for the list.
+    // Desktop: centred, the tagline over the name, the spaced issue line under a hairline, all over a double rule.
+    <header className="mb-1 mt-2 flex items-baseline justify-between gap-x-2 border-b border-ink pb-2 lg:mb-6 lg:mt-1 lg:block lg:border-b-[3px] lg:border-double lg:pb-4 lg:text-center">
       <p className="kicker hidden font-normal lg:block">{SITE.tagline} · 每日精选</p>
-      <p className="shrink-0 font-serif text-[1.375rem] font-bold leading-[1.2] tracking-[0.04em] text-ink lg:mt-2 lg:text-[2.75rem] lg:leading-[1.15] lg:tracking-[0.06em]">{SITE.name}</p>
-      <p className="kicker flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 font-normal tracking-[0.04em] lg:mt-3 lg:justify-center lg:gap-x-2 lg:border-t lg:border-line lg:pt-2 lg:tracking-[0.18em]">
+      <p className="shrink-0 font-serif text-[1.25rem] font-bold leading-[1.2] tracking-[0.02em] text-ink lg:mt-2 lg:text-[2.75rem] lg:leading-[1.15] lg:tracking-[0.06em]">{SITE.name}</p>
+      <p className="kicker flex min-w-0 flex-nowrap items-center justify-end gap-x-1 whitespace-nowrap text-[0.6875rem] font-normal tracking-normal lg:mt-3 lg:flex-wrap lg:justify-center lg:gap-x-2 lg:border-t lg:border-line lg:pt-2 lg:text-[0.75rem] lg:tracking-[0.18em]">
         {issue && (
           <Link to={`/daily/${issue.key}`} className="transition-colors hover:text-accent">
-            {issue.key === today ? "第" : "最新日报第"} <span className="num">{issue.issueNumber}</span> 期
-            {issue.key !== today && `（${monthDay(issue.key, noon)}）`}
+            {issue.key === today ? <span className="hidden lg:inline">第 </span> : <>最新<span className="hidden lg:inline">日报</span>第<span className="hidden lg:inline"> </span></>}
+            <span className="num">{issue.issueNumber}</span>
+            <span className="hidden lg:inline"> </span>期
+            {issue.key !== today && <span className="hidden lg:inline">（{monthDay(issue.key, noon)}）</span>}
           </Link>
         )}
         {issue && <span aria-hidden="true">·</span>}
@@ -34,7 +37,11 @@ export function Masthead({ today, issue, todayCount }: { today: string; issue: M
           <span className="hidden lg:inline"> {beijingWeekday(today)}</span>
         </time>
         <span aria-hidden="true">·</span>
-        <span>今日 <span className="num">{todayCount}</span> 条</span>
+        <span>
+          今日<span className="hidden lg:inline"> </span>
+          <span className="num">{todayCount}</span>
+          <span className="hidden lg:inline"> </span>条
+        </span>
       </p>
     </header>
   );
