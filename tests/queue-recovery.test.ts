@@ -2,11 +2,28 @@ import "./setup.ts";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { config } from "@aihot/backend/config";
-import { getBoss, enqueue, QUEUES, stopBoss } from "@aihot/backend/jobs/queue";
+import { getBoss, enqueue, QUEUES, recordRun, stopBoss } from "@aihot/backend/jobs/queue";
+import { BudgetExceededError } from "@aihot/backend/providers/receipts";
 
 import { closeDb, sql } from "@aihot/backend/db";
 
 after(async () => { await stopBoss(); await closeDb(); });
+
+const tag = () => Math.random().toString(36).slice(2);
+
+test("a run stopped by a paid-call budget is recorded as skipped, not failed", async () => {
+  const job = `budget-${tag()}`;
+  await assert.rejects(recordRun(job, async () => { throw new BudgetExceededError("socialdata", "hour", 600); }), /Budget/);
+  const [skipped] = await sql`SELECT status,error FROM job_runs WHERE job=${job}`;
+  assert.equal(skipped!.status, "skipped", "a budget pause is not a failure");
+  assert.match(String(skipped!.error), /Budget/);
+  const failedJob = `${job}-failed`;
+  await assert.rejects(recordRun(failedJob, async () => { throw new Error("real failure"); }), /real failure/);
+  const [failed] = await sql`SELECT status FROM job_runs WHERE job=${failedJob}`;
+  assert.equal(failed!.status, "failed", "other errors still fail");
+  await sql`DELETE FROM job_runs WHERE job IN (${job}, ${failedJob})`;
+});
+
 
 test("a failed first database connection does not poison all later queue requests", async () => {
   const original = config.databaseUrl;
