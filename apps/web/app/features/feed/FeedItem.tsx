@@ -61,7 +61,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
             <ScoreLabel score={item.score} compact />
           </span>
           <span className="-my-[12px] -mr-3 inline-flex lg:-my-1 lg:mr-0">
-            <StarButton item={item} className="size-11 lg:size-[26px]" />
+            <StarButton item={item} className="size-11 lg:-my-2 lg:size-8" />
           </span>
         </span>
       </header>
