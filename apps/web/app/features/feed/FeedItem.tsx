@@ -40,7 +40,8 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
   const tags = showTags ? item.tags.slice(0, 3) : [];
   // Phones lead with the publish date in the source line; when the row was collected on a later day, "收录 09:42" follows.
   const dates = at ? rowDates(item.publishedAt, at) : null;
-  const lead = dates && [dates.day, dates.clock].filter(Boolean).join(" ");
+  // Under a day head of another day, the date says what it is: "发布 11月13日".
+  const lead = dates && [dates.day && `发布 ${dates.day}`, dates.clock].filter(Boolean).join(" ");
 
   return (
     <article className="relative min-w-0 lg:border-t lg:border-line lg:py-6 lg:group-first/slot:border-t-0 lg:group-first/slot:pt-4 lg:[&:has(a:hover)_h3]:text-accent" data-item-id={item.id}>
@@ -68,7 +69,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
           </span>
         </span>
       </header>
-      {dates?.collected && <p className="mono mt-1 text-[0.75rem] leading-[16px] text-ink-4">{dates.collected}</p>}
+      {dates?.collected && <p className="mono text-[0.75rem] leading-[16px] text-ink-4 lg:mt-1">{dates.collected}</p>}
 
       {isX ? (
         item.summary ? <p className={`mt-2 whitespace-pre-line text-[0.875rem] leading-[1.75] line-clamp-5 lg:mt-2 lg:line-clamp-4 ${readTone(read, "text-ink")}`}>
@@ -78,12 +79,12 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
         </p> : <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} aria-label={`查看 ${item.x!.authorName} 的帖子`} className="absolute inset-0" />
       ) : (
         <>
-          <h3 className={`mt-2 line-clamp-2 text-[1.0625rem] font-semibold leading-[1.45] transition-colors lg:mt-2.5 lg:line-clamp-none lg:text-[1.25rem] lg:leading-[1.45] ${readTone(read, "text-ink")}`}>
+          <h3 className={`mt-1.5 line-clamp-2 text-[1.0625rem] font-semibold leading-[1.4] transition-colors lg:mt-2.5 lg:line-clamp-none lg:text-[1.25rem] lg:leading-[1.45] ${readTone(read, "text-ink")}`}>
             <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
               {item.title}
             </IntentLink>
           </h3>
-          {item.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:mt-2 lg:line-clamp-3 lg:text-[0.875rem] lg:leading-[1.75]">{shortAddresses(item.summary)}</p>}
+          {item.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.6] text-ink-3 lg:mt-2 lg:line-clamp-3 lg:text-[0.875rem] lg:leading-[1.75]">{shortAddresses(item.summary)}</p>}
         </>
       )}
 
@@ -121,7 +122,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
 
       {item.reason && (
         <div className="mt-1 lg:mt-3 lg:border-t lg:border-line-soft lg:pt-3">
-          <p className="line-clamp-1 text-[0.875rem] leading-[1.65] text-note lg:line-clamp-none lg:leading-[1.75]">{`${ITEM_COPY.reasonLabel}：`}{publicCopy(item.reason)}</p>
+          <p className="line-clamp-1 text-[0.875rem] leading-[1.6] text-note lg:line-clamp-none lg:leading-[1.75]">{`${ITEM_COPY.reasonLabel}：`}{publicCopy(item.reason)}</p>
         </div>
       )}
 
