@@ -59,7 +59,7 @@ export default function Home() {
       <FeedBar base="/" category={filters.category} channel={filters.channel} meta={facets} />
       <ActiveFilters base="/" category={filters.category} channel={filters.channel} tag={filters.tag} />
       {front && <Masthead today={today} issue={issue} todayCount={data.dayCounts[today] ?? 0} />}
-      <DesktopFacetBlock base="/" title={title} meta={facets} search={<SearchField keep={{ category: filters.category }} />} />
+      <DesktopFacetBlock base="/" title={title} titleHidden={front} meta={facets} search={<SearchField keep={{ category: filters.category }} />} />
 
       {data.hot && inNav("/hot") && <HotTopics entries={data.hot} />}
 

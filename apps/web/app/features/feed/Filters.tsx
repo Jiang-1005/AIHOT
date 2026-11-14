@@ -39,10 +39,12 @@ function patchFacets(base: string, params: URLSearchParams, next: FacetState): s
 
 /** Desktop: five-dimension chip rows, replacing the old 一手/能力/产品… tabs. */
 export function DesktopFacetBlock({
-  base, title, blurb, meta, search,
+  base, title, titleHidden = false, blurb, meta, search,
 }: {
   base: string;
   title: ReactNode;
+  /** Under the masthead the page's name is already said; the heading stays for screen readers only. */
+  titleHidden?: boolean;
   blurb?: ReactNode;
   meta: FacetsMeta;
   search?: ReactNode;
@@ -58,7 +60,7 @@ export function DesktopFacetBlock({
     <div className="hidden lg:block">
       <div className="mb-3 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[1.75rem] font-semibold leading-[1.3] text-ink">{title}</h1>
+          <h1 className={titleHidden ? "sr-only" : "text-[1.75rem] font-semibold leading-[1.3] text-ink"}>{title}</h1>
           {blurb}
         </div>
         {search}
