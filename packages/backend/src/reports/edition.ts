@@ -1,5 +1,7 @@
-// What an issue carries. A period carries its selected reports: public, not backfill, attributed by
-// the later of arrival and release, and not released long after they happened. The daily is computed
+// What an issue carries. A period carries its selected reports: public, not historical
+// (stale-on-discovery or undated backfill). A new source's first import from the last 48 hours
+// is still news (materials.ts newsCondition) and can lead a daily. Attribution is by the later
+// of arrival and release, and items are not released long after they happened. The daily is computed
 // by rule, without a model judging anything: one entry per event, its most authoritative report with
 // the event's other developments listed under it; an event an earlier issue covered comes back only
 // with a new fact; an event with an official post and three or more independent participants is
@@ -15,6 +17,13 @@ import { currentSignals } from "../events/hot.ts";
 import { pickRepresentative, representativePriority, REPRESENTATIVE_COLUMNS, type RepresentativeIdentity } from "../publication/representative.ts";
 import { factSources } from "../publication/coverage.ts";
 import { evidenceCondition, listedCondition, ownFactEvidenceCondition } from "../publication/scope.ts";
+import { STALE_ON_DISCOVERY_MS } from "../content/materials.ts";
+
+/** The publication-row form of newsCondition: first-import backfill still counts when it is news. */
+function newsPublicationCondition() {
+  return sql`(NOT p.backfill OR (p.published_at IS NOT NULL AND p.discovered_at - p.published_at <= make_interval(secs => ${STALE_ON_DISCOVERY_MS / 1000})))`;
+}
+
 
 /** Each category's section; several categories may share one, in the order the pack lists them. */
 export const SECTION_OF: Record<string, string> = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.section]));
@@ -102,23 +111,27 @@ const REPORT_FIELDS = sql`p.article_id AS id, p.title, p.summary, p.url, p.categ
  * issue, never to one already out). A report that arrived more than a day before the period began and
  * was released only within it is old news there.
  */
-export async function periodReports(start: Date, end: Date): Promise<ReportRow[]> {
+export async function periodReports(start: Date, end: Date, attribute: "release" | "timeline" = "release"): Promise<ReportRow[]> {
   return sql.begin("isolation level read committed", async (tx) => {
     // Wait for in-flight releases and keep later ones outside this snapshot. The following SELECT
     // gets a fresh READ COMMITTED snapshot; model calls and report writes happen after the lock ends.
     await tx`SELECT pg_advisory_xact_lock(hashtext('report_candidates'))`;
+    // "timeline" matches the homepage 精选 day bucket (anchorAt / timeline_at). "release" keeps
+    // the 08:00 edition rule: first seen at the later of arrival and release.
+    const inWindow = attribute === "timeline"
+      ? sql`p.timeline_at >= ${start} AND p.timeline_at < ${end} AND p.visible_after < ${end}`
+      : sql`(
+          (p.visible_after <= p.timeline_at AND p.timeline_at >= ${start} AND p.timeline_at < ${end})
+          OR (p.visible_after > p.timeline_at AND p.visible_after >= ${start} AND p.visible_after < ${end})
+        )
+        AND p.timeline_at >= ${start}::timestamptz - interval '24 hours'`;
     return tx<ReportRow[]>`
       SELECT ${REPORT_FIELDS}
       FROM publications p JOIN sources s ON s.id = p.source_id
       LEFT JOIN facts f ON f.id = p.fact_id AND ${ownFactEvidenceCondition()}
       LEFT JOIN stories st ON st.id = f.story_id
-      -- Attribute each item by the later of arrival and release; either range can use its index.
-      WHERE p.visibility = 'public' AND p.selected AND NOT p.backfill
-        AND (
-          (p.visible_after <= p.timeline_at AND p.timeline_at >= ${start} AND p.timeline_at < ${end})
-          OR (p.visible_after > p.timeline_at AND p.visible_after >= ${start} AND p.visible_after < ${end})
-        )
-        AND p.timeline_at >= ${start}::timestamptz - interval '24 hours'`;
+      WHERE p.visibility = 'public' AND p.selected AND ${newsPublicationCondition()}
+        AND ${inWindow}`;
   });
 }
 
@@ -206,7 +219,7 @@ export function citedIn(content: Record<string, any>): Array<Record<string, any>
 }
 
 /** A report a thin issue's highlights are filled with scored at least what any source needs to be selected. */
-const PICK_FLOOR = Math.min(...Object.values(SELECTION.thresholds));
+const PICK_FLOOR = SELECTION.threshold;
 
 /**
  * Reports to fill a thin issue's highlights with (a weekend's issue often carries a single entry): the
@@ -229,7 +242,7 @@ export async function dailyPicks(date: string, start: Date, end: Date, issue: Ed
     FROM publications p JOIN sources s ON s.id = p.source_id
     LEFT JOIN facts f ON f.id = p.fact_id AND ${ownFactEvidenceCondition()}
     LEFT JOIN stories st ON st.id = f.story_id
-    WHERE ${listedCondition(end)} AND NOT p.selected AND s.participation_mode = 'editorial' AND NOT p.backfill
+    WHERE ${listedCondition(end)} AND NOT p.selected AND s.participation_mode = 'editorial' AND ${newsPublicationCondition()}
       AND p.timeline_at >= ${start} AND p.timeline_at < ${end} AND p.score >= ${PICK_FLOOR}
     ORDER BY p.score DESC, p.timeline_at, p.article_id`;
   const picks: ReportEntry[] = [];
@@ -291,7 +304,7 @@ async function missedFacts(start: Date, end: Date): Promise<Array<{ key: string;
     WITH active AS (
       SELECT DISTINCT fa.fact_id FROM fact_articles fa
       JOIN publications p ON p.article_id = fa.article_id JOIN sources s ON s.id = p.source_id
-      WHERE ${evidenceCondition()} AND ${listedCondition(end)} AND s.participation_mode = 'editorial' AND NOT p.backfill
+      WHERE ${evidenceCondition()} AND ${listedCondition(end)} AND s.participation_mode = 'editorial' AND ${newsPublicationCondition()}
         AND p.timeline_at >= ${start} AND p.timeline_at < ${end}
     )
     SELECT fa.fact_id
@@ -309,7 +322,7 @@ async function missedFacts(start: Date, end: Date): Promise<Array<{ key: string;
     FROM fact_articles fa JOIN publications p ON p.article_id = fa.article_id JOIN sources s ON s.id = p.source_id
     JOIN facts f ON f.id = fa.fact_id LEFT JOIN stories st ON st.id = f.story_id
     WHERE fa.fact_id = ANY(${found.map((f) => f.fact_id)}::bigint[]) AND ${evidenceCondition()} AND ${listedCondition(end)}
-      AND s.participation_mode = 'editorial' AND s.tier <> 'EXCLUDE_MP' AND NOT p.backfill AND p.timeline_at < ${end}`;
+      AND s.participation_mode = 'editorial' AND s.tier <> 'EXCLUDE_MP' AND ${newsPublicationCondition()} AND p.timeline_at < ${end}`;
   return [...groupBy(rows, factKeyOf)]
     .filter(([, members]) => members.some((r) => representativePriority(r) < 3))
     .map(([key, members]) => ({ key, rows: members }));
@@ -319,7 +332,7 @@ async function missedFacts(start: Date, end: Date): Promise<Array<{ key: string;
 async function judgedReports(start: Date, end: Date): Promise<number> {
   const [row] = await sql<{ n: number }[]>`
     SELECT count(*)::int AS n FROM publications p
-    WHERE ${listedCondition(end)} AND p.score IS NOT NULL AND NOT p.backfill AND p.timeline_at >= ${start} AND p.timeline_at < ${end}`;
+    WHERE ${listedCondition(end)} AND p.score IS NOT NULL AND ${newsPublicationCondition()} AND p.timeline_at >= ${start} AND p.timeline_at < ${end}`;
   return row!.n;
 }
 
@@ -339,8 +352,8 @@ interface Fact { key: string; rows: ReportRow[]; selected: boolean; sources: str
  * The daily's events for the window [start, end), most important first, before the editors' pass:
  * selected reports and missed facts, minus what the week's issues already carried, one entry per event.
  */
-export async function dailyEdition(date: string, start: Date, end: Date): Promise<{ entries: EditionEntry[]; stats: Record<string, number> }> {
-  const [memory, selected, missed, judged] = await Promise.all([dailyMemory(date), periodReports(start, end), missedFacts(start, end), judgedReports(start, end)]);
+export async function dailyEdition(date: string, start: Date, end: Date, attribute: "release" | "timeline" = "release"): Promise<{ entries: EditionEntry[]; stats: Record<string, number> }> {
+  const [memory, selected, missed, judged] = await Promise.all([dailyMemory(date), periodReports(start, end, attribute), missedFacts(start, end), judgedReports(start, end)]);
   const raw = [
     ...[...groupBy(selected, factKeyOf)].map(([key, rows]) => ({ key, rows, selected: true })),
     ...missed.map((m) => ({ ...m, selected: false })),

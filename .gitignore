@@ -14,3 +14,17 @@ apps/web/.react-router/
 # Font package unpacked to regenerate the report nameplates (docs/customize.md)
 package/
 fontsource-noto-sans-sc-*.tgz
+
+# Local deployment secrets (never commit)
+.secrets/
+
+scripts/.vercel-file-manifest.json
+scripts/.vercel-ssr-entry.ts
+
+# Local runtime / secrets (added 2026-11-14 snapshot)
+.vercel/
+deploy/internal-gate.env
+deploy/*.log
+deploy/*.log.*
+deploy/*.pid
+__pycache__/

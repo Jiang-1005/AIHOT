@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { POLICY } from "@aihot/site";
 import { NO_STORE, PUBLIC_API_CORS } from "@aihot/contracts/http-policy";
+import { isPublicCdnCacheable, PUBLIC_CDN_HEADER_NAMES, PUBLIC_CDN_HEADERS, requestHasPrivateCookie } from "@aihot/contracts/public-cache";
 import { siteUrl } from "@aihot/backend/publication/links";
 import type { JsonNotice } from "@aihot/backend/modules";
 
@@ -86,10 +87,36 @@ export function etagMatches(header: string | undefined, etag: string): boolean {
  * `etagOf` names the content the tag stands for when the body also carries per-request values
  * (a snapshot's `asOf`), so unchanged content still answers 304.
  */
+
+/** CDN cache for public GET /api/site/* only. Admin cookies, Set-Cookie, and private/no-store stay uncached. */
+function applySiteCdnCache(req: FastifyRequest, reply: FastifyReply, cacheControl: string) {
+  const pathname = (req.raw.url ?? "").split("?")[0] ?? "";
+  const privateCookie = requestHasPrivateCookie(req.headers.cookie);
+  if (privateCookie) {
+    reply.header("Cache-Control", "private, no-store");
+    for (const name of PUBLIC_CDN_HEADER_NAMES) reply.removeHeader(name);
+    return;
+  }
+  if (!pathname.startsWith("/api/site")) return;
+  if (isPublicCdnCacheable({
+    method: req.method,
+    pathname,
+    status: 200,
+    requestCookie: req.headers.cookie,
+    hasSetCookie: Boolean(reply.getHeader("Set-Cookie")),
+    cacheControl,
+  })) {
+    for (const [k, v] of Object.entries(PUBLIC_CDN_HEADERS)) reply.header(k, v);
+  } else {
+    for (const name of PUBLIC_CDN_HEADER_NAMES) reply.removeHeader(name);
+  }
+}
+
 export function sendJsonWithEtag(req: FastifyRequest, reply: FastifyReply, body: unknown, opts: { etagPrefix: string; cacheControl: string; etagOf?: unknown }) {
   const text = opts.etagOf === undefined ? JSON.stringify(body) : undefined;
   const etag = weakEtag(opts.etagPrefix, text ?? JSON.stringify(opts.etagOf));
   reply.header("ETag", etag).header("Cache-Control", opts.cacheControl).header("Vary", "Accept-Encoding");
+  applySiteCdnCache(req, reply, opts.cacheControl);
   if (etagMatches(req.headers["if-none-match"], etag)) return reply.code(304).send();
   return reply.header("Content-Type", "application/json; charset=utf-8").send(text ?? JSON.stringify(body));
 }
@@ -110,6 +137,7 @@ export function sendJsonWithNotice(req: FastifyRequest, reply: FastifyReply, bod
 export function sendTextWithEtag(req: FastifyRequest, reply: FastifyReply, text: string, opts: { etagPrefix: string; cacheControl: string; contentType: string }) {
   const etag = weakEtag(opts.etagPrefix, text);
   reply.header("ETag", etag).header("Cache-Control", opts.cacheControl).header("Vary", "Accept-Encoding");
+  applySiteCdnCache(req, reply, opts.cacheControl);
   if (etagMatches(req.headers["if-none-match"], etag)) return reply.code(304).send();
   return reply.header("Content-Type", opts.contentType).send(text);
 }

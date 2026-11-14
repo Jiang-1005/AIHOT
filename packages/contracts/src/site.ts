@@ -127,6 +127,14 @@ export interface TimelineFilters {
   channel: ChannelKey;
   category: CategoryKey | null;
   tag: string | null;
+  /** Homepage 精选 (default) or the 往期 archive. */
+  slot?: "featured" | "archive";
+  /** Five-dimension tag filters (taxonomy.md); AND across groups, OR within one. */
+  topic?: string[];
+  subject?: string[];
+  form?: string[];
+  content_type?: string[];
+  company?: string[];
 }
 
 export interface TimelineResponse {

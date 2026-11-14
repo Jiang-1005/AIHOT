@@ -34,16 +34,21 @@ export function Select({ className = "", children, ...rest }: SelectHTMLAttribut
  * A filter that combines with others: a pill with its own small check mark, so a row of them reads
  * as "pick any" rather than the one-of-many `PillTabs` switch.
  */
-export function ToggleChip({ on, onToggle, children }: { on: boolean; onToggle: () => void; children: ReactNode }) {
+export function ToggleChip({ on, onToggle, children, size = "md" }: { on: boolean; onToggle: () => void; children: ReactNode; size?: "md" | "sm" }) {
+  const compact = size === "sm";
   return (
     <button
       type="button"
       aria-pressed={on}
       onClick={onToggle}
-      className={`inline-flex h-11 shrink-0 lg:h-8 select-none items-center gap-1.5 whitespace-nowrap rounded-full border pl-2 pr-3.5 text-[13px] font-medium transition-colors duration-150 active:scale-[0.98] ${on ? "border-accent/35 bg-accent-soft text-accent" : "border-line-strong bg-surface text-ink-2 hover:border-ink-4 hover:text-ink"}`}
+      className={`inline-flex shrink-0 select-none items-center whitespace-nowrap rounded-full border font-medium transition-colors duration-150 active:scale-[0.98] ${
+        compact
+          ? "h-auto gap-1 py-1 pl-1.5 pr-2.5 text-[12px]"
+          : "h-11 gap-1.5 pl-2 pr-3.5 text-[13px] lg:h-8"
+      } ${on ? "border-accent/35 bg-accent-soft text-accent" : "border-line-strong bg-surface text-ink-2 hover:border-ink-4 hover:text-ink"}`}
     >
-      <span aria-hidden="true" className={`inline-flex size-4 items-center justify-center rounded-full border transition-colors duration-150 ${on ? "border-accent bg-accent text-accent-contrast" : "border-line-strong"}`}>
-        {on && <IconCheck size={11} strokeWidth={3} />}
+      <span aria-hidden="true" className={`inline-flex items-center justify-center rounded-full border transition-colors duration-150 ${compact ? "size-3.5" : "size-4"} ${on ? "border-accent bg-accent text-accent-contrast" : "border-line-strong"}`}>
+        {on && <IconCheck size={compact ? 9 : 11} strokeWidth={3} />}
       </span>
       {children}
     </button>

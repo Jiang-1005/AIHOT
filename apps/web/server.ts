@@ -9,9 +9,19 @@ import { pathToFileURL } from "node:url";
 import { createRequestListener } from "@react-router/node";
 import type { ServerBuild } from "react-router";
 import { isApiOwned, resolveRedirect } from "@aihot/contracts/http-policy";
+import { isPublicCdnCacheable, PUBLIC_CDN_HEADER_NAMES, PUBLIC_CDN_HEADERS, requestHasPrivateCookie } from "@aihot/contracts/public-cache";
 import { BROWSER_MAX_SECONDS } from "./app/lib/api.server.ts";
 import { proxyToApi } from "./app/lib/api-proxy.server.ts";
 import { logError } from "./app/lib/errors.server.ts";
+import {
+  ROBOTS_TAG, applyGateDecision, decideGate, gateMisconfigured, getCookieHeader,
+  parseForm, requestIsSecure,
+} from "../../packages/backend/src/public-gate.ts";
+import { Readable } from "node:stream";
+
+if (gateMisconfigured()) {
+  throw new Error("EDU_HOT_GATE_ENABLED is true but EDU_HOT_GATE_PASSWORD is not set");
+}
 
 const PORT = Number(process.env.WEB_PORT || 3000);
 const HOST = process.env.WEB_HOST || "127.0.0.1";
@@ -70,6 +80,7 @@ async function serveStatic(pathname: string, res: import("node:http").ServerResp
     "Content-Length": info.size,
     "Cache-Control": immutable ? "public, max-age=31536000, immutable" : "public, max-age=3600",
     "X-Content-Type-Options": "nosniff",
+    "X-Robots-Tag": ROBOTS_TAG,
   });
   createReadStream(file).pipe(res);
   return true;
@@ -113,10 +124,12 @@ function pageResponse(req: import("node:http").IncomingMessage, res: import("nod
       res.setHeader("Content-Type", "text/plain; charset=utf-8");
     }
     const cc = String(res.getHeader("Cache-Control") ?? "");
-    if (!publicRead || status !== 200 || res.hasHeader("Set-Cookie") || !cc || /(?:private|no-store)/i.test(cc)) {
+    const privateCookie = requestHasPrivateCookie(req.headers.cookie);
+    if (!publicRead || privateCookie || status !== 200 || res.hasHeader("Set-Cookie") || !cc || /(?:private|no-store)/i.test(cc)) {
       res.removeHeader("Expires");
       res.setHeader("Cache-Control", "private, no-store");
       res.setHeader("X-Accel-Expires", "0");
+      for (const name of PUBLIC_CDN_HEADER_NAMES) res.removeHeader(name);
     } else {
       const now = new Date();
       const nowSeconds = Math.floor(now.getTime() / 1000);
@@ -132,7 +145,16 @@ function pageResponse(req: import("node:http").IncomingMessage, res: import("nod
       res.setHeader("Cache-Control", seconds > 0
         ? `public, max-age=${Math.min(seconds, BROWSER_MAX_SECONDS)}, s-maxage=${seconds}, must-revalidate`
         : "no-cache");
+      if (seconds > 0 && isPublicCdnCacheable({
+        method: req.method, pathname, status, requestCookie: req.headers.cookie,
+        hasSetCookie: false, cacheControl: "public",
+      })) {
+        for (const [k, v] of Object.entries(PUBLIC_CDN_HEADERS)) res.setHeader(k, v);
+      } else {
+        for (const name of PUBLIC_CDN_HEADER_NAMES) res.removeHeader(name);
+      }
     }
+    if (!res.hasHeader("X-Robots-Tag")) res.setHeader("X-Robots-Tag", ROBOTS_TAG);
     return typeof messageOrHeaders === "string" ? writeHead(status, messageOrHeaders) : writeHead(status);
   }) as typeof res.writeHead;
 }
@@ -151,6 +173,9 @@ async function handle(req: import("node:http").IncomingMessage, res: import("nod
     return res.end(decision.location ? undefined : decision.status === 410 ? "Gone" : "Not found");
   }
 
+  const gate = await runWebGate(req, res, pathname, search);
+  if (gate) return;
+
   if (isApiOwned(pathname)) {
     // The visitor's address, decided here: the one the trusted proxy saw (the last X-Forwarded-For
     // entry), or this connection's own. Both headers carry only that.
@@ -162,6 +187,34 @@ async function handle(req: import("node:http").IncomingMessage, res: import("nod
   if ((req.method === "GET" || req.method === "HEAD") && pathname.includes(".") && (await serveStatic(pathname, res))) return;
   pageResponse(req, res);
   return ssr(req, res);
+}
+
+
+async function readRequestBody(req: import("node:http").IncomingMessage): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req as unknown as Readable) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function runWebGate(
+  req: import("node:http").IncomingMessage,
+  res: import("node:http").ServerResponse,
+  pathname: string,
+  search: string,
+): Promise<boolean> {
+  let form: Record<string, string> | undefined;
+  if ((req.method ?? "GET").toUpperCase() === "POST" && pathname === "/gate") {
+    form = parseForm(await readRequestBody(req));
+  }
+  const decision = decideGate({
+    method: req.method ?? "GET",
+    pathname,
+    search,
+    cookieHeader: getCookieHeader(req.headers),
+    form,
+    secure: requestIsSecure(req.headers),
+  });
+  return applyGateDecision(decision, res);
 }
 
 process.on("unhandledRejection", (reason) => {

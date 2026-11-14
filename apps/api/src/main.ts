@@ -7,6 +7,7 @@ import { feishuLoginConfigured } from "@aihot/backend/admin/auth";
 import { startHeartbeat } from "@aihot/backend/operations/heartbeat";
 import { startWorkerWatchdog } from "@aihot/backend/operations/watch";
 import { buildApp } from "./app.ts";
+import { gateMisconfigured } from "@aihot/backend/public-gate";
 
 installModules(SERVER_MODULES);
 assertProductionSecrets([
@@ -19,10 +20,15 @@ if (config.environmentName === "production" && !(config.adminPassword && config.
   throw new Error("Refusing to start in production: set ADMIN_PASSWORD (at least 12 characters) or configure Feishu sign-in");
 }
 
+if (gateMisconfigured()) {
+  throw new Error("EDU_HOT_GATE_ENABLED is true but EDU_HOT_GATE_PASSWORD is not set");
+}
 const app = await buildApp();
 await app.listen({ port: config.apiPort, host: process.env.API_HOST || "127.0.0.1" });
-startHeartbeat(`api:${config.apiPort}`);
-startWorkerWatchdog();
+if (!process.env.VERCEL) {
+  startHeartbeat(`api:${config.apiPort}`);
+  startWorkerWatchdog();
+}
 
 let stopping = false;
 const shutdown = async () => {

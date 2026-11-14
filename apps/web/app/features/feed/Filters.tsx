@@ -1,15 +1,17 @@
 // Feed filters: the channel and category choice (a row of tabs on desktop, a sheet behind the bar's filter
 // button on phones), the phone bar of 精选 and 全部, and search.
-import { useEffect, useRef, useState } from "react";
-import { Form, Link, useNavigation, useSearchParams } from "react-router";
-import { CATEGORY_KEYS, CATEGORY_LABELS, CHANNEL_LABELS, type CategoryKey, type ChannelKey } from "@aihot/contracts/taxonomy";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Form, Link, useNavigate, useNavigation, useSearchParams } from "react-router";
+import { CATEGORY_LABELS, CHANNEL_LABELS, type CategoryKey, type ChannelKey } from "@aihot/contracts/taxonomy";
 import { SITE } from "@aihot/site";
 import { IconClose, IconFilter, IconSearch } from "../../components/icons";
 import { PillTabs } from "../../components/ui/Tabs";
-import { ChoiceTick, Sheet, sheetChoice } from "../../components/ui/Sheet";
+import { Sheet } from "../../components/ui/Sheet";
 import { Wordmark } from "@aihot/site/brand/Logo.tsx";
 import { BarButton, PhoneBar } from "../../components/shell/PhoneBar";
 import { openSearch } from "../search/SearchOverlay";
+import { EMPTY_FACETS, FacetChipRows, SelectedFacetBars, facetsEqualEmpty, facetsFromRecord, type FacetState, type FacetsMeta } from "../../components/facets/FacetChips";
+import { facetParams, facetsActive, readFacets } from "../../lib/seo";
 
 /** Same page with some query parameters changed (paging state dropped). */
 function hrefWith(base: string, params: URLSearchParams, patch: Record<string, string | null>) {
@@ -24,38 +26,60 @@ function hrefWith(base: string, params: URLSearchParams, patch: Record<string, s
   return s ? `${base}?${s}` : base;
 }
 
-/**
- * The feed's one filter (精选 and 全部动态 alike): none, 一手, or a category. One choice at a time: picking
- * 一手 clears the category and picking a category clears 一手. Older 资讯 / X links still filter; the
- * choice then shows as none.
- */
-function filterOptions(base: string, params: URLSearchParams, noneLabel: string) {
-  return [
-    { key: "all", label: noneLabel, to: hrefWith(base, params, { category: null, channel: null }) },
-    { key: "firstParty", label: CHANNEL_LABELS.firstParty, to: hrefWith(base, params, { category: null, channel: "firstParty" }) },
-    ...CATEGORY_KEYS.map((k) => ({ key: k, label: CATEGORY_LABELS[k], to: hrefWith(base, params, { category: k, channel: null }) })),
-  ];
+function currentFacets(params: URLSearchParams): FacetState {
+  return facetsFromRecord(readFacets(params));
 }
 
-function filterKey(category: CategoryKey | null, channel: ChannelKey): string {
-  return channel === "firstParty" ? "firstParty" : (category ?? "all");
+function patchFacets(base: string, params: URLSearchParams, next: FacetState): string {
+  return hrefWith(base, params, facetParams(next));
 }
 
-/** Desktop: the filter as a row of tabs beside the search field. */
-export function CategoryTabs({ base, category, channel = "all", layoutId, className = "" }: { base: string; category: CategoryKey | null; channel?: ChannelKey; layoutId: string; className?: string }) {
+/** Desktop: five-dimension chip rows, replacing the old 一手/能力/产品… tabs. */
+export function DesktopFacetBlock({
+  base, title, blurb, meta, search,
+}: {
+  base: string;
+  title: ReactNode;
+  blurb?: ReactNode;
+  meta: FacetsMeta;
+  search?: ReactNode;
+}) {
   const [params] = useSearchParams();
-  return <PillTabs items={filterOptions(base, params, "全部").map(o => ({ ...o, prefetchOnPress: true }))} active={filterKey(category, channel)} layoutId={layoutId} label="筛选" className={className} />;
+  const navigate = useNavigate();
+  const value = currentFacets(params);
+  return (
+    <div className="hidden lg:block">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-[24px] font-semibold leading-[1.3] text-ink">{title}</h1>
+          {blurb}
+        </div>
+        {search}
+      </div>
+      <div className="mb-5">
+        <FacetChipRows
+          vocab={meta.vocab}
+          value={value}
+          onChange={(next) => navigate(patchFacets(base, params, next), { preventScrollReset: true })}
+          counts={meta.counts}
+          logos={meta.logos?.index}
+          headCompanies={meta.headCompanies}
+        />
+      </div>
+    </div>
+  );
 }
 
 /**
- * The phone bar of 精选 and 全部: the brand, the 精选 | 全部 switch (a filter in use carries over), and
+ * The phone bar of 精选, 往期 and 全部: the brand, the switch (a filter in use carries over), and
  * buttons for the filter sheet and search.
  */
-export function FeedBar({ base, category, channel }: { base: "/" | "/all"; category: CategoryKey | null; channel: ChannelKey }) {
+export function FeedBar({ base, category, channel, meta }: { base: "/" | "/archive" | "/all"; category: CategoryKey | null; channel: ChannelKey; meta?: FacetsMeta }) {
   const [params] = useSearchParams();
   const [sheet, setSheet] = useState(false);
-  const scope = (to: string) => hrefWith(to, params, { q: null, tab: null, search: null });
-  const filtered = filterKey(category, channel) !== "all";
+  const scope = (to: string) => hrefWith(to, params, { q: null, tab: null, search: null, slot: null });
+  const filtered = facetsActive(readFacets(params)) || channel === "firstParty" || !!category;
+  const active = base === "/" ? "featured" : base === "/archive" ? "archive" : "all";
   return (
     <>
       <PhoneBar
@@ -68,10 +92,11 @@ export function FeedBar({ base, category, channel }: { base: "/" | "/all"; categ
           <PillTabs
             size="sm"
             layoutId="feed-scope"
-            label="看精选或全部"
-            active={base === "/" ? "featured" : "all"}
+            label="看精选、往期或全部"
+            active={active}
             items={[
               { key: "featured", label: "精选", to: scope("/"), resetScroll: true, prefetchOnPress: true },
+              { key: "archive", label: "往期", to: scope("/archive"), resetScroll: true, prefetchOnPress: true },
               { key: "all", label: "全部", to: scope("/all"), resetScroll: true, prefetchOnPress: true },
             ]}
           />
@@ -86,34 +111,54 @@ export function FeedBar({ base, category, channel }: { base: "/" | "/all"; categ
           </>
         }
       />
-      <FilterSheet open={sheet} onClose={() => setSheet(false)} base={base} active={filterKey(category, channel)} />
+      <FilterSheet open={sheet} onClose={() => setSheet(false)} base={base} meta={meta} />
     </>
   );
 }
 
-/** Phones: the filter as a sheet of options, the one in use ticked; choosing one applies it. */
-function FilterSheet({ open, onClose, base, active }: { open: boolean; onClose: () => void; base: string; active: string }) {
+/** Phones: the five-dimension filters in a sheet; 完成 applies them. */
+function FilterSheet({ open, onClose, base, meta }: { open: boolean; onClose: () => void; base: string; meta?: FacetsMeta }) {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const [draft, setDraft] = useState<FacetState>(currentFacets(params));
+  const [loaded, setLoaded] = useState<FacetsMeta | undefined>(meta);
+  useEffect(() => {
+    if (open) setDraft(currentFacets(params));
+  }, [open, params]);
+  useEffect(() => {
+    if (meta) { setLoaded(meta); return; }
+    if (!open || loaded) return;
+    let gone = false;
+    fetch("/api/site/facets")
+      .then((r) => r.json())
+      .then((d) => { if (!gone) setLoaded(d); })
+      .catch(() => undefined);
+    return () => { gone = true; };
+  }, [open, meta, loaded]);
+  const apply = (next: FacetState) => {
+    navigate(patchFacets(base, params, next), { preventScrollReset: true });
+    onClose();
+  };
   return (
     <Sheet open={open} onClose={onClose} title="筛选">
-      <ul className="mx-4 divide-y divide-line-soft">
-        {filterOptions(base, params, "不限").map((o) => {
-          const on = o.key === active;
-          return (
-            <li key={o.key}>
-              <Link
-                to={o.to}
-                onClick={onClose}
-                aria-current={on ? "true" : undefined}
-                className={`-mx-2 rounded-tile px-2 ${sheetChoice(on)}`}
-              >
-                {o.label}
-                {on && <ChoiceTick />}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="px-4 pb-6">
+        <div className="mb-3 flex items-center justify-end gap-3">
+          <button type="button" className="text-[13px] text-ink-3" onClick={() => setDraft(EMPTY_FACETS)}>清空</button>
+          <button type="button" className="text-[13px] font-medium text-accent" onClick={() => apply(draft)}>完成</button>
+        </div>
+        {loaded ? (
+          <FacetChipRows
+            vocab={loaded.vocab}
+            value={draft}
+            onChange={setDraft}
+            counts={loaded.counts}
+            logos={loaded.logos?.index}
+            headCompanies={loaded.headCompanies}
+          />
+        ) : (
+          <p className="py-6 text-center text-[13px] text-ink-4">加载筛选…</p>
+        )}
+      </div>
     </Sheet>
   );
 }
@@ -121,11 +166,14 @@ function FilterSheet({ open, onClose, base, active }: { open: boolean; onClose: 
 /** Phones: the filter and tag in use as chips under the bar; each one clears itself when tapped. */
 export function ActiveFilters({ base, category, channel, tag }: { base: string; category: CategoryKey | null; channel: ChannelKey; tag: string | null }) {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const facets = currentFacets(params);
   const label = channel === "firstParty" ? CHANNEL_LABELS.firstParty : category ? CATEGORY_LABELS[category] : null;
-  if (!label && !tag) return null;
+  const hasFacets = !facetsEqualEmpty(facets);
+  if (!label && !tag && !hasFacets) return null;
   const chip = "inline-flex min-h-11 max-w-full items-center gap-1 rounded-full bg-accent-soft pl-3 pr-2 text-[13px] font-medium text-accent transition-opacity active:opacity-60";
   return (
-    <div className="flex flex-wrap gap-2 pb-3 pt-1 lg:hidden">
+    <div className="flex flex-wrap items-center gap-2 pb-3 pt-1 lg:hidden">
       {label && (
         <Link to={hrefWith(base, params, { category: null, channel: null })} aria-label={`取消筛选：${label}`} className={chip}>
           只看{label}
@@ -137,6 +185,13 @@ export function ActiveFilters({ base, category, channel, tag }: { base: string; 
           <span className="truncate">#{tag}</span>
           <IconClose size={14} strokeWidth={2} className="shrink-0" />
         </Link>
+      )}
+      {hasFacets && (
+        <SelectedFacetBars
+          value={facets}
+          onToggle={(key, name) => navigate(patchFacets(base, params, { ...facets, [key]: facets[key].filter((v) => v !== name) }), { preventScrollReset: true })}
+          onClearAll={() => navigate(patchFacets(base, params, EMPTY_FACETS), { preventScrollReset: true })}
+        />
       )}
     </div>
   );
@@ -168,11 +223,13 @@ function useSlashFocus(ref: React.RefObject<HTMLInputElement | null>) {
 export function SearchField({ defaultValue = "", keep = {} }: { defaultValue?: string; keep?: Record<string, string | null> }) {
   const [value, setValue] = useState(defaultValue);
   const navigation = useNavigation();
+  const [params] = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => setValue(defaultValue), [defaultValue]);
   useSlashFocus(inputRef);
   const searching = navigation.state === "loading" && navigation.location?.pathname === "/all" && !!new URLSearchParams(navigation.location.search).get("q");
-  const hidden = Object.entries(keep).map(([k, v]) => (v ? <input key={k} type="hidden" name={k} value={v} /> : null));
+  const hiddenKeep = { ...facetParams(readFacets(params)), ...keep };
+  const hidden = Object.entries(hiddenKeep).map(([k, v]) => (v ? <input key={k} type="hidden" name={k} value={v} /> : null));
 
   return (
     <Form method="get" action="/all" role="search" className="group relative w-full shrink-0 lg:w-60">

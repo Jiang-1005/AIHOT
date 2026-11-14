@@ -14,7 +14,7 @@ import { describePublicationTime } from "../sources/dates.ts";
 import { z } from "zod";
 import { CATEGORY_KEYS } from "@aihot/contracts/taxonomy";
 import { CATEGORIES } from "@aihot/industry/taxonomy";
-import { SELECTION } from "@aihot/industry/selection";
+import { conservativeRelevance, featuredFinalScore, SELECTION, type FocusRelevance } from "@aihot/industry/selection";
 import { ITEM_COPY } from "@aihot/site";
 import { sql } from "../db.ts";
 import { chatJson, MODELS, type ContentPart } from "../providers/llm.ts";
@@ -54,14 +54,13 @@ export const ANALYZE_PROMPT_VERSION = Object.values(PROMPT_VERSIONS).join("+");
 export const SCORE_CALLS = 2;
 
 /**
- * The threshold on the mean score for a source (industry/selection.ts): its tier's, raised to its
- * class's floor; a class never lowers it. Selected when score1 + score2 >= 2 × threshold. Tiers
- * without a threshold are not scored for 精选.
+ * The threshold on the mean score for a source (industry/selection.ts): one number for every
+ * scored tier. Selected when score1 + score2 >= 2 × threshold. Tiers not in scoredTiers
+ * are not scored for 精选. Source class is a label only and does not change the bar.
  */
 export function selectionThreshold(source: { tier: string; selectionClass?: string | null }): number | null {
-  const tier = SELECTION.thresholds[source.tier];
-  if (tier === undefined) return null;
-  return Math.max(tier, (source.selectionClass && SELECTION.classes[source.selectionClass]?.threshold) || 0);
+  if (!(SELECTION.scoredTiers as readonly string[]).includes(source.tier)) return null;
+  return SELECTION.threshold;
 }
 
 /** Unselected items above this mean are written like selected ones. */
@@ -73,7 +72,11 @@ const scoreCall = (model: string) => MODELS[model]?.scoreCall ?? { temperature: 
 /** The score prompt: the industry's taste (industry/prompts/selection-score.md). */
 export const SCORE_SYSTEM = promptText("selection-score");
 
-export const ScoreSchema = z.object({ attentionScore: z.coerce.number().int().min(0).max(100) });
+export const ScoreSchema = z.object({
+  attentionScore: z.coerce.number().int().min(0).max(100),
+  focusRelevance: z.enum(["direct", "plausible", "none"]).optional(),
+  focusRelevanceReason: z.string().max(200).optional(),
+});
 
 const SCORE_TIME = new Intl.DateTimeFormat("sv-SE", {
   timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
@@ -100,7 +103,7 @@ export function buildScoreInput(a: AnalyzeInputArticle): string {
   if (!body) body = a.title;
   const at = a.publishedAt;
   return [
-    "请按系统规则评估以下单篇材料所代表的事件。只输出 attentionScore。",
+    "请按系统规则评估以下单篇材料所代表的事件。只输出 attentionScore、focusRelevance 和 focusRelevanceReason。",
     `【发布时间（北京时间）】\n${at ? a.publicationTime === undefined || a.publicationTime?.includes("T") ? scoreInputTime(at) : describePublicationTime(at, a.publicationTime) : "未知（收录时间不代表发布时间）"}`,
     `【标题】\n${a.title.trim()}`,
     `【完整正文】\n${body.length > MAX_BODY_CHARS ? body.slice(0, MAX_BODY_CHARS) : body}`,
@@ -198,7 +201,7 @@ export interface AnalysisRun {
    * The independent score calls and the source's threshold they are held against; absent when the material
    * is not scored. `refused`: the model's content filter declined it, so it is not selected.
    */
-  scores: { model: string; threshold: number; values: number[]; receiptIds: number[]; reused: boolean; refused?: boolean } | null;
+  scores: { model: string; threshold: number; values: number[]; relevance: FocusRelevance[]; relevanceReasons: string[]; receiptIds: number[]; reused: boolean; refused?: boolean } | null;
   /** The reader-facing copy: `understand` (selected, near-selected), `summarize`, `verbatim` (a Chinese short post), `none`. */
   writing: {
     kind: "understand" | "summarize" | "verbatim" | "none";
@@ -278,6 +281,8 @@ async function runScores(
   const call = scoreCall(model);
   const input = buildScoreInput(a);
   const values: number[] = [];
+  const relevance: FocusRelevance[] = [];
+  const relevanceReasons: string[] = [];
   const receiptIds: number[] = [];
   let reused = true;
   // One after the other: the second call reuses the provider's cached prompt.
@@ -292,17 +297,19 @@ async function runScores(
       });
       onReceipt?.(res.receiptId);
       values.push(res.data.attentionScore);
+      relevance.push(res.data.focusRelevance === "direct" || res.data.focusRelevance === "plausible" ? res.data.focusRelevance : "none");
+      relevanceReasons.push(String(res.data.focusRelevanceReason ?? "").trim());
       receiptIds.push(res.receiptId);
       reused &&= res.reused;
     } catch (error) {
       const receiptId = failedReceiptId(error);
       if (receiptId !== null) onReceipt?.(receiptId);
       // The model's content filter declines the material (Zhipu 1301): not scored, so not selected.
-      if (isContentFilter(error)) return { model, threshold, values, receiptIds, reused: false, refused: true };
+      if (isContentFilter(error)) return { model, threshold, values, relevance, relevanceReasons, receiptIds, reused: false, refused: true };
       throw error;
     }
   }
-  return { model, threshold, values, receiptIds, reused };
+  return { model, threshold, values, relevance, relevanceReasons, receiptIds, reused };
 }
 
 /** The production score step; its threshold stays case-specific even when an evaluator shares model output. */
@@ -461,19 +468,34 @@ function scoreSum(scores: AnalysisRun["scores"]): number | null {
   return scores && !scores.refused && scores.values.length === SCORE_CALLS ? scores.values.reduce((total, v) => total + v, 0) : null;
 }
 
-/** The score shown: the two scores' mean, floored (it never decides a half point on its own). */
+/** The base score shown: the two attention scores' mean, floored (it never decides a half point on its own). */
 export function shownScore(scores: AnalysisRun["scores"]): number | null {
   const sum = scoreSum(scores);
   return sum === null ? null : Math.floor(sum / SCORE_CALLS);
 }
 
+export function scoreRelevance(scores: AnalysisRun["scores"]): { level: FocusRelevance; bonus: number; reason: string } {
+  const decided = conservativeRelevance(scores?.relevance ?? []);
+  const reason = (scores?.relevanceReasons ?? []).find((r, i) => (scores?.relevance?.[i] ?? "none") === decided.level && r.trim())
+    ?? (scores?.relevanceReasons ?? []).find((r) => r.trim())
+    ?? "";
+  return { ...decided, reason };
+}
+
+/** Final featured score: base mean plus the documented relevance bonus, capped at 100. */
+export function finalScore(scores: AnalysisRun["scores"]): number | null {
+  const base = shownScore(scores);
+  if (base === null) return null;
+  return featuredFinalScore(base, scoreRelevance(scores).bonus);
+}
+
 /**
- * The selection rule on the scores: they add up to twice the source's threshold (or `threshold`,
- * when an evaluation sweeps it). The item must also pass relevance (normalizeAnalysis).
+ * The selection rule: the final score (base + relevance bonus) meets the threshold.
+ * The item must also pass prefilter relevance (normalizeAnalysis).
  */
 export function scoresSelect(scores: AnalysisRun["scores"], threshold = scores?.threshold ?? null): boolean {
-  const sum = scoreSum(scores);
-  return sum !== null && threshold !== null && sum >= threshold * SCORE_CALLS;
+  const score = finalScore(scores);
+  return score !== null && threshold !== null && score >= threshold;
 }
 
 /** Runs the steps on the material as it is (or reuses their receipts) without writing business results. */
@@ -488,8 +510,8 @@ export async function runAnalysis(a: AnalyzeInputArticle, opts: StepOpts = {}): 
   const structure = runStructure(a, opts).then((value) => ({ value }), (error: unknown) => ({ error }));
   try {
     const scores = await runSelectionScores(a, opts);
-    const sum = scoreSum(scores);
-    const near = scoresSelect(scores) || (sum !== null && sum > UNDERSTAND_FLOOR * SCORE_CALLS);
+    const shown = finalScore(scores) ?? shownScore(scores);
+    const near = scoresSelect(scores) || (shown !== null && shown > UNDERSTAND_FLOOR);
     const s = await structure;
     if ("error" in s) throw s.error;
     // Writing checks the material itself and is never handed the structure's fact: given those
@@ -513,7 +535,9 @@ export function normalizeAnalysis(run: AnalysisRun) {
   // Original posts can consist entirely of media. Model-written copy still needs a title and summary.
   const relevance = label === "BLOCK" ? "block" : !run.writing || !titleZh || (!summaryZh && run.writing.kind !== "verbatim") ? "unknown" : "pass";
   const values = run.scores && !run.scores.refused ? run.scores.values : null;
-  const score = shownScore(run.scores);
+  const baseScore = shownScore(run.scores);
+  const rel = scoreRelevance(run.scores);
+  const score = finalScore(run.scores);
   const threshold = run.scores?.threshold ?? null;
   const selected = relevance === "pass" && scoresSelect(run.scores);
   const subjects = run.structure?.subjects ?? [];
@@ -526,6 +550,10 @@ export function normalizeAnalysis(run: AnalysisRun) {
     relevance,
     selected,
     score,
+    baseScore,
+    relevanceBonus: rel.bonus,
+    focusRelevance: rel.level,
+    focusRelevanceReason: rel.reason,
     scores: values,
     scoreModel: run.scores?.model ?? null,
     scoreRefused: run.scores?.refused ?? false,
@@ -569,7 +597,7 @@ export async function analyzeArticle(articleId: string, opts: StepOpts = {}): Pr
   const w = run.writing;
   const detail = {
     prefilter: run.prefilter && { label: run.prefilter.label, reason: run.prefilter.reason },
-    scores: out.scores, scoreModel: out.scoreModel, threshold: out.threshold, ...(out.scoreRefused ? { scoreRefused: true } : {}),
+    scores: out.scores, scoreModel: out.scoreModel, threshold: out.threshold, baseScore: out.baseScore, relevanceBonus: out.relevanceBonus, focusRelevance: out.focusRelevance, focusRelevanceReason: out.focusRelevanceReason, ...(out.scoreRefused ? { scoreRefused: true } : {}),
     ...(w ? { writer: w.kind, writerModel: w.model, itemType: w.itemType ?? null, authorRole: w.authorRole ?? null } : {}),
     ...(w?.identityGuard?.outcome === "fallback" ? { identityGuard: w.identityGuard } : {}),
     scope: out.scope, fact: out.fact,

@@ -204,7 +204,7 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
                   {Object.entries(TIER_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </Select>
               </Field>
-              <Field label="类别" hint="抬高精选门槛，一手身份不变">
+              <Field label="类别" hint="仅作标注，不再抬高精选门槛">
                 <Select value={draft.selection_class ?? ""} onChange={(e) => setDraft({ ...draft, selection_class: e.target.value || null })}>
                   <option value="">无（按等级）</option>
                   {Object.entries(SELECTION_CLASS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}

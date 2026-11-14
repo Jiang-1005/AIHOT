@@ -1,0 +1,131 @@
+{
+  "r1440": {
+    "visibleCards": 60,
+    "first16": 16,
+    "distinctBgs": 13,
+    "bgCounts": {
+      "rgb(221, 214, 254)": 2,
+      "rgb(232, 213, 181)": 1,
+      "rgb(239, 230, 214)": 1,
+      "rgb(196, 181, 253)": 3,
+      "rgb(212, 227, 238)": 1,
+      "rgb(179, 202, 243)": 1,
+      "rgb(226, 235, 251)": 1,
+      "rgb(207, 233, 212)": 1,
+      "rgb(255, 215, 179)": 1,
+      "rgb(188, 214, 230)": 1,
+      "rgb(255, 196, 138)": 1,
+      "rgb(197, 235, 232)": 1,
+      "rgb(205, 220, 247)": 1
+    },
+    "tintCounts": {
+      "voice-cover-kol": 2,
+      "voice-cover-other-2": 1,
+      "voice-cover-other": 1,
+      "voice-cover-kol-2": 3,
+      "voice-cover-media": 1,
+      "voice-cover-official-2": 1,
+      "voice-cover-official-3": 1,
+      "voice-cover-teacher": 1,
+      "voice-cover-parent": 1,
+      "voice-cover-media-2": 1,
+      "voice-cover-parent-2": 1,
+      "voice-cover-student": 1,
+      "voice-cover-official": 1
+    },
+    "maxBgShare": 0.1875,
+    "metaOverflow": 0,
+    "platformsOnFirst": [
+      "X"
+    ],
+    "chips": [
+      "全部",
+      "小红书",
+      "X",
+      "中文社区"
+    ],
+    "shot": "after3-1440.png",
+    "consoleErrors": []
+  },
+  "r390": {
+    "visibleCards": 36,
+    "first16": 16,
+    "distinctBgs": 9,
+    "bgCounts": {
+      "rgb(221, 214, 254)": 2,
+      "rgb(236, 231, 254)": 4,
+      "rgb(232, 213, 181)": 1,
+      "rgb(246, 238, 220)": 2,
+      "rgb(239, 230, 214)": 1,
+      "rgb(196, 181, 253)": 3,
+      "rgb(188, 214, 230)": 1,
+      "rgb(212, 227, 238)": 1,
+      "rgb(226, 243, 230)": 1
+    },
+    "tintCounts": {
+      "voice-cover-kol": 2,
+      "voice-cover-kol-3": 4,
+      "voice-cover-other-2": 1,
+      "voice-cover-other-3": 2,
+      "voice-cover-other": 1,
+      "voice-cover-kol-2": 3,
+      "voice-cover-media-2": 1,
+      "voice-cover-media": 1,
+      "voice-cover-teacher-3": 1
+    },
+    "maxBgShare": 0.25,
+    "metaOverflow": 0,
+    "platformsOnFirst": [
+      "X"
+    ],
+    "chips": [
+      "全部",
+      "小红书",
+      "X",
+      "中文社区"
+    ],
+    "shot": "after3-390.png",
+    "consoleErrors": []
+  },
+  "r360": {
+    "visibleCards": 36,
+    "first16": 16,
+    "distinctBgs": 9,
+    "bgCounts": {
+      "rgb(221, 214, 254)": 2,
+      "rgb(236, 231, 254)": 4,
+      "rgb(232, 213, 181)": 1,
+      "rgb(246, 238, 220)": 2,
+      "rgb(239, 230, 214)": 1,
+      "rgb(196, 181, 253)": 3,
+      "rgb(188, 214, 230)": 1,
+      "rgb(212, 227, 238)": 1,
+      "rgb(226, 243, 230)": 1
+    },
+    "tintCounts": {
+      "voice-cover-kol": 2,
+      "voice-cover-kol-3": 4,
+      "voice-cover-other-2": 1,
+      "voice-cover-other-3": 2,
+      "voice-cover-other": 1,
+      "voice-cover-kol-2": 3,
+      "voice-cover-media-2": 1,
+      "voice-cover-media": 1,
+      "voice-cover-teacher-3": 1
+    },
+    "maxBgShare": 0.25,
+    "metaOverflow": 0,
+    "platformsOnFirst": [
+      "X"
+    ],
+    "chips": [
+      "全部",
+      "小红书",
+      "X",
+      "中文社区"
+    ],
+    "shot": "after3-360.png",
+    "consoleErrors": []
+  },
+  "consoleErrors": []
+}

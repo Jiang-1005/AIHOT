@@ -3,6 +3,7 @@ import { Await, isRouteErrorResponse, Link, useAsyncError, useLoaderData, useNav
 import type { Route } from "./+types/item";
 import { REPORT_NAMES, reportDateLabel, type FeedItemSummary, type SiteItemDetail, type StoryFollowupsResponse } from "@aihot/contracts/site";
 import { ITEM_COPY, SITE, withSubject } from "@aihot/site";
+import { publicCopy } from "../lib/public-copy";
 import { linkMentions } from "@aihot/contracts/mentions";
 import { addressRuns } from "@aihot/contracts/addresses";
 import { cachedPage, loadOr404 } from "../lib/api.server";
@@ -267,7 +268,7 @@ function ItemPreview({ preview }: { preview: FeedItemSummary }) {
         {preview.reason && (
           <section className="mt-6 border-t border-line pt-4">
             <div className="mb-1 text-[12px] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
-            <p className="text-[15px] leading-[1.75] text-ink-2">{preview.reason}</p>
+            <p className="text-[15px] leading-[1.75] text-ink-2">{publicCopy(preview.reason)}</p>
           </section>
         )}
         <div className="mt-9 space-y-3 border-t border-line pt-6" aria-hidden="true">
@@ -452,7 +453,7 @@ function ItemView({ item, followups }: Loaded) {
       {item.reason && !summaryOnly ? (
         <RailSection title={ITEM_COPY.reasonLabel}>
           {verdict && <div className="mb-3">{verdict}</div>}
-          <p className="text-[13.5px] leading-[1.8] text-ink-2">{item.reason}</p>
+          <p className="text-[13.5px] leading-[1.8] text-ink-2">{publicCopy(item.reason)}</p>
         </RailSection>
       ) : (
         verdict && <RailSection title={shownScore(item.score) !== null ? "AI 评分" : undefined}>{verdict}</RailSection>
@@ -571,7 +572,7 @@ function ItemView({ item, followups }: Loaded) {
           {item.reason && !summaryOnly && (
             <section className="mt-6 border-t border-line pt-4 side:hidden">
               <div className="mb-1 text-[12px] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
-              <p className="text-[15px] leading-[1.75] text-ink-2">{item.reason}</p>
+              <p className="text-[15px] leading-[1.75] text-ink-2">{publicCopy(item.reason)}</p>
             </section>
           )}
 

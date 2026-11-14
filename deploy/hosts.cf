@@ -1,0 +1,12 @@
+127.0.0.1	localhost
+::1	localhost ip6-localhost ip6-loopback
+fe00::0	ip6-localnet
+ff00::0	ip6-mcastprefix
+ff02::1	ip6-allnodes
+ff02::2	ip6-allrouters
+127.0.0.1	grok-bot-vm-403026441
+
+# real Cloudflare tunnel edge (DoH, 2026-11-10)
+198.41.192.7 region1.v2.argotunnel.com
+198.41.200.53 region2.v2.argotunnel.com
+104.16.231.132 api.trycloudflare.com trycloudflare.com

@@ -4,7 +4,7 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { EDITION_TIMES, SITE } from "@aihot/site";
+import { DAILY_UPDATE_TIME, EDITION_TIMES, SITE } from "@aihot/site";
 import { CONTACT_ALIASES, PUBLIC_INTERFACE_VERSION } from "@aihot/contracts/http-policy";
 import { PUBLIC_API_CATEGORY_KEYS } from "@aihot/contracts/taxonomy";
 import { REPO_ROOT, config } from "@aihot/backend/config";
@@ -42,7 +42,7 @@ function fillPlaceholders(text: string, json: boolean): string {
     description: SITE.description,
     tagline: SITE.tagline,
     locale: SITE.locale,
-    dailyTime: EDITION_TIMES.daily,
+    dailyTime: DAILY_UPDATE_TIME,
     weeklyTime: EDITION_TIMES.weekly,
     monthlyTime: EDITION_TIMES.monthly,
     version: PUBLIC_INTERFACE_VERSION,

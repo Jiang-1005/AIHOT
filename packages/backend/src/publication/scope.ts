@@ -3,7 +3,7 @@
 // evidence, `fact_articles fa`); no other module spells visibility, the release time or the composite
 // rule in SQL, and grouping takes the composite rule from here too. What a publication holds is
 // derived once, at publish time, by publish.ts and rules.ts.
-import { SELECTION } from "@aihot/industry/selection";
+import { beijingCalendarDay, SELECTION } from "@aihot/industry/selection";
 import { sql } from "../db.ts";
 import { independentSelectedSources } from './rules.ts';
 
@@ -81,7 +81,8 @@ export function groupingEvidenceCondition(article: ReturnType<typeof sql>) {
 
 /** `fa` links report `p` to a fact as evidence: a primary or report membership, never a composite. */
 export function evidenceCondition() {
-  return sql`fa.role <> 'mention' AND NOT ${compositeCondition()}`;
+  // Manual fact memberships (same-event merges) stay evidence even if the analysis was marked composite.
+  return sql`fa.role <> 'mention' AND (fa.manual IS TRUE OR NOT ${compositeCondition()})`;
 }
 
 /**
@@ -90,4 +91,37 @@ export function evidenceCondition() {
  */
 export function ownFactEvidenceCondition() {
   return sql`EXISTS (SELECT 1 FROM fact_articles fa WHERE fa.fact_id = p.fact_id AND fa.article_id = p.article_id AND ${evidenceCondition()})`;
+}
+
+/**
+ * The article dateline as a Beijing calendar day (YYYY-MM-DD), matching featuredDatelineDay():
+ * URL /YYYY/MM/DD/, then articles.publication_time, then publications.published_at.
+ * No discovered_at fallback: an undated item is not in 精选 or 往期.
+ */
+export function publicationDatelineDaySql() {
+  // regexp_match() as a FROM item still yields a row when there is no match (m is null);
+  // format() then turns null groups into "--", which is not a date and must not win COALESCE.
+  return sql`COALESCE(
+    (SELECT format('%s-%s-%s', m[1], m[2], m[3])
+       FROM regexp_match(p.url, '/(20[0-9]{2})/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])(?:/|$)') AS m
+       WHERE m IS NOT NULL AND m[1] IS NOT NULL AND m[2] IS NOT NULL AND m[3] IS NOT NULL),
+    (SELECT CASE
+      WHEN a.publication_time ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(a.publication_time, 10)
+      ELSE NULL
+    END FROM articles a WHERE a.id = p.article_id),
+    CASE WHEN p.published_at IS NOT NULL THEN to_char(p.published_at AT TIME ZONE 'Asia/Shanghai', 'YYYY-MM-DD') ELSE NULL END
+  )`;
+}
+
+/** Homepage 精选 (≤ 7 days) or the 往期 view (older than 7, ≤ 30), by dateline age. */
+export function featuredSlotCondition(now: Date, slot: "featured" | "archive" = "featured") {
+  const today = beijingCalendarDay(now);
+  const day = publicationDatelineDaySql();
+  if (slot === "archive") {
+    return sql`(${day}) IS NOT NULL
+      AND (${today}::date - (${day})::date) > ${SELECTION.featuredMaxAgeDays}
+      AND (${today}::date - (${day})::date) <= ${SELECTION.archiveMaxAgeDays}`;
+  }
+  return sql`(${day}) IS NOT NULL
+    AND (${today}::date - (${day})::date) <= ${SELECTION.featuredMaxAgeDays}`;
 }

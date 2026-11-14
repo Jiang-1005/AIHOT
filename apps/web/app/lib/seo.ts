@@ -50,21 +50,68 @@ export function listPath(path: string, params: Record<string, string | number | 
 export function readFilters(params: URLSearchParams): TimelineFilters {
   const channel = params.get("channel") ?? "all";
   const category = params.get("category");
+  const slot = params.get("slot");
   return {
     channel: isChannelKey(channel) ? channel : "all",
     category: category && isCategoryKey(category) ? category : null,
     tag: params.get("tag")?.trim() || null,
+    slot: slot === "archive" ? "archive" : slot === "featured" ? "featured" : undefined,
+    ...readFacets(params),
   };
 }
 
-/** Feed filters as list address parameters: the default channel and unset filters are left out. */
-export function filterParams(f: TimelineFilters) {
-  return { channel: f.channel === "all" ? null : f.channel, category: f.category, tag: f.tag };
+/** Feed filters as list address parameters: the default channel and unset filters are left out. Slot is a timeline API parameter, not a page query. */
+export function filterParams(f: TimelineFilters & FacetQuery) {
+  return { channel: f.channel === "all" ? null : f.channel, category: f.category, tag: f.tag, ...facetParams(f) };
+}
+
+export function timelineApiParams(f: TimelineFilters & FacetQuery) {
+  return { ...filterParams(f), slot: f.slot === "archive" ? "archive" : "featured", ...facetParams(f) };
 }
 
 /** Filter combinations are browsing views; the unfiltered feed and its archive pages remain indexable. */
-export function hasFeedFilters(filters: TimelineFilters | undefined): boolean {
-  return !!filters && (filters.channel !== "all" || !!filters.category || !!filters.tag);
+
+export type FacetQuery = {
+  topic?: string[];
+  subject?: string[];
+  form?: string[];
+  content_type?: string[];
+  company?: string[];
+};
+
+function readList(params: URLSearchParams, key: string): string[] {
+  const raw = [...params.getAll(key), params.get(key) ?? ""].join(",");
+  return [...new Set(raw.split(",").map((s) => s.trim()).filter(Boolean))];
+}
+
+export function readFacets(params: URLSearchParams): FacetQuery {
+  return {
+    topic: readList(params, "topic"),
+    subject: readList(params, "subject"),
+    form: readList(params, "form"),
+    content_type: readList(params, "content_type"),
+    company: readList(params, "company"),
+  };
+}
+
+export function facetParams(f: FacetQuery) {
+  const pack = (v?: string[]) => (v && v.length ? v.join(",") : null);
+  return {
+    topic: pack(f.topic),
+    subject: pack(f.subject),
+    form: pack(f.form),
+    content_type: pack(f.content_type),
+    company: pack(f.company),
+  };
+}
+
+export function facetsActive(f: FacetQuery | undefined): boolean {
+  if (!f) return false;
+  return Boolean(f.topic?.length || f.subject?.length || f.form?.length || f.content_type?.length || f.company?.length);
+}
+
+export function hasFeedFilters(filters: (TimelineFilters & FacetQuery) | undefined): boolean {
+  return !!filters && (filters.channel !== "all" || !!filters.category || !!filters.tag || facetsActive(filters));
 }
 
 /** "Title · Site". */
@@ -96,12 +143,8 @@ export function pageMeta(input: PageMetaInput): MetaDescriptor[] {
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: image },
   ];
-  if (input.noindex) tags.push({ name: "robots", content: input.nofollow ? "noindex, nofollow" : "noindex, follow" });
-  else {
-    // Search results and Discover may show an indexable page's picture large, as they do for news sites.
-    tags.push({ name: "robots", content: "max-image-preview:large" });
-    if (input.googleNoindex) tags.push({ name: "googlebot", content: "noindex" });
-  }
+  // This site is internal: every public page is noindex, including ones that would otherwise be indexed.
+  tags.push({ name: "robots", content: "noindex, nofollow" });
   if (input.jsonLd) tags.push({ "script:ld+json": input.jsonLd });
   return tags;
 }

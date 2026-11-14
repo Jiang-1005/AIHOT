@@ -84,18 +84,28 @@ function windowPoint(at: Date): string {
 const DAILY_HIGHLIGHTS = 3;
 
 /**
- * Daily report for Beijing date D covers the 24 hours up to the site's edition time on D (EDITION_TIMES).
- * Its most important entry leads, in its own words, and the next three are today's highlights; a thin issue
- * (a weekend's often carries a single entry) fills the rest with the window's best reports it left out
- * (`picks`, dailyPicks), which are neither entries nor counted in its metrics. A window the editors judged
- * with nothing new in it still has its issue: no entries, no highlights, and a lead that says so (REPORTS.quiet).
+ * Daily report for Beijing date D. After the 08:00 edition is out, today's issue is kept in line with
+ * that calendar day's 精选 (homepage grouping by timeline_at): items released later the same Beijing
+ * day are folded in, so the daily never stays on "今日安静" while 精选 already has that day's stories.
+ * Historical dates still cover the 24 hours up to edition time. A thin issue fills leftover highlight
+ * slots from `dailyPicks`. A judged window with nothing new still gets a quiet lead (REPORTS.quiet).
  */
 export async function composeDaily(date: string, reason?: string): Promise<{ key: string; entries: number }> {
   const previous = await savedReport("daily", date);
-  if (previous && reason === undefined) return { key: date, entries: previous.entries };
-  const end = beijingAt(date, EDITION_TIMES.daily);
-  const start = new Date(end.getTime() - 86400000);
-  const edition = await dailyEdition(date, start, end);
+  const today = beijingDate(new Date());
+  // Today's issue uses the Beijing calendar day so it lines up with 精选; past issues keep the 08:00 window.
+  const calendar = date >= today || reason === "featured-updated";
+  const end = calendar ? beijingAt(addDays(date, 1), "00:00") : beijingAt(date, EDITION_TIMES.daily);
+  const start = calendar ? beijingAt(date, "00:00") : new Date(end.getTime() - 86400000);
+  if (previous && reason === undefined && date < today) return { key: date, entries: previous.entries };
+  const edition = await dailyEdition(date, start, end, calendar ? "timeline" : "release");
+  if (previous && reason !== "manual-rerun") {
+    const same = previous.entries === edition.entries.length;
+    if (same && (reason === undefined || reason === "featured-updated")) {
+      return { key: date, entries: previous.entries };
+    }
+    if (reason === undefined) reason = "featured-updated";
+  }
   // Nothing judged in the window is a failure upstream, not a quiet day: the run fails and is caught up later.
   if (edition.entries.length === 0 && edition.stats.judgedReports === 0) throw new Error(`daily ${date}: nothing judged in its window`);
   const issue = arrangeDaily(edition.entries);
@@ -334,6 +344,21 @@ export async function composeDueReports(now = new Date(), limit = 8): Promise<{ 
         if (shutdownSignal.signal.aborted) break kinds;
         failed.push(`${k.kind}:${key}`);
         console.error(JSON.stringify({ level: "error", msg: "report failed", report: `${k.kind}:${key}`, error: logError(error) }));
+      }
+    }
+  }
+  // Today's 精选 can still grow after the 08:00 issue is first written, including after the
+  // evening ~20:30 import. Refresh the current Beijing day's daily so it does not stay on a quiet lead while the homepage already lists items.
+  if (!shutdownSignal.signal.aborted && beijingTime(now) >= EDITION_TIMES.daily && generated.length < limit) {
+    const today = beijingDate(now);
+    const before = await savedReport("daily", today);
+    try {
+      const after = await composeDaily(today, "featured-updated");
+      if (!before || before.entries !== after.entries) generated.push(`daily:${today}`);
+    } catch (error) {
+      if (!shutdownSignal.signal.aborted) {
+        failed.push(`daily:${today}`);
+        console.error(JSON.stringify({ level: "error", msg: "report failed", report: `daily:${today}`, error: logError(error) }));
       }
     }
   }

@@ -185,3 +185,7 @@ AIHOT 曾经只是我无数个深夜里，一个很小、很小的念头。
 ## 许可
 
 代码使用 [MIT 许可证](LICENSE)。AIHOT 的名字和 Logo 不在许可范围内。字体有自己的许可，见 [NOTICE](NOTICE)。
+
+## 本站：国内公司动态、国内政策（教育AI HOT）
+
+公开页 `/companies`、`/policies`。各自覆盖最近 90 个北京日历日、已核对原文（或标明「未查到原文」）的报道；公司栏默认可展开看全部，政策栏按日期倒序。这两个栏目不走精选 7 天 / 往期 30 天新鲜度规则，也不会把老条目送进首页精选。没有动态写「近 90 天未查到」。公司栏可按时间混排或按公司筛选，心田花开作为普通一家列入。补录导入用法见 [DEPLOY-VERCEL.md](DEPLOY-VERCEL.md#国内公司动态与国内政策)。每日 routine 在导入 `items.csv` 之后，若补录文件存在，再运行 `scripts/import-company-backfill.ts`，然后 `./scripts/sync-to-neon.sh`。

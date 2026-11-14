@@ -18,6 +18,11 @@ import { registerFeeds } from "./routes/feeds.ts";
 import { registerStatic } from "./routes/static.ts";
 import { registerMcp } from "./routes/mcp.ts";
 import { sendProblem } from "./http/respond.ts";
+import { hydrateSiteBlobsFromDb } from "@aihot/backend/publication/site-blobs";
+import {
+  ROBOTS_TAG, decideGate, gateEnabled, gateLoginPage, getCookieHeader,
+  hasValidGateCookie, isGateExemptPath, parseForm, requestIsSecure, safeNextPath,
+} from "@aihot/backend/public-gate";
 
 /** Quiet ordinary access logs, while keeping errors that happen after the route has returned. */
 class RequestLogs extends LogController {
@@ -30,6 +35,7 @@ class RequestLogs extends LogController {
 }
 
 export async function buildApp(): Promise<FastifyInstance> {
+  await hydrateSiteBlobsFromDb();
   const logs = new RequestLogs();
   const app = Fastify({
     // Access logs never record query strings (tokens).
@@ -57,6 +63,13 @@ export async function buildApp(): Promise<FastifyInstance> {
     return child;
   });
 
+  // Warm Vercel instances keep /tmp catalogs; refresh when Neon site_blobs is newer.
+  if (process.env.VERCEL) {
+    app.addHook("onRequest", async () => {
+      await hydrateSiteBlobsFromDb();
+    });
+  }
+
   app.addHook("onResponse", async (req, reply) => {
     const path = (req.raw.url ?? "").split("?")[0] ?? "/";
     // The reverse proxy logs every request; the process only notes the slow and the failed.
@@ -67,12 +80,25 @@ export async function buildApp(): Promise<FastifyInstance> {
     for (const m of serverModules()) m.on?.requestAnswered?.(req, reply, path);
   });
 
+  app.addHook("onSend", async (_req, reply) => {
+    if (!reply.hasHeader("X-Robots-Tag")) reply.header("X-Robots-Tag", ROBOTS_TAG);
+  });
+
   // Central redirect table (shared with the web server).
   app.addHook("onRequest", async (req, reply) => {
     const raw = req.raw.url ?? "/";
     const qi = raw.indexOf("?");
     const pathname = qi >= 0 ? raw.slice(0, qi) : raw;
     const search = qi >= 0 ? raw.slice(qi) : "";
+    reply.header("X-Robots-Tag", ROBOTS_TAG);
+    if (gateEnabled() && !isGateExemptPath(pathname) && !hasValidGateCookie(getCookieHeader(req.headers))) {
+      const accept = String(req.headers.accept ?? "");
+      const next = safeNextPath(pathname + search);
+      if (accept.includes("text/html")) {
+        return reply.code(401).header("Cache-Control", "no-store").type("text/html; charset=utf-8").send(gateLoginPage({ next }));
+      }
+      return sendProblem(req, reply, { status: 401, code: "unauthorized", detail: "Password required." });
+    }
     if (OAUTH_PROBE_PATHS.includes(pathname)) {
       return reply.code(404).header("Cache-Control", "public, max-age=3600").type("application/json").send('{"error":"not_found"}');
     }
@@ -88,6 +114,27 @@ export async function buildApp(): Promise<FastifyInstance> {
     const started = performance.now();
     await sql`SELECT 1`;
     return reply.header("Cache-Control", "no-store").send({ ok: true, db: "ok", ms: Math.round(performance.now() - started), release: process.env.AIHOT_RELEASE ?? "dev" });
+  });
+
+  app.get("/gate", async (req, reply) => {
+    const next = safeNextPath(typeof req.query === "object" && req.query && "next" in req.query ? String((req.query as { next?: string }).next ?? "/") : "/");
+    if (hasValidGateCookie(getCookieHeader(req.headers))) return reply.redirect(next);
+    return reply.header("Cache-Control", "no-store").header("X-Robots-Tag", ROBOTS_TAG).type("text/html; charset=utf-8").send(gateLoginPage({ next }));
+  });
+  app.post("/gate", async (req, reply) => {
+    const body = typeof req.body === "string" ? parseForm(req.body) : (req.body as Record<string, string> | undefined) ?? {};
+    const decision = decideGate({
+      method: "POST",
+      pathname: "/gate",
+      search: "",
+      cookieHeader: getCookieHeader(req.headers),
+      form: body,
+      secure: requestIsSecure(req.headers),
+    });
+    if (decision.kind === "granted") {
+      return reply.header("Set-Cookie", decision.cookie).header("Cache-Control", "no-store").redirect(decision.location);
+    }
+    return reply.code(401).header("Cache-Control", "no-store").header("X-Robots-Tag", ROBOTS_TAG).type("text/html; charset=utf-8").send(gateLoginPage({ next: decision.kind === "login" ? decision.next : "/", error: true }));
   });
 
   registerSite(app);

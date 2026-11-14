@@ -65,6 +65,7 @@ export async function loadDiscoveryEntries(at = new Date(), limits?: { urls: num
   const topics = await topicPageCounts(at, !limits);
   entries.push(
     { loc: "/", revision: activity?.selected ?? "", changefreq: "hourly", priority: 1 },
+    { loc: "/archive", revision: activity?.selected ?? "", changefreq: "hourly", priority: 0.8 },
     { loc: "/all", revision: activity?.listed ?? "", changefreq: "hourly", priority: 0.9 },
     { loc: "/daily", revision: reportRevision("daily"), changefreq: "daily", priority: 0.9 },
     { loc: "/hot", revision: limits ? undefined : sha256(stableJson((await latestHotRanking())?.entries ?? [])), changefreq: "hourly", priority: 0.9 },

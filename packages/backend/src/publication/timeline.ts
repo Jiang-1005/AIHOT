@@ -10,12 +10,21 @@ import {
   ITEM_COLUMNS, ITEM_FROM, categoryCondition, channelCondition, tagCondition, toFeedItemSummary,
   type ItemRow,
 } from "./items.ts";
-import { evidenceCondition, foldableSelectionCondition, listedCondition, ownFactEvidenceCondition, selectedCondition } from "./scope.ts";
+import { evidenceCondition, featuredSlotCondition, foldableSelectionCondition, listedCondition, ownFactEvidenceCondition, selectedCondition } from "./scope.ts";
+import { articleIdsMatchingFacets, type FacetQuery } from "./facets.ts";
 
-export interface TimelineQuery extends TimelineFilters {
+export interface TimelineQuery extends TimelineFilters, FacetQuery {
   cursor?: string | null;
   limit?: number;
   now?: Date;
+}
+
+function slotOf(q: TimelineQuery): "featured" | "archive" {
+  return q.slot === "archive" ? "archive" : "featured";
+}
+
+function timelineScope(now: Date, q: TimelineQuery) {
+  return sql`${selectedCondition(now)} AND ${featuredSlotCondition(now, slotOf(q))}`;
 }
 
 interface GroupRow {
@@ -23,12 +32,19 @@ interface GroupRow {
   anchor_at: Date;
 }
 
+function facetCondition(q: TimelineQuery) {
+  const ids = articleIdsMatchingFacets(q);
+  if (ids == null) return sql``;
+  if (!ids.length) return sql`AND FALSE`;
+  return sql`AND p.article_id IN ${sql(ids)}`;
+}
+
 function filterSql(q: TimelineQuery) {
-  return sql`${channelCondition(q.channel)} ${categoryCondition(q.category)} ${tagCondition(q.tag)}`;
+  return sql`${channelCondition(q.channel)} ${categoryCondition(q.category)} ${tagCondition(q.tag)} ${facetCondition(q)}`;
 }
 
 function binding(q: TimelineQuery): string {
-  return queryBinding({ c: q.channel, k: q.category, t: q.tag });
+  return queryBinding({ c: q.channel, k: q.category, t: q.tag, s: slotOf(q), topic: q.topic ?? [], subject: q.subject ?? [], form: q.form ?? [], content_type: q.content_type ?? [], company: q.company ?? [] });
 }
 
 /**
@@ -58,7 +74,7 @@ async function queryGroupedAnchors(q: TimelineQuery, now: Date) {
         SELECT p.sort_at, CASE WHEN p.fact_id IS NOT NULL AND ${ownFactEvidenceCondition()} AND ${foldableSelectionCondition()}
           THEN 'f' || p.fact_id::text ELSE 'a' || p.article_id END AS gk
         FROM publications p
-        WHERE ${selectedCondition(now)} ${filterSql(q)}
+        WHERE ${timelineScope(now, q)} ${filterSql(q)}
       )
       SELECT gk, min(sort_at) AS anchor_at FROM base GROUP BY gk ORDER BY anchor_at DESC, gk COLLATE "C" DESC`
   ).map((r) => ({ gk: r.gk, anchor: r.anchor_at.getTime() }));
@@ -114,7 +130,7 @@ export async function loadTimeline(q: TimelineQuery): Promise<Omit<TimelineRespo
         SELECT p.fact_id, p.article_id AS id, p.body_mode, p.score, p.timeline_at, ${REPRESENTATIVE_COLUMNS}
         FROM publications p JOIN sources s ON s.id = p.source_id LEFT JOIN facts f ON f.id = p.fact_id
         WHERE p.fact_id IN ${sql(factIds)}
-          AND ${selectedCondition(now)} AND ${ownFactEvidenceCondition()} AND ${foldableSelectionCondition()} ${filterSql(q)}`
+          AND ${timelineScope(now, q)} AND ${ownFactEvidenceCondition()} AND ${foldableSelectionCondition()} ${filterSql(q)}`
       : Promise.resolve([] as Member[]),
     groupPool(q, now, factIds),
   ]);
@@ -147,7 +163,7 @@ export async function loadTimeline(q: TimelineQuery): Promise<Omit<TimelineRespo
   // Recheck scope when hydrating: a withdrawal may commit after the narrow representative read.
   const rows = new Map(planned.length ? (await sql<ItemRow[]>`
     SELECT ${ITEM_COLUMNS} ${ITEM_FROM} WHERE p.article_id IN ${sql(planned.map((p) => p.id))}
-      AND ${selectedCondition(now)} ${filterSql(q)}`).map((row) => [row.id, row]) : []);
+      AND ${timelineScope(now, q)} ${filterSql(q)}`).map((row) => [row.id, row]) : []);
   const cards: TimelineCard[] = planned.flatMap(({ id, key, anchorAt, group }) => {
     const row = rows.get(id);
     if (!row) return [];
@@ -160,5 +176,5 @@ export async function loadTimeline(q: TimelineQuery): Promise<Omit<TimelineRespo
 
   const last = page[page.length - 1];
   const nextCursor = hasMore && last ? encodeCursor("tl2", { a: last.anchor_at.getTime(), g: last.gk, b: bind }) : null;
-  return { filters: { channel: q.channel, category: q.category, tag: q.tag }, cards, nextCursor, dayCounts };
+  return { filters: { channel: q.channel, category: q.category, tag: q.tag, slot: slotOf(q), topic: q.topic ?? [], subject: q.subject ?? [], form: q.form ?? [], content_type: q.content_type ?? [], company: q.company ?? [] }, cards, nextCursor, dayCounts };
 }

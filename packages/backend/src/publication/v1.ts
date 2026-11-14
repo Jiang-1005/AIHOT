@@ -7,7 +7,7 @@ import { publicCategoryCondition, API_ITEM_COLUMNS, API_ITEM_FROM, type ApiItemR
 import { browsedCondition, listedCondition, seatedCondition } from "./scope.ts";
 import { publicMatchCondition, searchTerms, withSearchCapacity } from "./pool.ts";
 import { sharedSearch } from "../lib/cache.ts";
-import { v1Payload, type V1ItemPayload } from "./publish.ts";
+import { publicV1Item, v1Payload, type V1ItemPayload } from "./publish.ts";
 
 export interface V1ItemsQuery {
   mode: "selected" | "all";
@@ -188,7 +188,7 @@ export async function selectedSnapshot(q: SnapshotQuery, now = new Date()) {
     count: page.length,
     hasMore,
     nextPage: hasMore && last ? encodeCursor(SYNC_PREFIX, { k: "page", e: epoch, w, f: fields, a: last.article_id, t: asOf }) : null,
-    items: page.map((r) => (fields === "minimal" ? minimalOf(r.payload) : r.payload)),
+    items: page.map((r) => (fields === "minimal" ? minimalOf(publicV1Item(r.payload)) : publicV1Item(r.payload))),
   };
 }
 
@@ -225,7 +225,7 @@ export async function selectedChanges(q: { cursor: string; limit: number }, now 
     changes: page.map((r) =>
       r.op === "remove"
         ? { op: "remove" as const, changedAt: r.changed_at.toISOString(), id: r.article_id }
-        : { op: "upsert" as const, changedAt: r.changed_at.toISOString(), item: c.f === "minimal" ? minimalOf(r.payload!) : r.payload! },
+        : { op: "upsert" as const, changedAt: r.changed_at.toISOString(), item: c.f === "minimal" ? minimalOf(publicV1Item(r.payload!)) : publicV1Item(r.payload!) },
     ),
   };
 }

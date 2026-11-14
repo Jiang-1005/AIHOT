@@ -1,6 +1,6 @@
 # docker compose up -d --build     → http://localhost:3000   (the admin is at /admin)
 # docker compose --profile https up -d --build   → HTTPS for SITE_DOMAIN through Caddy
-name: aihot
+name: xintian-edu-hot
 
 x-app: &app
   build: .
@@ -11,7 +11,9 @@ x-backend: &backend
   <<: *app
   env_file: .env
   environment: &backend-env
-    NODE_ENV: production
+    NODE_ENV: development
+    AIHOT_ENVIRONMENT: sandbox
+    ALLOW_PRIVATE_NETWORK_FETCH: "true"
     DATABASE_URL: postgres://aihot:${POSTGRES_PASSWORD:-aihot}@db:5432/aihot
     AIHOT_DATA_DIR: /data
     API_BASE_URL: http://api:3001

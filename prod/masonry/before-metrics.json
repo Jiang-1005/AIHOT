@@ -1,0 +1,100 @@
+{
+  "tag": "before",
+  "url": "https://edu-ai-hot.vercel.app/voices?t=1794319855532",
+  "at": "2026-11-10T14:10:55.781Z",
+  "v1440": {
+    "width": 1440,
+    "height": 900,
+    "min": 190,
+    "max": 236,
+    "ratio": 1.24,
+    "heights": [
+      190,
+      236,
+      236,
+      213,
+      236,
+      236,
+      213,
+      213,
+      236,
+      236,
+      236,
+      236,
+      213,
+      236,
+      236
+    ],
+    "cols": 3,
+    "initialCards": 24,
+    "startTitles": 24,
+    "duplicates": 0,
+    "consoleErrors": [
+      "Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    ],
+    "shotPath": "/workspace/edu-hot/prod/masonry/before-1440.png",
+    "perf": {
+      "startCount": 24,
+      "endCount": 48,
+      "stalledScreens": 0,
+      "jumps": 0,
+      "longTasks": 2,
+      "longTaskMs": 184,
+      "frames": 163,
+      "droppedEst": 2,
+      "longFrames": 1,
+      "avgFrame": 17.06,
+      "maxFrame": 83.3,
+      "dupTitles": 0,
+      "scrollY": 1845,
+      "docHeight": 2745
+    },
+    "docHeight": 1572
+  },
+  "v390": {
+    "width": 390,
+    "height": 844,
+    "min": 213,
+    "max": 236,
+    "ratio": 1.11,
+    "heights": [
+      213,
+      236,
+      236,
+      236,
+      236,
+      236,
+      236,
+      236,
+      236,
+      236,
+      236,
+      236
+    ],
+    "cols": 2,
+    "initialCards": 12,
+    "startTitles": 12,
+    "duplicates": 0,
+    "consoleErrors": [
+      "Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    ],
+    "shotPath": "/workspace/edu-hot/prod/masonry/before-390.png",
+    "perf": {
+      "startCount": 12,
+      "endCount": 12,
+      "stalledScreens": 1,
+      "jumps": 0,
+      "longTasks": 3,
+      "longTaskMs": 246,
+      "frames": 165,
+      "droppedEst": 0,
+      "longFrames": 0,
+      "avgFrame": 16.5,
+      "maxFrame": 16.8,
+      "dupTitles": 0,
+      "scrollY": 1041,
+      "docHeight": 1885
+    },
+    "docHeight": 1885
+  }
+}
