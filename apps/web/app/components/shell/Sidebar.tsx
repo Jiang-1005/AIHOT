@@ -27,7 +27,7 @@ function SideLink({ item, dot, active }: { item: NavItem; dot: boolean; active: 
       to={item.to}
       aria-current={active ? "page" : undefined}
       className={`flex h-10 items-center gap-3 rounded-control px-3 text-[0.875rem] transition-colors duration-150 touch:h-11 ${
-        active ? "bg-accent/10 font-semibold text-ink dark:bg-accent-soft" : "font-medium text-ink-3 hover:bg-bg-sunk hover:text-ink"
+        active ? "bg-accent-soft font-semibold text-ink" : "font-medium text-ink-3 hover:bg-bg-sunk hover:text-ink"
       }`}
     >
       <span className={`flex w-[22px] shrink-0 justify-center ${active ? "text-accent" : ""}`}>
@@ -63,7 +63,7 @@ function Rail({ dot }: { dot: boolean }) {
               to={t.to}
               aria-current={on ? "page" : undefined}
               className={`relative flex h-14 shrink-0 flex-col items-center justify-center gap-[4px] rounded-control text-[0.75rem] transition-colors duration-150 short:h-12 ${
-                on ? "bg-accent/10 font-semibold text-ink dark:bg-accent-soft" : "font-medium text-ink-3 hover:bg-bg-sunk hover:text-ink"
+                on ? "bg-accent-soft font-semibold text-ink" : "font-medium text-ink-3 hover:bg-bg-sunk hover:text-ink"
               }`}
             >
               <span className={on ? "text-accent" : ""}>
