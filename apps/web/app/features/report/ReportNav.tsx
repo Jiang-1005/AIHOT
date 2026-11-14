@@ -33,14 +33,14 @@ export function ReportArchive({ kind, index, current }: { kind: ReportKind; inde
       <div className="pb-4 pt-8">
         <KindSwitch kind={kind} />
       </div>
-      <div className="border-b border-line-strong pb-2 pl-1 text-[12px] font-semibold tracking-[0.3em] text-ink">往期</div>
+      <div className="border-b border-line-strong pb-2 pl-1 text-[0.75rem] font-semibold tracking-[0.3em] text-ink">往期</div>
       <nav aria-label={`${REPORT_NAMES[kind]}历史`} className="scrollbar-thin -mr-3 flex-1 overflow-y-auto pb-6 pr-3">
         {groups.map((g) => (
           <ArchiveGroup key={g.id} g={g} kind={kind} current={current} initiallyOpen={g.id === openId} />
         ))}
       </nav>
       {kind === "daily" && (
-        <IntentLink to="/daily/archive" className="flex h-12 shrink-0 items-center justify-between border-t border-line pl-1 pr-2 text-[14px] font-medium text-ink-2 transition-colors hover:text-accent">
+        <IntentLink to="/daily/archive" className="flex h-12 shrink-0 items-center justify-between border-t border-line pl-1 pr-2 text-[0.875rem] font-medium text-ink-2 transition-colors hover:text-accent">
           日报合订本 <IconChevronRight size={14} />
         </IntentLink>
       )}
@@ -68,10 +68,10 @@ function ArchiveGroup({ g, kind, current, initiallyOpen }: {
   const mark = (key: string) => archiveMark(kind, key);
   return (
     <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="disclosure group/month border-b border-line">
-      <summary className="flex h-11 items-center gap-2 pl-1 pr-2 text-[14px] text-ink transition-colors hover:text-accent">
+      <summary className="flex h-11 items-center gap-2 pl-1 pr-2 text-[0.875rem] text-ink transition-colors hover:text-accent">
         <IconChevronRight size={14} className="text-ink-4 transition-transform duration-200 group-open/month:rotate-90" />
         <span className="flex-1 font-semibold">{g.label}</span>
-        <span className="num text-[12px] text-ink-4">{g.entries.length}</span>
+        <span className="num text-[0.75rem] text-ink-4">{g.entries.length}</span>
       </summary>
       {(kind !== "daily" || open) && <ul className="space-y-1 pb-3">
         {entries.map((e) => {
@@ -86,10 +86,10 @@ function ArchiveGroup({ g, kind, current, initiallyOpen }: {
                 className={`group flex gap-3 rounded-tile py-3 pl-3 pr-2 transition-colors ${on ? "bg-accent-soft" : "hover:bg-bg-sunk"}`}
               >
                 <span className="flex w-8 shrink-0 flex-col items-center">
-                  <span className={`num text-[20px] font-black leading-none tracking-[-0.03em] ${on ? "text-accent" : "text-ink"}`}>{mark(e.key).big}</span>
-                  {mark(e.key).small && <span className="mt-1 whitespace-nowrap text-[12px] leading-none text-ink-4">{mark(e.key).small}</span>}
+                  <span className={`num text-[1.25rem] font-black leading-none tracking-[-0.03em] ${on ? "text-accent" : "text-ink"}`}>{mark(e.key).big}</span>
+                  {mark(e.key).small && <span className="mt-1 whitespace-nowrap text-[0.75rem] leading-none text-ink-4">{mark(e.key).small}</span>}
                 </span>
-                <span className={`line-clamp-2 min-w-0 text-[14px] leading-[18px] transition-colors ${on ? "font-semibold text-ink" : "text-ink-2 group-hover:text-ink"}`}>{e.title ?? `${REPORT_NAMES[kind]} ${e.key}`}</span>
+                <span className={`line-clamp-2 min-w-0 text-[0.875rem] leading-[18px] transition-colors ${on ? "font-semibold text-ink" : "text-ink-2 group-hover:text-ink"}`}>{e.title ?? `${REPORT_NAMES[kind]} ${e.key}`}</span>
               </IntentLink>
             </li>
           );
@@ -104,7 +104,7 @@ function ArchiveGroup({ g, kind, current, initiallyOpen }: {
 export function ReportPhoneNav({ kind, index, current, today }: { kind: ReportKind; index: ReportNavigationEntry[]; current: string | null; today: string }) {
   const recent = index.slice(0, 3);
   const earlier = kind === "daily" ? "/daily/archive" : "#report-history";
-  const chip = "inline-flex h-11 shrink-0 items-center rounded-full border px-4 text-[14px] transition-colors";
+  const chip = "inline-flex h-11 shrink-0 items-center rounded-full border px-4 text-[0.875rem] transition-colors";
   if (recent.length === 0) return null;
   return (
     <nav aria-label={`最近的${REPORT_NAMES[kind]}`} className="scrollbar-none bleed flex gap-2 overflow-x-auto pb-1 pt-2 lg:mx-0 lg:w-full lg:max-w-[1160px] lg:px-0 lg:pb-4 lg:pt-3 side:hidden">

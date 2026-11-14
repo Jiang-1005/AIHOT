@@ -243,7 +243,7 @@
     background: var(--bg);
     color: var(--ink);
     font-family: var(--font-sans);
-    font-size: 14px;
+    font-size: 0.875rem;
     line-height: 1.5;
   }
   ::selection {
@@ -284,7 +284,7 @@
     height: 2rem;
     padding: 0 0.75rem;
     border-radius: 9999px;
-    font-size: 12px;
+    font-size: 0.75rem;
     color: var(--ink-4);
     background: var(--bg-sunk);
     border: 1px solid var(--line-soft);
@@ -483,13 +483,14 @@
  */
 .prose {
   color: var(--prose-ink);
-  font-size: 16px;
+  text-wrap: pretty;
+  font-size: 1rem;
   line-height: 1.8;
   letter-spacing: 0.012em;
   overflow-wrap: anywhere;
 }
 @media (min-width: 80rem) {
-  .prose { font-size: 16px; }
+  .prose { font-size: 1rem; }
 }
 /* One gap between any two blocks, whatever they are; headings and figures adjust it below. Paragraphs
    need no margin reset of their own (preflight has one): a `.prose p` rule outranked this one and left a
@@ -498,14 +499,15 @@
 .prose p + p { margin-top: 1.2em; }
 .prose h2, .prose h3, .prose h4, .prose h5 {
   color: var(--ink);
+  text-wrap: balance;
   font-weight: 650;
   line-height: 1.4;
   letter-spacing: 0;
   scroll-margin-top: 88px;
 }
-.prose h2 { font-size: 20px; margin-top: 2.2em; }
-.prose h3 { font-size: 16px; margin-top: 1.8em; }
-.prose h4, .prose h5 { font-size: 16px; margin-top: 1.5em; }
+.prose h2 { font-size: 1.25rem; margin-top: 2.2em; }
+.prose h3 { font-size: 1rem; margin-top: 1.8em; }
+.prose h4, .prose h5 { font-size: 1rem; margin-top: 1.5em; }
 .prose :is(h2, h3, h4, h5) + * { margin-top: 0.7em; }
 .prose a {
   color: var(--accent);
@@ -533,7 +535,7 @@
   background: var(--bg-sunk);
 }
 .prose figure { margin: 1.5em 0; }
-.prose figcaption { font-size: 14px; color: var(--ink-4); text-align: center; margin-top: 0.6em; }
+.prose figcaption { font-size: 0.875rem; color: var(--ink-4); text-align: center; margin-top: 0.6em; }
 .prose figcaption > :is(b, strong):first-child { margin-right: 0.5em; }
 /* A figure whose picture did not come through and that is left with only words (a chart's own
    description, a panel of numbers) stands apart from the running text in a well. */
@@ -543,14 +545,14 @@
   background: var(--well);
   box-shadow: inset 0 0 0 1px var(--line-soft);
   color: var(--ink-2);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.7;
 }
 .prose figure:not(:has(img, picture, video, table, pre, blockquote)) > * + * { margin-top: 0.5em; }
 .prose figure:not(:has(img, picture, video, table, pre, blockquote)) figcaption { text-align: left; }
 .prose code {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 0.875rem;
   background: var(--code-bg);
   border: 1px solid var(--line-soft);
   padding: 0.1em 0.35em;
@@ -559,7 +561,7 @@
 .prose pre {
   position: relative;
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.65;
   background: var(--code-bg);
   border: 1px solid var(--line);
@@ -571,8 +573,8 @@
 /* Code blocks in article bodies get a head with the language and a copy button (features/item/ArticleBody). */
 .prose .code-block { margin-top: 1.2em; border: 1px solid var(--line); border-radius: var(--radius-tile); overflow: hidden; background: var(--code-bg); }
 .prose .code-block pre { margin: 0; border: 0; border-radius: 0; }
-.prose .code-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--line-soft); font-size: 12px; line-height: 1.4; color: var(--ink-4); letter-spacing: 0; }
-.prose .code-block-copy { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-mark); background: var(--surface); color: var(--ink-3); font-size: 12px; transition: color 120ms, border-color 120ms; }
+.prose .code-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--line-soft); font-size: 0.75rem; line-height: 1.4; color: var(--ink-4); letter-spacing: 0; }
+.prose .code-block-copy { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-mark); background: var(--surface); color: var(--ink-3); font-size: 0.75rem; transition: color 120ms, border-color 120ms; }
 .prose .code-block-copy:hover { color: var(--ink); border-color: var(--line-strong); }
 .prose .code-block-copy[data-status="copied"] { color: var(--ok-ink); }
 .prose .hljs-comment, .prose .hljs-quote { color: var(--ink-4); font-style: italic; }
@@ -591,7 +593,7 @@
   overscroll-behavior-x: contain;
   overflow-wrap: normal;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.55;
 }
 .prose th, .prose td { border: 1px solid var(--line); padding: 0.5em 0.75em; text-align: left; min-width: 4.5em; overflow-wrap: break-word; }
@@ -600,32 +602,32 @@
 
 /* A quoted post's words, set as the post's own text is (QuotedPost), at the quote box's size: its
    original language under 原文 smaller and quieter. */
-.prose.prose-quote { font-size: 14px; line-height: 1.75; letter-spacing: 0; color: var(--ink-2); }
-.prose.prose-quote-original { font-size: 14px; line-height: 1.7; letter-spacing: 0; color: var(--ink-3); }
+.prose.prose-quote { font-size: 0.875rem; line-height: 1.75; letter-spacing: 0; color: var(--ink-2); }
+.prose.prose-quote-original { font-size: 0.875rem; line-height: 1.7; letter-spacing: 0; color: var(--ink-3); }
 .prose:is(.prose-quote, .prose-quote-original) > * + * { margin-top: 0.75em; }
 
 /* Policy pages read smaller and quieter than article bodies, with numbered sections set apart. */
 .prose-compact {
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.85;
   color: var(--ink-2);
 }
 @media (min-width: 80rem) {
-  .prose-compact { font-size: 16px; line-height: 1.85; }
+  .prose-compact { font-size: 1rem; line-height: 1.85; }
 }
 .prose-compact h2 {
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 600;
   margin-top: 2.2em;
   padding-top: 1.4em;
   border-top: 1px solid var(--line);
 }
 .prose-compact h3 {
-  font-size: 16px;
+  font-size: 1rem;
   margin-top: 1.6em;
 }
 .prose-compact table {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .prose-compact td:first-child {
   color: var(--ink);
@@ -646,7 +648,7 @@
   align-items: center;
   border-radius: var(--radius-mark);
   padding: 0 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 20px;
   background: var(--bg);
@@ -660,7 +662,7 @@
   align-items: center;
   border-radius: var(--radius-mark);
   padding: 0 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   line-height: 20px;
   color: var(--warn);
@@ -718,7 +720,7 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 20px;
   color: var(--ink-4);
   white-space: nowrap;
@@ -727,14 +729,16 @@
 .voice-card-foot > .text-accent { position: relative; z-index: 1; pointer-events: none; }
 .voice-card-title {
   margin: 0;
-  font-size: 16px;
+  text-wrap: balance;
+  font-size: 1rem;
   font-weight: 650;
   line-height: 1.5;
   color: var(--ink);
 }
 .voice-card-summary {
   margin: 0;
-  font-size: 14px;
+  text-wrap: pretty;
+  font-size: 0.875rem;
   line-height: 1.7;
   color: var(--ink-2);
   display: -webkit-box;
@@ -748,7 +752,7 @@
   gap: 8px;
   min-height: 44px;
   padding: 8px 16px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .voice-row:hover { background: var(--accent-soft); }
 .voice-row-title {
@@ -764,7 +768,7 @@
   display: inline-flex;
   flex-shrink: 0;
   gap: 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--ink-4);
 }
 .voice-platform-mark {
@@ -777,7 +781,7 @@
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-mark);
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   line-height: 1;
 }
@@ -789,7 +793,7 @@
   height: 32px;
   border-radius: 999px;
   padding: 0 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1;
   background: var(--bg);
   color: var(--ink-2);
@@ -850,4 +854,9 @@
     max-height: 92dvh;
     border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   }
+}
+
+/* Page headings wrap evenly (modern-web-guidance typography: balance headlines, not body text). */
+[data-page-title] {
+  text-wrap: balance;
 }

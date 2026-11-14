@@ -75,15 +75,15 @@ function FeedbackAside({ tips }: { tips: string[] }) {
       <AsideCard title="写清楚这几点，处理更快">
         <ol className="space-y-3">
           {tips.map((t, i) => (
-            <li key={t} className="flex gap-3 text-[14px] leading-[1.6] text-ink-3">
-              <span className="mono mt-px text-[12px] font-bold text-accent">{String(i + 1).padStart(2, "0")}</span>
+            <li key={t} className="flex gap-3 text-[0.875rem] leading-[1.6] text-ink-3">
+              <span className="mono mt-px text-[0.75rem] font-bold text-accent">{String(i + 1).padStart(2, "0")}</span>
               {t}
             </li>
           ))}
         </ol>
       </AsideCard>
       <AsideCard title="来源方">
-        <p className="text-[14px] leading-[1.75] text-ink-3">如果你是来源方，希望更正、下架或调整展示方式，写明对应的文章链接和你的诉求即可。</p>
+        <p className="text-[0.875rem] leading-[1.75] text-ink-3">如果你是来源方，希望更正、下架或调整展示方式，写明对应的文章链接和你的诉求即可。</p>
       </AsideCard>
     </>
   );
@@ -194,11 +194,11 @@ export default function FeedbackPage() {
           <div className="anim-pop-in mx-auto flex size-14 items-center justify-center rounded-full bg-accent text-accent-contrast">
             <IconCheck size={26} />
           </div>
-          <h1 className="mt-6 text-[20px] font-semibold text-ink">收到了，谢谢你</h1>
-          <p className="mt-2 text-[14px] text-ink-3">
+          <h1 className="mt-6 text-[1.25rem] font-semibold text-ink">收到了，谢谢你</h1>
+          <p className="mt-2 text-[0.875rem] text-ink-3">
             反馈编号 <span className="mono font-semibold text-ink">#{state.id}</span>，需要回复时我们会引用这个编号。
           </p>
-          <Link to="/" className="mt-8 inline-flex h-10 items-center rounded-full bg-ink px-6 text-[14px] font-medium text-bg transition-opacity hover:opacity-90">
+          <Link to="/" className="mt-8 inline-flex h-10 items-center rounded-full bg-ink px-6 text-[0.875rem] font-medium text-bg transition-opacity hover:opacity-90">
             回到精选
           </Link>
         </div>
@@ -207,15 +207,15 @@ export default function FeedbackPage() {
   }
 
   const field = "w-full rounded-card bg-well text-ink outline-none ring-1 ring-inset ring-line-soft transition-[background-color,box-shadow] placeholder:text-ink-4 hover:ring-line-strong focus:bg-surface focus:shadow-[0_0_0_3px_var(--accent-soft)] focus:ring-accent";
-  const label = "mb-2 block text-[14px] font-semibold text-ink";
+  const label = "mb-2 block text-[0.875rem] font-semibold text-ink";
   const canSend = draft.content.trim().length >= 2 && state.kind !== "sending";
   return (
     <>
     <PhoneBar back={{ to: "/more", label: "我的" }} title="意见反馈" />
     <ReadingLayout aside={<FeedbackAside tips={guide?.tips ?? TIPS} />}>
       <header>
-        <h1 data-page-title="" className="text-[28px] font-semibold leading-[1.3] text-ink">{guide?.title ?? "说说你的想法"}</h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-ink-3">{guide?.lead ?? SITE.feedbackLead}</p>
+        <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">{guide?.title ?? "说说你的想法"}</h1>
+        <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-3">{guide?.lead ?? SITE.feedbackLead}</p>
       </header>
 
       <form
@@ -248,9 +248,9 @@ export default function FeedbackPage() {
                 value={draft.content}
                 onChange={(e) => setDraft({ ...draft, content: e.target.value })}
                 placeholder={guide?.example ?? SITE.feedbackExample}
-                className={`${field} block resize-y px-4 pb-8 pt-4 text-[16px] leading-relaxed sm:text-[14px]`}
+                className={`${field} block resize-y px-4 pb-8 pt-4 text-[1rem] leading-relaxed sm:text-[0.875rem]`}
               />
-              <span className="mono pointer-events-none absolute bottom-3 right-4 text-[12px] text-ink-4">
+              <span className="mono pointer-events-none absolute bottom-3 right-4 text-[0.75rem] text-ink-4">
                 {draft.content.length} / {MAX_TEXT}
               </span>
             </div>
@@ -260,7 +260,7 @@ export default function FeedbackPage() {
             <label htmlFor="fb-email" className={label}>
               邮箱 <span className="font-normal text-ink-4">（选填）</span>
             </label>
-            <input id="fb-email" type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder={SITE.feedbackEmailHint} className={`${field} h-11 px-4 text-[16px] sm:text-[14px]`} />
+            <input id="fb-email" type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder={SITE.feedbackEmailHint} className={`${field} h-11 px-4 text-[1rem] sm:text-[0.875rem]`} />
           </div>
 
           <div>
@@ -271,8 +271,8 @@ export default function FeedbackPage() {
               <div className="flex items-center gap-4 well rounded-card p-3">
                 <img src={shot.url} alt="截图预览" className="h-16 w-24 shrink-0 rounded-control border border-line bg-surface object-cover" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] font-medium text-ink-2">{shot.file.name}</div>
-                  <div className="mono mt-1 text-[12px] text-ink-4">{(shot.file.size / 1024 / 1024).toFixed(2)} MB</div>
+                  <div className="truncate text-[0.875rem] font-medium text-ink-2">{shot.file.name}</div>
+                  <div className="mono mt-1 text-[0.75rem] text-ink-4">{(shot.file.size / 1024 / 1024).toFixed(2)} MB</div>
                 </div>
                 <button type="button" aria-label="移除截图" onClick={() => setShot(null)} className="grid size-8 shrink-0 place-items-center rounded-full text-ink-4 transition-colors hover:bg-surface hover:text-ink">
                   <IconClose size={15} />
@@ -288,8 +288,8 @@ export default function FeedbackPage() {
                   <IconImage size={19} />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[14px] font-semibold text-ink-2">添加一张问题截图</span>
-                  <span className="mt-1 block text-[12px] leading-relaxed text-ink-4">粘贴或拖到这里也可以 · 请先遮盖敏感信息；PNG、JPEG 或 WebP，原图不超过 5 MB</span>
+                  <span className="block text-[0.875rem] font-semibold text-ink-2">添加一张问题截图</span>
+                  <span className="mt-1 block text-[0.75rem] leading-relaxed text-ink-4">粘贴或拖到这里也可以 · 请先遮盖敏感信息；PNG、JPEG 或 WebP，原图不超过 5 MB</span>
                 </span>
               </button>
             )}
@@ -297,14 +297,14 @@ export default function FeedbackPage() {
           </div>
 
           <Presence show={state.kind === "error"} enter="anim-notice-in" exit="anim-fade-out" duration={160}>
-            <p role="alert" className="rounded-tile bg-hot-soft px-4 py-3 text-[14px] text-hot">
+            <p role="alert" className="rounded-tile bg-hot-soft px-4 py-3 text-[0.875rem] text-hot">
               {state.kind === "error" ? state.message : ""}
             </p>
           </Presence>
         </div>
 
         <div className="flex flex-col-reverse gap-4 border-t border-line-soft bg-bg-sunk/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:bg-bg-muted/30">
-          <p className="text-[12px] leading-relaxed text-ink-4 sm:max-w-[400px]">
+          <p className="text-[0.75rem] leading-relaxed text-ink-4 sm:max-w-[400px]">
             请勿提交密钥、身份证件或与问题无关的敏感信息。提交即表示你知悉反馈内容、选填邮箱、页面信息和截图将按
             <Link viewTransition to="/privacy" className="text-accent hover:underline">
               隐私说明
@@ -314,7 +314,7 @@ export default function FeedbackPage() {
           <button
             type="submit"
             disabled={!canSend}
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 self-start rounded-full bg-accent px-6 text-[14px] font-medium text-accent-contrast transition-[background-color,opacity] hover:bg-accent-ink disabled:bg-line-strong disabled:text-ink-4 sm:self-auto"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 self-start rounded-full bg-accent px-6 text-[0.875rem] font-medium text-accent-contrast transition-[background-color,opacity] hover:bg-accent-ink disabled:bg-line-strong disabled:text-ink-4 sm:self-auto"
           >
             {state.kind === "sending" && <RingMark className="size-4" spinning />}
             发送反馈

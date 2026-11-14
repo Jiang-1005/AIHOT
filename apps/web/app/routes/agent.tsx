@@ -118,7 +118,7 @@ export default function AgentPage() {
   };
   const track = TRACKS.find((t) => t.key === tab);
 
-  const chip = "inline-flex h-7 items-center gap-2 rounded-full border border-line bg-surface px-3 text-[12px] text-ink-3";
+  const chip = "inline-flex h-7 items-center gap-2 rounded-full border border-line bg-surface px-3 text-[0.75rem] text-ink-3";
   const aside = (
     <>
       <AsideCard title="接入方式" className="hidden side:block">
@@ -135,7 +135,7 @@ export default function AgentPage() {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 aria-current={on ? "true" : undefined}
-                className={`flex items-center gap-3 rounded-control px-2 py-2 text-[14px] transition-colors ${on ? "bg-accent-soft font-medium text-accent" : "text-ink-2 hover:bg-bg-sunk hover:text-ink"}`}
+                className={`flex items-center gap-3 rounded-control px-2 py-2 text-[0.875rem] transition-colors ${on ? "bg-accent-soft font-medium text-accent" : "text-ink-2 hover:bg-bg-sunk hover:text-ink"}`}
               >
                 <t.icon size={16} />
                 <span className="min-w-0 flex-1">{t.name}</span>
@@ -150,8 +150,8 @@ export default function AgentPage() {
           {RESOURCES.map(([l, h, note]) => (
             <a key={h} href={h} target={h.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="group flex items-start gap-2 rounded-control px-2 py-2 transition-colors hover:bg-bg-sunk">
               <span className="min-w-0 flex-1">
-                <span className="block text-[14px] text-ink-2 group-hover:text-ink">{l}</span>
-                <span className="mt-1 block text-[12px] text-ink-4">{note}</span>
+                <span className="block text-[0.875rem] text-ink-2 group-hover:text-ink">{l}</span>
+                <span className="mt-1 block text-[0.75rem] text-ink-4">{note}</span>
               </span>
               <IconArrowUpRight size={13} className="mt-1 shrink-0 text-ink-4" />
             </a>
@@ -159,8 +159,8 @@ export default function AgentPage() {
         </nav>
       </AsideCard>
       <AsideCard title="没接上？">
-        <p className="text-[14px] leading-[1.75] text-ink-3">把平台、版本和报错写在反馈页，别发 token 或本地文件。</p>
-        <IntentLink viewTransition to="/feedback" className="mt-3 inline-flex items-center gap-1 text-[14px] font-medium text-accent hover:underline">
+        <p className="text-[0.875rem] leading-[1.75] text-ink-3">把平台、版本和报错写在反馈页，别发 token 或本地文件。</p>
+        <IntentLink viewTransition to="/feedback" className="mt-3 inline-flex items-center gap-1 text-[0.875rem] font-medium text-accent hover:underline">
           去反馈 <IconChevronRight size={14} />
         </IntentLink>
       </AsideCard>
@@ -173,8 +173,8 @@ export default function AgentPage() {
     <ReadingLayout aside={aside}>
       <header className="lg:pt-5">
         <Kicker>AGENT 接入</Kicker>
-        <h1 data-page-title="" className="mt-4 text-[28px] font-semibold leading-[1.3] text-ink sm:text-[28px]">{`把 ${SITE.name} 接进你的 Agent`}</h1>
-        <p className="mt-3 max-w-[40em] text-[14px] leading-[1.8] text-ink-3">{`${TRACKS.map((t) => t.short).join("、")} ${WAYS}种方式读的是同一份数据：精选、热点、日报、周报和月报，按你用的工具选一种就行。全部匿名只读，不用注册，也不用 API Key。`}</p>
+        <h1 data-page-title="" className="mt-4 text-[1.75rem] font-semibold leading-[1.3] text-ink sm:text-[1.75rem]">{`把 ${SITE.name} 接进你的 Agent`}</h1>
+        <p className="mt-3 max-w-[40em] text-[0.875rem] leading-[1.8] text-ink-3">{`${TRACKS.map((t) => t.short).join("、")} ${WAYS}种方式读的是同一份数据：精选、热点、日报、周报和月报，按你用的工具选一种就行。全部匿名只读，不用注册，也不用 API Key。`}</p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className={`${chip} ${healthy ? "text-ok" : "text-hot"}`}>
             <span className={`size-1.5 rounded-full ${healthy ? "bg-ok" : "bg-hot"}`} aria-hidden="true" />
@@ -208,11 +208,11 @@ export default function AgentPage() {
                 <span className={`grid size-9 place-items-center rounded-control transition-colors ${on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-3 group-hover:text-ink"}`}>
                   <t.icon size={18} />
                 </span>
-                {t.badge && <span className="inline-flex h-[18px] items-center rounded-full bg-accent-soft px-2 text-[12px] font-medium text-accent">{t.badge}</span>}
+                {t.badge && <span className="inline-flex h-[18px] items-center rounded-full bg-accent-soft px-2 text-[0.75rem] font-medium text-accent">{t.badge}</span>}
               </span>
-              <span className="mt-3 text-[14px] font-semibold text-ink">{t.name}</span>
-              <span className="mt-1 text-[14px] leading-snug text-ink-2">{t.pitch}</span>
-              <span className="mt-2 hidden text-[12px] leading-snug text-ink-4 sm:block">{t.fit}</span>
+              <span className="mt-3 text-[0.875rem] font-semibold text-ink">{t.name}</span>
+              <span className="mt-1 text-[0.875rem] leading-snug text-ink-2">{t.pitch}</span>
+              <span className="mt-2 hidden text-[0.75rem] leading-snug text-ink-4 sm:block">{t.fit}</span>
             </a>
           );
         })}

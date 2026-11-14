@@ -8,9 +8,9 @@ import { IconChevronDown } from "../../components/icons";
 export function PanelHead({ label, title, children }: { label: string; title: string; children?: ReactNode }) {
   return (
     <header>
-      <div className="mono text-[12px] uppercase tracking-[0.14em] text-ink-4">{label}</div>
-      <h2 className="mt-2 text-[20px] font-semibold leading-[1.35] text-ink">{title}</h2>
-      {children && <p className="mt-2 text-[14px] leading-[1.8] text-ink-3">{children}</p>}
+      <div className="mono text-[0.75rem] uppercase tracking-[0.14em] text-ink-4">{label}</div>
+      <h2 className="mt-2 text-[1.25rem] font-semibold leading-[1.35] text-ink">{title}</h2>
+      {children && <p className="mt-2 text-[0.875rem] leading-[1.8] text-ink-3">{children}</p>}
     </header>
   );
 }
@@ -23,10 +23,10 @@ export function Steps({ children }: { children: ReactNode }) {
 export function Step({ n, title, children }: { n: number; title: string; children?: ReactNode }) {
   return (
     <li className="relative grid grid-cols-[28px_minmax(0,1fr)] gap-x-4 before:absolute before:bottom-[-26px] before:left-[13.5px] before:top-9 before:w-px before:bg-line last:before:hidden">
-      <span className="num grid size-7 place-items-center rounded-full bg-accent-soft text-[14px] font-semibold text-accent">{n}</span>
+      <span className="num grid size-7 place-items-center rounded-full bg-accent-soft text-[0.875rem] font-semibold text-accent">{n}</span>
       <div className="min-w-0 pt-[4px]">
-        <h3 className="text-[14px] font-semibold leading-snug text-ink">{title}</h3>
-        {children && <div className="mt-2 text-[14px] leading-[1.8] text-ink-2">{children}</div>}
+        <h3 className="text-[0.875rem] font-semibold leading-snug text-ink">{title}</h3>
+        {children && <div className="mt-2 text-[0.875rem] leading-[1.8] text-ink-2">{children}</div>}
       </div>
     </li>
   );
@@ -36,8 +36,8 @@ export function Step({ n, title, children }: { n: number; title: string; childre
 export function Block({ title, id, children }: { title: string; id?: string; children: ReactNode }) {
   return (
     <section id={id} className="mt-10 scroll-mt-24 border-t border-line pt-6">
-      <h3 className="mb-3 text-[16px] font-semibold text-ink">{title}</h3>
-      <div className="text-[14px] leading-[1.8] text-ink-2">{children}</div>
+      <h3 className="mb-3 text-[1rem] font-semibold text-ink">{title}</h3>
+      <div className="text-[0.875rem] leading-[1.8] text-ink-2">{children}</div>
     </section>
   );
 }
@@ -46,7 +46,7 @@ export function Block({ title, id, children }: { title: string; id?: string; chi
 export function Ask({ text }: { text: string }) {
   return (
     <div className="mt-3 flex items-center gap-3 rounded-tile border border-line bg-surface py-2 pl-4 pr-2">
-      <span className="min-w-0 flex-1 text-[14px] font-medium leading-snug text-ink">{text}</span>
+      <span className="min-w-0 flex-1 text-[0.875rem] font-medium leading-snug text-ink">{text}</span>
       <CopyButton text={text} className="shrink-0" />
     </div>
   );
@@ -56,7 +56,7 @@ export function Ask({ text }: { text: string }) {
 export function Address({ url, label = "复制" }: { url: string; label?: string }) {
   return (
     <div className="mt-3 flex items-center gap-2 rounded-tile border border-line bg-surface py-2 pl-4 pr-2">
-      <code className="mono min-w-0 flex-1 truncate text-[14px] text-ink">{url}</code>
+      <code className="mono min-w-0 flex-1 truncate text-[0.875rem] text-ink">{url}</code>
       <CopyButton text={url} label={label} className="shrink-0" />
     </div>
   );
@@ -68,9 +68,9 @@ export function Tips({ items }: { items: Array<{ title: string; text: ReactNode 
     <ol className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {items.map((t, i) => (
         <li key={t.title} className="well rounded-panel p-4">
-          <div className="mono text-[12px] text-ink-4">0{i + 1}</div>
-          <div className="mt-1 text-[14px] font-semibold text-ink">{t.title}</div>
-          <p className="mt-1 text-[14px] leading-[1.7] text-ink-3">{t.text}</p>
+          <div className="mono text-[0.75rem] text-ink-4">0{i + 1}</div>
+          <div className="mt-1 text-[0.875rem] font-semibold text-ink">{t.title}</div>
+          <p className="mt-1 text-[0.875rem] leading-[1.7] text-ink-3">{t.text}</p>
         </li>
       ))}
     </ol>
@@ -86,7 +86,7 @@ export function Callout({ tone = "accent", title, children, action }: { tone?: "
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 gap-3">
           <span className={`mt-[8px] size-1.5 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
-          <div className="min-w-0 text-[14px] leading-[1.75] text-ink-2">
+          <div className="min-w-0 text-[0.875rem] leading-[1.75] text-ink-2">
             <div className="font-semibold text-ink">{title}</div>
             <div className="mt-1">{children}</div>
           </div>
@@ -103,11 +103,11 @@ export function Details({ items }: { items: Array<{ title: string; body: ReactNo
     <div className="mt-10 border-b border-line">
       {items.map((it) => (
         <details key={it.title} className="disclosure group border-t border-line">
-          <summary className="flex items-center justify-between gap-3 py-4 text-[14px] font-medium text-ink transition-colors hover:text-accent">
+          <summary className="flex items-center justify-between gap-3 py-4 text-[0.875rem] font-medium text-ink transition-colors hover:text-accent">
             {it.title}
             <IconChevronDown size={16} className="shrink-0 text-ink-4 transition-transform duration-200 group-open:rotate-180" />
           </summary>
-          <div className="pb-5 text-[14px] leading-[1.8] text-ink-2">{it.body}</div>
+          <div className="pb-5 text-[0.875rem] leading-[1.8] text-ink-2">{it.body}</div>
         </details>
       ))}
     </div>
@@ -135,15 +135,15 @@ export function Mono({ children }: { children: ReactNode }) {
 export function Table({ head, rows, minWidth = 560 }: { head: string[]; rows: Array<{ group: string } | ReactNode[]>; minWidth?: number }) {
   return (
     <div className="overflow-x-auto rounded-card border border-line bg-surface">
-      <table className="w-full text-left text-[14px]" style={{ minWidth }}>
-        <thead className="bg-bg-sunk text-[14px] text-ink-3">
+      <table className="w-full text-left text-[0.875rem]" style={{ minWidth }}>
+        <thead className="bg-bg-sunk text-[0.875rem] text-ink-3">
           <tr>{head.map((h) => <th key={h} className="px-4 py-2 font-medium">{h}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((r, i) =>
             "group" in r ? (
               <tr key={`g${i}`} className="border-t border-line">
-                <td colSpan={head.length} className="bg-bg-sunk/40 px-4 pb-2 pt-3 text-[12px] font-semibold text-ink-3">{r.group}</td>
+                <td colSpan={head.length} className="bg-bg-sunk/40 px-4 pb-2 pt-3 text-[0.75rem] font-semibold text-ink-3">{r.group}</td>
               </tr>
             ) : (
               <tr key={i} className="border-t border-line-soft align-top">

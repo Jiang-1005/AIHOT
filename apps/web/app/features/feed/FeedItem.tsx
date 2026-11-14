@@ -41,10 +41,10 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
 
   return (
     <article className="relative min-w-0 lg:card lg:card-hover lg:card-press lg:px-[20px] lg:pb-[16px] lg:pt-[16px]" data-item-id={item.id}>
-      <header className="flex min-h-[22px] items-center gap-2 text-[14px] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
+      <header className="flex min-h-[22px] items-center gap-2 text-[0.875rem] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
         <SourceLine item={item} className="text-ink-4" />
         {at && slotClock(at) && (
-          <time dateTime={at} className="mono shrink-0 text-[12px] lg:hidden">
+          <time dateTime={at} className="mono shrink-0 text-[0.75rem] lg:hidden">
             · {slotClock(at)}
           </time>
         )}
@@ -67,19 +67,19 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
       </header>
 
       {isX ? (
-        item.summary ? <p className={`mt-2 whitespace-pre-line text-[14px] leading-[1.75] line-clamp-5 lg:mt-2 lg:line-clamp-4 ${readTone(read, "text-ink")}`}>
+        item.summary ? <p className={`mt-2 whitespace-pre-line text-[0.875rem] leading-[1.75] line-clamp-5 lg:mt-2 lg:line-clamp-4 ${readTone(read, "text-ink")}`}>
           <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
             {shortAddresses(item.summary)}
           </IntentLink>
         </p> : <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} aria-label={`查看 ${item.x!.authorName} 的帖子`} className="absolute inset-0" />
       ) : (
         <>
-          <h3 className={`mt-2 line-clamp-2 text-[16px] font-[650] leading-[1.5] lg:mt-2 lg:line-clamp-none lg:leading-[1.55] ${readTone(read, "text-ink")}`}>
+          <h3 className={`mt-2 line-clamp-2 text-[1rem] font-[650] leading-[1.5] lg:mt-2 lg:line-clamp-none lg:leading-[1.55] ${readTone(read, "text-ink")}`}>
             <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
               {item.title}
             </IntentLink>
           </h3>
-          {item.summary && <p className="mt-1 line-clamp-2 text-[14px] leading-[1.7] text-ink-3 lg:mt-2 lg:line-clamp-3 lg:text-[14px] lg:leading-[1.75]">{shortAddresses(item.summary)}</p>}
+          {item.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:mt-2 lg:line-clamp-3 lg:text-[0.875rem] lg:leading-[1.75]">{shortAddresses(item.summary)}</p>}
         </>
       )}
 
@@ -87,7 +87,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
       {isX && item.x!.quoted?.text && <QuotedLine quoted={item.x!.quoted} />}
 
       {(tags.length > 0 || (showTags && item.category)) && (
-        <div className="relative z-10 mt-2 hidden flex-wrap gap-x-3 gap-y-1 text-[12px] text-ink-4 lg:flex">
+        <div className="relative z-10 mt-2 hidden flex-wrap gap-x-3 gap-y-1 text-[0.75rem] text-ink-4 lg:flex">
           {showTags && item.category && (
             <Link to={`/all?category=${item.category}`} className="hover:text-accent">
               {CATEGORY_LABELS[item.category]}
@@ -102,7 +102,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
       )}
 
       {item.sameEvent && (
-        <p className="relative z-10 mt-2 line-clamp-1 text-[14px] text-ink-4">
+        <p className="relative z-10 mt-2 line-clamp-1 text-[0.875rem] text-ink-4">
           同一件事，精选收录的是
           <Link viewTransition to={`/items/${item.sameEvent.id}`} className="text-ink-3 transition-colors hover:text-accent">
             《{item.sameEvent.title}》
@@ -117,7 +117,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
 
       {item.reason && (
         <div className="mt-1 lg:mt-3 lg:border-t lg:border-line-soft lg:pt-3">
-          <p className="line-clamp-1 text-[14px] leading-[1.65] text-note lg:line-clamp-none lg:leading-[1.75]">{`${ITEM_COPY.reasonLabel}：`}{publicCopy(item.reason)}</p>
+          <p className="line-clamp-1 text-[0.875rem] leading-[1.65] text-note lg:line-clamp-none lg:leading-[1.75]">{`${ITEM_COPY.reasonLabel}：`}{publicCopy(item.reason)}</p>
         </div>
       )}
 

@@ -40,8 +40,8 @@ function Figure({ n, unit }: { n: number; unit: string }) {
   const f = figure(n);
   return (
     <div className="flex items-baseline gap-2">
-      <span className="num text-[28px] font-black leading-none tracking-[-0.03em] text-ink xl:text-[28px]">{f.value}</span>
-      <span className="text-[14px] text-ink-3">
+      <span className="num text-[1.75rem] font-black leading-none tracking-[-0.03em] text-ink xl:text-[1.75rem]">{f.value}</span>
+      <span className="text-[0.875rem] text-ink-3">
         {f.unit}
         {unit}
       </span>
@@ -122,9 +122,9 @@ function QrCard({ src, kind, title, note }: { src: string; kind: string; title: 
     <figure className="card flex items-center gap-5 p-5">
       <img src={src} alt={`${kind}二维码`} width={112} height={112} loading="lazy" className="size-[104px] shrink-0 rounded-tile border border-line bg-white object-contain p-2 sm:size-[112px]" />
       <figcaption className="min-w-0">
-        <div className="text-[12px] text-ink-4">{kind}</div>
-        <div className="mt-1 text-[16px] font-semibold leading-snug text-ink">{title}</div>
-        <p className="mt-2 text-[14px] leading-[1.7] text-ink-3">{note}</p>
+        <div className="text-[0.75rem] text-ink-4">{kind}</div>
+        <div className="mt-1 text-[1rem] font-semibold leading-snug text-ink">{title}</div>
+        <p className="mt-2 text-[0.875rem] leading-[1.7] text-ink-3">{note}</p>
       </figcaption>
     </figure>
   );
@@ -143,13 +143,13 @@ function Maker({ maker, contact }: { maker: NonNullable<typeof ABOUT.maker>; con
     <section aria-labelledby="maker" className="mt-20 grid gap-10 xl:mt-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
       <div>
         <Kicker>做这个站的人</Kicker>
-        <h2 id="maker" className="mt-4 flex items-center gap-4 text-[28px] font-black leading-[1.3] tracking-[-0.02em] text-ink xl:gap-4 xl:text-[28px]">
+        <h2 id="maker" className="mt-4 flex items-center gap-4 text-[1.75rem] font-black leading-[1.3] tracking-[-0.02em] text-ink xl:gap-4 xl:text-[1.75rem]">
           {contact?.makerAvatar && <MakerFace src={contact.makerAvatar} />}
           <span>
             嗨，我是 <span className="whitespace-nowrap text-accent">{maker.name}</span>
           </span>
         </h2>
-        <div className="mt-5 space-y-4 text-[14px] leading-[1.9] text-ink-2 xl:text-[16px]">
+        <div className="mt-5 space-y-4 text-[0.875rem] leading-[1.9] text-ink-2 xl:text-[1rem]">
           {maker.greeting.map((line) => (
             <p key={line}>{line}</p>
           ))}
@@ -168,7 +168,7 @@ function Maker({ maker, contact }: { maker: NonNullable<typeof ABOUT.maker>; con
       </div>
       {codes.length > 0 && (
         <div className="grid content-start gap-3">
-          <h3 className="text-[14px] font-semibold text-ink">如果觉得有点用，欢迎加入</h3>
+          <h3 className="text-[0.875rem] font-semibold text-ink">如果觉得有点用，欢迎加入</h3>
           {codes}
         </div>
       )}
@@ -181,10 +181,10 @@ function Latest({ item, className = "" }: { item: SiteStats["latest"][number] | 
   if (!item) return null;
   return (
     <IntentLink viewTransition to={`/items/${item.id}`} className={`group block ${className}`}>
-      <span className="text-[12px] font-semibold tracking-[0.2em] text-accent">最近精选</span>
+      <span className="text-[0.75rem] font-semibold tracking-[0.2em] text-accent">最近精选</span>
       <span key={item.id} className="animate-fade-up mt-2 block">
-        <span className="line-clamp-2 text-[14px] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span>
-        <span className="mt-1 block truncate text-[12px] text-ink-4">{item.source}</span>
+        <span className="line-clamp-2 text-[0.875rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span>
+        <span className="mt-1 block truncate text-[0.75rem] text-ink-4">{item.source}</span>
       </span>
     </IntentLink>
   );
@@ -212,12 +212,12 @@ export default function AboutPage() {
       <header className="grid items-end gap-8 pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:pt-0">
         <div>
           <Kicker>{ABOUT.kicker}</Kicker>
-          <h1 data-page-title="" className="mt-5 text-[28px] font-black leading-[1.18] tracking-[-0.03em] text-ink [text-wrap:balance] sm:text-[28px] xl:text-[28px] 2xl:text-[28px]">
+          <h1 data-page-title="" className="mt-5 text-[1.75rem] font-black leading-[1.18] tracking-[-0.03em] text-ink [text-wrap:balance] sm:text-[1.75rem] xl:text-[1.75rem] 2xl:text-[1.75rem]">
             {ABOUT.headline[0]}
             <br />
             <span className="text-accent">{ABOUT.headline[1]}</span>
           </h1>
-          <p className="mt-5 max-w-[36em] text-[14px] leading-[1.85] text-ink-3 xl:text-[16px]">
+          <p className="mt-5 max-w-[36em] text-[0.875rem] leading-[1.85] text-ink-3 xl:text-[1rem]">
             {ABOUT.lead.split("{sources}").map((part, i) => (
               <Fragment key={i}>
                 {i > 0 && (stats ? <>{" "}<span className="num font-semibold text-ink">{stats.sources}</span>{" "}</> : ABOUT.sourcesFallback)}
@@ -257,12 +257,12 @@ export default function AboutPage() {
               className={`border-line py-6 outline-none transition-colors ${STAGE_CELL[i]} ${focus === i ? "bg-accent-softer" : ""}`}
             >
               <div className="flex items-baseline gap-3">
-                <span className="num text-[12px] font-bold tracking-[0.12em] text-accent">{s.no}</span>
-                <h3 className="text-[16px] font-bold text-ink">{s.title}</h3>
+                <span className="num text-[0.75rem] font-bold tracking-[0.12em] text-accent">{s.no}</span>
+                <h3 className="text-[1rem] font-bold text-ink">{s.title}</h3>
               </div>
               {s.figure && <div className="mt-4">{s.figure}</div>}
-              <p className="mt-3 text-[14px] leading-[1.8] text-ink-3">{s.text}</p>
-              {s.note && <p className="mt-3 text-[12px] text-ink-4">{s.note}</p>}
+              <p className="mt-3 text-[0.875rem] leading-[1.8] text-ink-3">{s.text}</p>
+              {s.note && <p className="mt-3 text-[0.75rem] text-ink-4">{s.note}</p>}
             </li>
           ))}
         </ol>
@@ -270,7 +270,7 @@ export default function AboutPage() {
 
       {ABOUT.maker && <Maker maker={ABOUT.maker} contact={contact} />}
 
-      <p className="mt-16 well rounded-card px-5 py-4 text-[14px] leading-[1.85] text-ink-3">
+      <p className="mt-16 well rounded-card px-5 py-4 text-[0.875rem] leading-[1.85] text-ink-3">
         {ABOUT.copyright[0]}
         <Link viewTransition to="/feedback" className="text-accent hover:underline">
           反馈页
@@ -278,7 +278,7 @@ export default function AboutPage() {
         {ABOUT.copyright[1]}
       </p>
 
-      <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[14px] text-ink-4">
+      <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[0.875rem] text-ink-4">
         <span>{SITE.footerNote}</span>
         <nav className="flex gap-5" aria-label="规则与隐私">
           <Link

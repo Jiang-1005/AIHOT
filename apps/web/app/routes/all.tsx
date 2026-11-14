@@ -107,7 +107,7 @@ export default function AllPage() {
         <PhoneBar
           back={{ to: "/all", label: "全部" }}
           center={
-            <button type="button" onClick={(event) => openSearch(f.q ?? "", event.currentTarget)} className="flex h-11 min-w-0 max-w-full items-center gap-2 rounded-full bg-well px-4 text-[14px] text-ink ring-1 ring-inset ring-line-soft">
+            <button type="button" onClick={(event) => openSearch(f.q ?? "", event.currentTarget)} className="flex h-11 min-w-0 max-w-full items-center gap-2 rounded-full bg-well px-4 text-[0.875rem] text-ink ring-1 ring-inset ring-line-soft">
               <IconSearch size={16} className="shrink-0 text-ink-4" />
               <span className="truncate">{f.q}</span>
             </button>
@@ -135,7 +135,7 @@ export default function AllPage() {
             active={f.tab}
             items={(["time", "relevance"] as const).map((t) => ({ key: t, label: t === "time" ? "按时间（搜标题和摘要）" : "按相关度（含正文）", to: searchTabHref(t) }))}
           />
-          <span className="text-[12px] text-ink-4">
+          <span className="text-[0.75rem] text-ink-4">
             找到 <span className="num">{data.total >= 2000 ? "2000+" : data.total}</span> 条 · 更新于 <span className="num">{updated}</span>
           </span>
         </div>
@@ -148,7 +148,7 @@ export default function AllPage() {
               title="没有找到相关内容"
               action={
                 f.q && f.tab === "time" ? (
-                  <Link to={searchTabHref("relevance")} className="text-[14px] font-medium text-accent hover:underline">
+                  <Link to={searchTabHref("relevance")} className="text-[0.875rem] font-medium text-accent hover:underline">
                     试试“按相关度”，连正文一起搜
                   </Link>
                 ) : undefined
@@ -162,7 +162,7 @@ export default function AllPage() {
         )}
       </div>
       <Pagination page={data.page} pageCount={data.pageCount} href={(p) => pageHref(params, p)} />
-      {data.page >= 50 && <p className="mt-4 text-center text-[12px] text-ink-4">最多提供 50 页，更早的内容请使用搜索或主题页。</p>}
+      {data.page >= 50 && <p className="mt-4 text-center text-[0.75rem] text-ink-4">最多提供 50 页，更早的内容请使用搜索或主题页。</p>}
     </div>
   );
 }

@@ -52,9 +52,9 @@ export interface TabItem {
 }
 
 const SIZES = {
-  md: "h-11 px-4 text-[14px] lg:h-9",
-  sm: "h-10 min-w-12 px-2 text-[14px] lg:h-8 lg:px-4",
-  xs: "h-11 px-3 text-[14px] lg:h-7",
+  md: "h-11 px-4 text-[0.875rem] lg:h-9",
+  sm: "h-10 min-w-12 px-2 text-[0.875rem] lg:h-8 lg:px-4",
+  xs: "h-11 px-3 text-[0.875rem] lg:h-7",
 } as const;
 
 /**
@@ -94,7 +94,7 @@ export function PillTabs({
               {on && <Thumb id={layoutId} />}
               <span className="relative inline-flex items-center gap-1">
                 {t.label}
-                {t.count !== undefined && t.count !== null && <span className={`num text-[12px] font-normal ${on ? "text-ink-3" : "text-ink-4"}`}>{t.count}</span>}
+                {t.count !== undefined && t.count !== null && <span className={`num text-[0.75rem] font-normal ${on ? "text-ink-3" : "text-ink-4"}`}>{t.count}</span>}
               </span>
             </>
           );

@@ -13,7 +13,7 @@ export function CopyPage({ doc, rendered, eyebrow, footer }: { doc: CopyDocument
   const facts = (["版本", "生效日期", "运营主体", "联系方式", "备案号"] as const).filter((k) => doc.meta[k]);
   const info = facts.length > 0 && (
     <RailSection title="文档信息">
-      <dl className="space-y-2 text-[14px]">
+      <dl className="space-y-2 text-[0.875rem]">
         {facts.map((k) => (
           <div key={k}>
             <dt className="text-ink-4">{k}</dt>
@@ -29,7 +29,7 @@ export function CopyPage({ doc, rendered, eyebrow, footer }: { doc: CopyDocument
         <ol className="-ml-px space-y-1 border-l border-line">
           {rendered.outline.map((o) => (
             <li key={o.id}>
-              <a href={`#${o.id}`} className="-ml-px block border-l border-transparent py-1 pl-3 text-[14px] leading-snug text-ink-3 transition-colors hover:border-accent hover:text-ink">
+              <a href={`#${o.id}`} className="-ml-px block border-l border-transparent py-1 pl-3 text-[0.875rem] leading-snug text-ink-3 transition-colors hover:border-accent hover:text-ink">
                 {o.text}
               </a>
             </li>
@@ -51,11 +51,11 @@ export function CopyPage({ doc, rendered, eyebrow, footer }: { doc: CopyDocument
       }
     >
       <article className="pb-14 pt-3 lg:pt-2">
-        {eyebrow && <div className="mb-3 text-[12px] font-semibold text-accent">{eyebrow}</div>}
-        <h1 data-page-title="" className="text-[28px] font-bold leading-[1.35] text-ink lg:text-[28px] xl:text-[28px] xl:leading-[1.3]">{doc.title}</h1>
-        {doc.intro && <p className="mt-4 text-[14px] leading-[1.8] text-ink-3 xl:text-[16px]">{doc.intro}</p>}
+        {eyebrow && <div className="mb-3 text-[0.75rem] font-semibold text-accent">{eyebrow}</div>}
+        <h1 data-page-title="" className="text-[1.75rem] font-bold leading-[1.35] text-ink lg:text-[1.75rem] xl:text-[1.75rem] xl:leading-[1.3]">{doc.title}</h1>
+        {doc.intro && <p className="mt-4 text-[0.875rem] leading-[1.8] text-ink-3 xl:text-[1rem]">{doc.intro}</p>}
         {facts.length > 0 && (
-          <dl className="mt-5 grid grid-cols-1 border-y border-line text-[14px] sm:grid-cols-2 side:hidden">
+          <dl className="mt-5 grid grid-cols-1 border-y border-line text-[0.875rem] sm:grid-cols-2 side:hidden">
             {facts.map((k) => (
               <div key={k} className="flex gap-4 border-b border-line-soft py-3 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0">
                 <dt className="w-16 shrink-0 text-ink-4">{k}</dt>
@@ -65,7 +65,7 @@ export function CopyPage({ doc, rendered, eyebrow, footer }: { doc: CopyDocument
           </dl>
         )}
         <div className="prose prose-compact mt-6 lg:mt-8" dangerouslySetInnerHTML={{ __html: rendered.html }} />
-        {footer && <div className="mt-12 border-t border-line pt-5 text-[14px] text-ink-3">{footer}</div>}
+        {footer && <div className="mt-12 border-t border-line pt-5 text-[0.875rem] text-ink-3">{footer}</div>}
       </article>
     </ArticleLayout>
     </>

@@ -48,7 +48,7 @@ export default function Archive() {
       <DesktopFacetBlock
         base="/archive"
         title={title}
-        blurb={<p className="mt-2 text-[14px] leading-6 text-ink-3">通过统一门槛（60）与核验、稿件日期在 8 到 30 天内的报道。首页精选只保留 7 天内的稿件。</p>}
+        blurb={<p className="mt-2 text-[0.875rem] leading-6 text-ink-3">通过统一门槛（60）与核验、稿件日期在 8 到 30 天内的报道。首页精选只保留 7 天内的稿件。</p>}
         meta={facets}
         search={<SearchField keep={{ category: filters.category }} />}
       />

@@ -152,16 +152,16 @@ function CompanySection({ company, logoIndex, previewMax, expandAll, today }: { 
     <section className="min-w-0">
       <div className="mb-2 flex items-center gap-2">
         {logo ? <img src={logo} alt="" className="h-6 w-6 rounded object-contain" /> : null}
-        <h2 className="text-[16px] font-semibold text-ink">{company.name}</h2>
-        {!company.empty ? <span className="text-[12px] text-ink-4">{company.items.length} 条</span> : null}
+        <h2 className="text-[1rem] font-semibold text-ink">{company.name}</h2>
+        {!company.empty ? <span className="text-[0.75rem] text-ink-4">{company.items.length} 条</span> : null}
       </div>
       {company.empty ? (
-        <p className="text-[14px] leading-7 text-ink-3">{EMPTY_COPY}</p>
+        <p className="text-[0.875rem] leading-7 text-ink-3">{EMPTY_COPY}</p>
       ) : (
         <>
           <CompanyDayList items={shown} today={today} />
           {hidden > 0 ? (
-            <button type="button" className="mt-2 text-[14px] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
+            <button type="button" className="mt-2 text-[0.875rem] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
               {open ? "收起" : `展开全部（还有 ${hidden} 条）`}
             </button>
           ) : null}
@@ -188,7 +188,7 @@ function CompanyChips({ companies, active, allCount }: { companies: CompanyUpdat
               to={companyHref(chip.name)}
               preventScrollReset
               aria-current={on ? "page" : undefined}
-              className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium ring-1 transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 py-2 text-[0.875rem] font-medium ring-1 transition-colors ${
                 on
                   ? "bg-surface text-ink ring-line shadow-[var(--shadow-thumb)] dark:bg-raised"
                   : "bg-well text-ink-3 ring-line-soft hover:text-ink"
@@ -231,11 +231,11 @@ export default function CompanyUpdatesPage() {
         title="国内公司动态"
       />
       <header className="mb-6">
-        <h1 data-page-title="" className="text-[28px] font-semibold leading-[1.3] text-ink">国内公司动态</h1>
-        <p className="mt-2 text-[14px] leading-[1.7] text-ink-3">
+        <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">国内公司动态</h1>
+        <p className="mt-2 text-[0.875rem] leading-[1.7] text-ink-3">
           列出最近 90 天内已核对原文（或标明「未查到原文」）的报道。可按时间混看各公司，或按公司筛选。不走精选 60 分和 7 天/往期 30 天门槛，也不会把老条目送进首页精选。没有新动态的公司写「{EMPTY_COPY}」，不拿窗口外的旧稿凑数。
         </p>
-        <p className="mt-1 text-[12px] text-ink-4">
+        <p className="mt-1 text-[0.75rem] text-ink-4">
           {data.asOf} 北京时间 · {withNews} 家有动态
         </p>
       </header>
@@ -255,12 +255,12 @@ export default function CompanyUpdatesPage() {
 
       {view === "time" ? (
         timeline.length === 0 ? (
-          <p className="text-[14px] leading-7 text-ink-3">{EMPTY_COPY}</p>
+          <p className="text-[0.875rem] leading-7 text-ink-3">{EMPTY_COPY}</p>
         ) : (
           <>
             <CompanyDayList items={timeShown} today={data.asOf} />
             {timeHidden > 0 ? (
-              <button type="button" className="mt-3 text-[14px] text-accent hover:underline" onClick={() => setTimeOpen((v) => !v)}>
+              <button type="button" className="mt-3 text-[0.875rem] text-accent hover:underline" onClick={() => setTimeOpen((v) => !v)}>
                 {timeOpen ? "收起" : `展开全部（还有 ${timeHidden} 条）`}
               </button>
             ) : null}

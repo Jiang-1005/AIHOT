@@ -58,7 +58,7 @@ export function DesktopFacetBlock({
     <div className="hidden lg:block">
       <div className="mb-3 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[28px] font-semibold leading-[1.3] text-ink">{title}</h1>
+          <h1 className="text-[1.75rem] font-semibold leading-[1.3] text-ink">{title}</h1>
           {blurb}
         </div>
         {search}
@@ -160,8 +160,8 @@ function FilterSheet({ open, onClose, base, meta, unread = false }: { open: bool
               <ToggleChip on={unreadOnly} onToggle={() => setUnreadOnly(!unreadOnly)}>只看未读</ToggleChip>
             </span>
           )}
-          <button type="button" className="text-[14px] text-ink-3" onClick={() => setDraft(EMPTY_FACETS)}>清空</button>
-          <button type="button" className="text-[14px] font-medium text-accent" onClick={() => apply(draft)}>完成</button>
+          <button type="button" className="text-[0.875rem] text-ink-3" onClick={() => setDraft(EMPTY_FACETS)}>清空</button>
+          <button type="button" className="text-[0.875rem] font-medium text-accent" onClick={() => apply(draft)}>完成</button>
         </div>
         {loaded ? (
           <FacetChipRows
@@ -173,7 +173,7 @@ function FilterSheet({ open, onClose, base, meta, unread = false }: { open: bool
             headCompanies={loaded.headCompanies}
           />
         ) : (
-          <p className="py-6 text-center text-[14px] text-ink-4">加载筛选…</p>
+          <p className="py-6 text-center text-[0.875rem] text-ink-4">加载筛选…</p>
         )}
       </div>
     </Sheet>
@@ -188,7 +188,7 @@ export function ActiveFilters({ base, category, channel, tag }: { base: string; 
   const label = channel === "firstParty" ? CHANNEL_LABELS.firstParty : category ? CATEGORY_LABELS[category] : null;
   const hasFacets = !facetsEqualEmpty(facets);
   if (!label && !tag && !hasFacets) return null;
-  const chip = "inline-flex min-h-11 max-w-full items-center gap-1 rounded-full bg-accent-soft pl-3 pr-2 text-[14px] font-medium text-accent transition-opacity active:opacity-60";
+  const chip = "inline-flex min-h-11 max-w-full items-center gap-1 rounded-full bg-accent-soft pl-3 pr-2 text-[0.875rem] font-medium text-accent transition-opacity active:opacity-60";
   return (
     <div className="flex flex-wrap items-center gap-2 pb-3 pt-1 lg:hidden">
       {label && (
@@ -264,7 +264,7 @@ export function SearchField({ defaultValue = "", keep = {} }: { defaultValue?: s
         placeholder="搜索标题、摘要…"
         maxLength={200}
         autoComplete="off"
-        className="h-[42px] w-full rounded-full bg-well pl-10 pr-10 text-[16px] text-ink outline-none ring-1 ring-inset ring-line-soft transition-[background-color,box-shadow] placeholder:text-ink-4 hover:ring-line-strong focus:bg-surface focus:shadow-[0_0_0_3px_var(--accent-soft)] focus:ring-accent sm:text-[14px]"
+        className="h-[42px] w-full rounded-full bg-well pl-10 pr-10 text-[1rem] text-ink outline-none ring-1 ring-inset ring-line-soft transition-[background-color,box-shadow] placeholder:text-ink-4 hover:ring-line-strong focus:bg-surface focus:shadow-[0_0_0_3px_var(--accent-soft)] focus:ring-accent sm:text-[0.875rem]"
       />
       {value ? (
         <button
@@ -279,7 +279,7 @@ export function SearchField({ defaultValue = "", keep = {} }: { defaultValue?: s
           <IconClose size={13} />
         </button>
       ) : (
-        <kbd className="mono pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 rounded-mark border border-line-strong bg-surface px-2 text-[12px] leading-4 text-ink-4 lg:block">/</kbd>
+        <kbd className="mono pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 rounded-mark border border-line-strong bg-surface px-2 text-[0.75rem] leading-4 text-ink-4 lg:block">/</kbd>
       )}
     </Form>
   );

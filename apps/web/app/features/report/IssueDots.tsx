@@ -150,12 +150,12 @@ export function IssueDots({ kind, reportKey, issueNumber, index, className = "" 
 
   return (
     <div className={className}>
-      <div className="flex items-baseline justify-between text-[12px] text-ink-4">
+      <div className="flex items-baseline justify-between text-[0.75rem] text-ink-4">
         <span className="font-semibold tracking-[0.2em] text-ink-2">{grid.title}</span>
         <span className="num">{grid.note}</span>
       </div>
       {grid.heads && (
-        <div className="mt-2 grid text-center text-[12px] leading-none text-ink-4" style={{ gridTemplateColumns: `repeat(${grid.columns}, minmax(0, 1fr))` }}>
+        <div className="mt-2 grid text-center text-[0.75rem] leading-none text-ink-4" style={{ gridTemplateColumns: `repeat(${grid.columns}, minmax(0, 1fr))` }}>
           {grid.heads.map((h) => (
             <span key={h}>{h}</span>
           ))}

@@ -359,7 +359,7 @@ function tagLine(item: VoiceCard): string[] {
 function RailGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="border-b border-line-soft px-4 py-3 last:border-b-0">
-      <h3 className="mb-2 text-[12px] font-medium text-ink-4">{title}</h3>
+      <h3 className="mb-2 text-[0.75rem] font-medium text-ink-4">{title}</h3>
       <div className="flex flex-wrap gap-2">{children}</div>
     </section>
   );
@@ -575,17 +575,17 @@ export default function VoicesPage() {
         }
         title="社区热帖"
         actions={
-          <button type="button" className="mr-2 inline-flex h-8 items-center rounded-full px-3 text-[14px] text-accent" onClick={() => setSheet(true)}>
+          <button type="button" className="mr-2 inline-flex h-8 items-center rounded-full px-3 text-[0.875rem] text-accent" onClick={() => setSheet(true)}>
             筛选{scoped ? " · 已选" : ""}
           </button>
         }
       />
       <header className="mb-3 lg:mb-4">
-        <h1 data-page-title="" className="text-[28px] font-semibold leading-[1.3] text-ink">社区热帖</h1>
-        <p className="mt-1 hidden text-[14px] leading-[1.7] text-ink-3 lg:block">
+        <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">社区热帖</h1>
+        <p className="mt-1 hidden text-[0.875rem] leading-[1.7] text-ink-3 lg:block">
           X、小红书和中文社区里的真实讨论。先看站内摘要，再决定要不要去原帖。
         </p>
-        <p className="mt-1 text-[12px] text-ink-4">
+        <p className="mt-1 text-[0.75rem] text-ink-4">
           共 <span className="num">{counts.total}</span> 条 · 近 7 天 <span className="num">{counts.last7}</span> 条 · 已核实原文 <span className="num">{counts.verified}</span> 条
           {fetchedAt ? ` · 数据截至 ${fetchedAt}` : ""}
         </p>
@@ -598,7 +598,7 @@ export default function VoicesPage() {
 
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="text-[14px] text-ink-2"><span className="num font-semibold text-ink">{matchCount}</span> 条{scoped ? "符合筛选" : ""}</span>
+            <span className="text-[0.875rem] text-ink-2"><span className="num font-semibold text-ink">{matchCount}</span> 条{scoped ? "符合筛选" : ""}</span>
             {scoped ? (
               <SelectedFacetBars
                 value={facets}
@@ -613,7 +613,7 @@ export default function VoicesPage() {
             ) : null}
             <div className="ml-auto inline-flex rounded-full bg-surface p-1 ring-1 ring-inset ring-line" role="group" aria-label="视图">
               {(["cards", "compact"] as const).map((v) => (
-                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className={`h-8 rounded-full px-3 text-[12px] transition-colors active:scale-[0.97] ${view === v ? "bg-accent text-accent-contrast" : "text-ink-3 hover:text-ink"}`}>
+                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className={`h-8 rounded-full px-3 text-[0.75rem] transition-colors active:scale-[0.97] ${view === v ? "bg-accent text-accent-contrast" : "text-ink-3 hover:text-ink"}`}>
                   {v === "cards" ? "卡片" : "紧凑列表"}
                 </button>
               ))}
@@ -624,7 +624,7 @@ export default function VoicesPage() {
             <div className="card">
               <EmptyState
                 title="没有符合筛选的帖子"
-                action={scoped ? <button type="button" className="text-[14px] text-accent hover:underline" onClick={clearAll}>清空筛选</button> : undefined}
+                action={scoped ? <button type="button" className="text-[0.875rem] text-accent hover:underline" onClick={clearAll}>清空筛选</button> : undefined}
               >
                 试试去掉部分条件，或换个平台、来源看看。
               </EmptyState>
@@ -647,7 +647,7 @@ export default function VoicesPage() {
           )}
           <div ref={sentinel} className="h-8" data-voices-sentinel="" />
           {data.catalog.generatedAt && (
-            <p className="mt-4 text-[12px] text-ink-4">目录更新于 {data.catalog.generatedAt} 北京时间</p>
+            <p className="mt-4 text-[0.75rem] text-ink-4">目录更新于 {data.catalog.generatedAt} 北京时间</p>
           )}
         </div>
       </div>
@@ -657,10 +657,10 @@ export default function VoicesPage() {
           <button type="button" className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={() => setSheet(false)} />
           <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface pb-8 shadow-xl">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line-soft bg-surface px-4 py-3">
-              <h2 className="text-[16px] font-semibold text-ink">筛选</h2>
+              <h2 className="text-[1rem] font-semibold text-ink">筛选</h2>
               <div className="flex items-center gap-2">
-                {scoped ? <button type="button" className="h-8 px-2 text-[14px] text-ink-3" onClick={clearAll}>清空</button> : null}
-                <button type="button" className="h-8 px-2 text-[14px] font-medium text-accent" onClick={() => setSheet(false)}>完成</button>
+                {scoped ? <button type="button" className="h-8 px-2 text-[0.875rem] text-ink-3" onClick={clearAll}>清空</button> : null}
+                <button type="button" className="h-8 px-2 text-[0.875rem] font-medium text-accent" onClick={() => setSheet(false)}>完成</button>
               </div>
             </div>
             {rail}
@@ -786,27 +786,27 @@ function VoiceReader({ item, index, total, today, onClose, onStep, hasPrev, hasN
     >
       <div className="voice-reader-panel">
         <div className="flex items-center gap-3 border-b border-line-soft px-5 py-3">
-          <span className="text-[12px] text-ink-4">站内摘要 · 第 <span className="num">{index + 1}</span> / <span className="num">{total}</span> 条</span>
-          <button type="button" onClick={onClose} className="ml-auto inline-flex h-8 items-center rounded-full px-3 text-[14px] text-ink-3 ring-1 ring-inset ring-line hover:text-ink active:scale-[0.97]">
+          <span className="text-[0.75rem] text-ink-4">站内摘要 · 第 <span className="num">{index + 1}</span> / <span className="num">{total}</span> 条</span>
+          <button type="button" onClick={onClose} className="ml-auto inline-flex h-8 items-center rounded-full px-3 text-[0.875rem] text-ink-3 ring-1 ring-inset ring-line hover:text-ink active:scale-[0.97]">
             关闭
           </button>
         </div>
         <div className="voice-reader-body">
-          <div className="flex flex-wrap items-center gap-2 text-[12px] text-ink-4">
+          <div className="flex flex-wrap items-center gap-2 text-[0.75rem] text-ink-4">
             <PlatformMark platform={item.platform} />
             <span>{item.platform === "X" ? item.author : item.source || item.poster}{item.platform === "X" && item.source ? ` · ${item.source}` : ""}</span>
             {unverified ? <UnverifiedBadge /> : <span className="text-accent">已核对原文</span>}
             <time className="ml-auto num" dateTime={item.published_at || item.day || undefined}>{formatWhen(item, today, true)}</time>
           </div>
-          <h2 id="voice-reader-title" className="mt-3 text-[20px] font-semibold leading-[1.5] text-ink">{cardTitle(item)}</h2>
+          <h2 id="voice-reader-title" className="mt-3 text-[1.25rem] font-semibold leading-[1.5] text-ink">{cardTitle(item)}</h2>
           {summary ? (
             <div className="mt-4 rounded-card border-l-4 border-accent bg-bg px-4 py-3">
-              <div className="mb-1 text-[12px] text-ink-4">站内摘要</div>
-              <p className="text-[16px] leading-[1.75] text-ink-2">{summary}</p>
+              <div className="mb-1 text-[0.75rem] text-ink-4">站内摘要</div>
+              <p className="text-[1rem] leading-[1.75] text-ink-2">{summary}</p>
             </div>
           ) : null}
           {facts.length ? (
-            <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[14px]">
+            <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[0.875rem]">
               {facts.map(([k, v]) => (
                 <div key={k} className="contents"><dt className="text-ink-4">{k}</dt><dd className="text-ink-2">{v}</dd></div>
               ))}
@@ -816,24 +816,24 @@ function VoiceReader({ item, index, total, today, onClose, onStep, hasPrev, hasN
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {stats.slice(0, 4).map((s) => (
                 <div key={s.label} className="rounded-control bg-bg px-3 py-2">
-                  <div className="text-[12px] text-ink-4">{s.label}</div>
-                  <div className="num text-[16px] font-semibold text-ink">{formatCount(s.n)}</div>
+                  <div className="text-[0.75rem] text-ink-4">{s.label}</div>
+                  <div className="num text-[1rem] font-semibold text-ink">{formatCount(s.n)}</div>
                 </div>
               ))}
             </div>
           ) : null}
-          <p className="mt-4 text-[12px] leading-[1.7] text-ink-4">
+          <p className="mt-4 text-[0.75rem] leading-[1.7] text-ink-4">
             {unverified
               ? "这条还没打开原帖核对，摘要里的数字和说法以原帖为准。"
               : "「已核对原文」指站内打开过原帖、核对了摘要里的说法。这里是站内整理，不是原文全文。"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 border-t border-line-soft px-5 py-3">
-          <button type="button" disabled={!hasPrev} onClick={() => onStep(-1)} className="h-8 rounded-full px-3 text-[14px] text-ink-2 hover:text-ink disabled:opacity-40 active:scale-[0.97]">← 上一条</button>
-          <button type="button" disabled={!hasNext} onClick={() => onStep(1)} className="h-8 rounded-full px-3 text-[14px] text-ink-2 hover:text-ink disabled:opacity-40 active:scale-[0.97]">下一条 →</button>
-          <button type="button" onClick={onClose} className="ml-auto h-8 rounded-full px-3 text-[14px] text-ink-2 ring-1 ring-inset ring-line hover:text-ink active:scale-[0.97]">返回列表</button>
-          <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1 rounded-full bg-accent px-4 text-[14px] font-medium text-accent-contrast active:scale-[0.97]">
-            查看原帖{host ? <span className="text-[12px] opacity-80">{host}</span> : null} ↗
+          <button type="button" disabled={!hasPrev} onClick={() => onStep(-1)} className="h-8 rounded-full px-3 text-[0.875rem] text-ink-2 hover:text-ink disabled:opacity-40 active:scale-[0.97]">← 上一条</button>
+          <button type="button" disabled={!hasNext} onClick={() => onStep(1)} className="h-8 rounded-full px-3 text-[0.875rem] text-ink-2 hover:text-ink disabled:opacity-40 active:scale-[0.97]">下一条 →</button>
+          <button type="button" onClick={onClose} className="ml-auto h-8 rounded-full px-3 text-[0.875rem] text-ink-2 ring-1 ring-inset ring-line hover:text-ink active:scale-[0.97]">返回列表</button>
+          <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1 rounded-full bg-accent px-4 text-[0.875rem] font-medium text-accent-contrast active:scale-[0.97]">
+            查看原帖{host ? <span className="text-[0.75rem] opacity-80">{host}</span> : null} ↗
           </a>
         </div>
       </div>

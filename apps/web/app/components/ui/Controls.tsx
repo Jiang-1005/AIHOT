@@ -8,7 +8,7 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 type Size = "md" | "lg";
-const SIZES: Record<Size, string> = { md: "h-11 px-4 text-[14px] lg:h-9", lg: "h-11 px-5 text-[14px]" };
+const SIZES: Record<Size, string> = { md: "h-11 px-4 text-[0.875rem] lg:h-9", lg: "h-11 px-5 text-[0.875rem]" };
 
 /** The pill button's classes, for links that look like buttons. */
 export function buttonClass(variant: Variant = "secondary", size: Size = "md"): string {
@@ -20,7 +20,7 @@ export function Select({ className = "", children, ...rest }: SelectHTMLAttribut
   return (
     <span className={`relative inline-flex ${className}`}>
       <select
-        className="h-11 w-full cursor-pointer appearance-none rounded-full border border-line-strong bg-surface py-0 pl-4 pr-8 text-[16px] text-ink-2 outline-none lg:h-8 lg:text-[14px] transition-colors hover:border-ink-4 focus:border-accent"
+        className="h-11 w-full cursor-pointer appearance-none rounded-full border border-line-strong bg-surface py-0 pl-4 pr-8 text-[1rem] text-ink-2 outline-none lg:h-8 lg:text-[0.875rem] transition-colors hover:border-ink-4 focus:border-accent"
         {...rest}
       >
         {children}
@@ -43,8 +43,8 @@ export function ToggleChip({ on, onToggle, children, size = "md" }: { on: boolea
       onClick={onToggle}
       className={`inline-flex shrink-0 select-none items-center whitespace-nowrap rounded-full border font-medium transition-colors duration-150 active:scale-[0.98] ${
         compact
-          ? "h-auto gap-1 py-1 pl-2 pr-3 text-[12px]"
-          : "h-11 gap-2 pl-2 pr-4 text-[14px] lg:h-8"
+          ? "h-auto gap-1 py-1 pl-2 pr-3 text-[0.75rem]"
+          : "h-11 gap-2 pl-2 pr-4 text-[0.875rem] lg:h-8"
       } ${on ? "border-accent/35 bg-accent-soft text-accent" : "border-line-strong bg-surface text-ink-2 hover:border-ink-4 hover:text-ink"}`}
     >
       <span aria-hidden="true" className={`inline-flex items-center justify-center rounded-full border transition-colors duration-150 ${compact ? "size-3.5" : "size-4"} ${on ? "border-accent bg-accent text-accent-contrast" : "border-line-strong"}`}>

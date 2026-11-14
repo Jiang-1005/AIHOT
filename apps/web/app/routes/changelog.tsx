@@ -44,7 +44,7 @@ function ReleaseBody({ lines }: { lines: string[] }) {
     else if (Array.isArray(last)) last.push(line.slice(2));
     else blocks.push([line.slice(2)]);
   }
-  const text = "mt-2 max-w-[52em] text-[14px] leading-[1.8] text-ink-3";
+  const text = "mt-2 max-w-[52em] text-[0.875rem] leading-[1.8] text-ink-3";
   return blocks.map((b, i) =>
     Array.isArray(b) ? (
       <ul key={i} className={`${text} space-y-1`}>
@@ -71,10 +71,10 @@ function Day({ date, releases, id }: { date: string; releases: Release[]; id?: s
   return (
     <section id={id} className="card scroll-mt-[calc(var(--bar-h)+1.5rem)] px-5 lg:px-7">
       <h2 className="flex items-baseline gap-3 border-b border-line-soft py-4">
-        <time dateTime={date} className="text-[20px] font-bold text-ink">
+        <time dateTime={date} className="text-[1.25rem] font-bold text-ink">
           {h.label}
         </time>
-        <span className="text-[12px] text-ink-4">{h.weekday}</span>
+        <span className="text-[0.75rem] text-ink-4">{h.weekday}</span>
       </h2>
       <ol>
         {releases.map((r) => (
@@ -83,15 +83,15 @@ function Day({ date, releases, id }: { date: string; releases: Release[]; id?: s
             className={`grid gap-x-8 gap-y-2 border-b border-line-soft py-5 last:border-b-0 sm:grid-cols-[88px_minmax(0,1fr)] ${r.urgent ? "-mx-5 border-l-4 border-l-hot bg-hot-soft pl-4 pr-5 lg:-mx-7 lg:pl-6 lg:pr-7" : ""}`}
           >
             <div className="flex items-center gap-3 sm:block">
-              <span className="mono block text-[14px] text-ink-3">{r.time}</span>
-              <span className="inline-flex items-center gap-2 text-[12px] text-ink-4 sm:mt-2">
+              <span className="mono block text-[0.875rem] text-ink-3">{r.time}</span>
+              <span className="inline-flex items-center gap-2 text-[0.75rem] text-ink-4 sm:mt-2">
                 <span className={`size-1.5 rounded-full ${r.urgent ? "bg-hot" : KIND_DOT[r.kind]}`} aria-hidden="true" />
                 {r.kind}
               </span>
             </div>
             <article className={`min-w-0 sm:border-l sm:pl-8 ${r.urgent ? "sm:border-hot/40" : "sm:border-line"}`}>
-              {r.urgent && <span className="mb-2 inline-flex rounded-full bg-hot px-3 py-1 text-[12px] font-semibold text-white">重要</span>}
-              <h3 className={`text-[14px] font-bold leading-snug ${r.urgent ? "text-hot" : "text-ink"}`}>{r.title}</h3>
+              {r.urgent && <span className="mb-2 inline-flex rounded-full bg-hot px-3 py-1 text-[0.75rem] font-semibold text-white">重要</span>}
+              <h3 className={`text-[0.875rem] font-bold leading-snug ${r.urgent ? "text-hot" : "text-ink"}`}>{r.title}</h3>
               <ReleaseBody lines={r.body} />
             </article>
           </li>
@@ -149,11 +149,11 @@ export default function ChangelogPage() {
               type="button"
               onClick={() => setKind(k)}
               aria-pressed={kind === k}
-              className={`flex w-full items-center gap-3 rounded-control px-2 py-2 text-left text-[14px] transition-colors ${kind === k ? "bg-well font-medium text-ink" : "text-ink-2 hover:bg-bg-sunk hover:text-ink"}`}
+              className={`flex w-full items-center gap-3 rounded-control px-2 py-2 text-left text-[0.875rem] transition-colors ${kind === k ? "bg-well font-medium text-ink" : "text-ink-2 hover:bg-bg-sunk hover:text-ink"}`}
             >
               <span className={`size-1.5 rounded-full ${k ? KIND_DOT[k] : "bg-ink-2"}`} aria-hidden="true" />
               <span className="flex-1">{k ?? "全部"}</span>
-              <span className="num text-[12px] text-ink-4">{k ? data.releases.filter((r) => r.kind === k).length : data.releases.length}</span>
+              <span className="num text-[0.75rem] text-ink-4">{k ? data.releases.filter((r) => r.kind === k).length : data.releases.length}</span>
             </button>
           ))}
         </div>
@@ -163,16 +163,16 @@ export default function ChangelogPage() {
           {[...months.entries()].map(([month, m]) => {
             const [y, mo] = month.split("-").map(Number) as [number, number];
             return (
-              <a key={month} href={`#d-${m.first}`} className="flex items-center justify-between rounded-control px-2 py-2 text-[14px] text-ink-2 transition-colors hover:bg-bg-sunk hover:text-ink">
-                {y} 年 {mo} 月<span className="num text-[12px] text-ink-4">{m.count} 条</span>
+              <a key={month} href={`#d-${m.first}`} className="flex items-center justify-between rounded-control px-2 py-2 text-[0.875rem] text-ink-2 transition-colors hover:bg-bg-sunk hover:text-ink">
+                {y} 年 {mo} 月<span className="num text-[0.75rem] text-ink-4">{m.count} 条</span>
               </a>
             );
           })}
         </nav>
       </AsideCard>
       <AsideCard title="有想法或遇到问题">
-        <p className="text-[14px] leading-[1.75] text-ink-3">想要的功能、用着不顺的地方，都可以在反馈页告诉我们。</p>
-        <IntentLink viewTransition to="/feedback" className="mt-3 inline-flex items-center gap-1 text-[14px] font-medium text-accent hover:underline">
+        <p className="text-[0.875rem] leading-[1.75] text-ink-3">想要的功能、用着不顺的地方，都可以在反馈页告诉我们。</p>
+        <IntentLink viewTransition to="/feedback" className="mt-3 inline-flex items-center gap-1 text-[0.875rem] font-medium text-accent hover:underline">
           去反馈 <IconChevronRight size={14} />
         </IntentLink>
       </AsideCard>
@@ -184,8 +184,8 @@ export default function ChangelogPage() {
     <PhoneBar back={{ to: "/more", label: "我的" }} title="更新日志" />
     <ReadingLayout aside={aside}>
       <header className="pb-6">
-        <h1 data-page-title="" className="text-[28px] font-semibold leading-[1.3] text-ink">更新日志</h1>
-        <p className="mt-2 text-[14px] text-ink-3">新功能、调整、下线，都写在这里。</p>
+        <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">更新日志</h1>
+        <p className="mt-2 text-[0.875rem] text-ink-3">新功能、调整、下线，都写在这里。</p>
       </header>
       <div className="space-y-4">
         {[...groups.entries()].map(([date, releases]) => {

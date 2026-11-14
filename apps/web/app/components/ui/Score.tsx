@@ -29,11 +29,11 @@ export function ScoreLabel({ score, compact = false }: { score: number | null; c
     >
       {!compact && (
         <>
-          <span className="text-[12px] font-medium leading-none opacity-80">AI 评分</span>
+          <span className="text-[0.75rem] font-medium leading-none opacity-80">AI 评分</span>
           <span className="h-2.5 w-px bg-current opacity-25" aria-hidden="true" />
         </>
       )}
-      <span className="mono text-[14px] font-bold leading-none tabular-nums">{value}</span>
+      <span className="mono text-[0.875rem] font-bold leading-none tabular-nums">{value}</span>
     </span>
   );
 }

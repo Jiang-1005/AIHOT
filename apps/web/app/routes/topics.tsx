@@ -65,7 +65,7 @@ export default function TopicsPage() {
   const selected = !facetsEqualEmpty(value);
   const [sheet, setSheet] = useState(false);
   const unreadOnly = useUnreadOnly();
-  const chip = (on: boolean) => `inline-flex rounded-full px-3 py-1 text-[12px] ${on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-2"}`;
+  const chip = (on: boolean) => `inline-flex rounded-full px-3 py-1 text-[0.75rem] ${on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-2"}`;
 
   const facetRows = (
     <FacetChipRows
@@ -89,8 +89,8 @@ export default function TopicsPage() {
         title="主题"
       />
       <header className="pb-2 pt-3 lg:pt-1">
-        <h1 data-page-title="" className="text-[28px] font-semibold leading-[1.3] text-ink">主题</h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-ink-3">按五组标签浏览媒体精选与往期报道。</p>
+        <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">主题</h1>
+        <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-3">按五组标签浏览媒体精选与往期报道。</p>
       </header>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -137,8 +137,8 @@ export default function TopicsPage() {
           <button type="button" className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={() => setSheet(false)} />
           <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface p-4 pb-8 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[16px] font-semibold text-ink">筛选</h2>
-              <button type="button" className="text-[14px] text-ink-3" onClick={() => setSheet(false)}>完成</button>
+              <h2 className="text-[1rem] font-semibold text-ink">筛选</h2>
+              <button type="button" className="text-[0.875rem] text-ink-3" onClick={() => setSheet(false)}>完成</button>
             </div>
             {facetRows}
           </div>
