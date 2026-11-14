@@ -107,20 +107,25 @@ if (!existsSync(client) || !existsSync(server)) {
 cpSync(client, path.join(OUT, "static"), { recursive: true });
 
 // The CDN compresses on the fly at a low brotli level (framework.js: 111 KB vs 93 KB at level 11).
-// Hashed JS/CSS ship a level-11 twin that a route below serves to clients that accept br.
+// Hashed JS/CSS over 8 KB (where the difference is worth a file) ship a level-11 twin that a route below
+// serves to clients that accept br.
 const ASSET_TYPES = { ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
 const overrides = {};
+const brotliNames = [];
 const assetsDir = path.join(OUT, "static/assets");
 for (const name of existsSync(assetsDir) ? readdirSync(assetsDir) : []) {
   const type = ASSET_TYPES[path.extname(name)];
   if (!type) continue;
   const raw = readFileSync(path.join(assetsDir, name));
+  if (raw.length < 8192) continue;
+  brotliNames.push(name);
   const br = brotliCompressSync(raw, {
     params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11, [zlibConstants.BROTLI_PARAM_SIZE_HINT]: raw.length },
   });
   writeFileSync(path.join(assetsDir, `${name}.br`), br);
   overrides[`assets/${name}.br`] = { contentType: type };
 }
+const brotliAssets = `^/assets/(${brotliNames.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})$`;
 
 const apiRoot = path.join(OUT, "functions/api.func");
 const apiFile = path.join(apiRoot, "packages/backend/src/index.js");
@@ -261,12 +266,12 @@ const config = {
     { src: "/(.*)", headers: { "X-Robots-Tag": "noindex, nofollow" }, continue: true },
     { src: "^/assets/(.*)$", headers: { "Cache-Control": "public, max-age=31536000, immutable" }, continue: true },
     {
-      src: "^/assets/([^/]+\\.(?:js|css))$",
+      src: brotliAssets,
       has: [{ type: "header", key: "accept-encoding", value: "(?:^|.*[\\s,])br(?:[\\s,;].*|$)" }],
       headers: { "Content-Encoding": "br", Vary: "Accept-Encoding" },
       dest: "/assets/$1.br",
     },
-    { src: "^/assets/([^/]+\\.(?:js|css))$", headers: { Vary: "Accept-Encoding" }, continue: true },
+    { src: brotliAssets, headers: { Vary: "Accept-Encoding" }, continue: true },
     { handle: "filesystem" },
     { src: "^/api(?:/.*)?$", dest: "/api" },
     { src: "^/(?:feed(?:\\.xml)?|rss(?:\\.xml)?|atom\\.xml|openapi-v1\\.json|llms\\.txt|robots\\.txt|sitemap\\.xml)(?:/.*)?$", dest: "/api" },
