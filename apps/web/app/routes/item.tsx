@@ -10,7 +10,7 @@ import { cachedPage, loadOr404 } from "../lib/api.server";
 import { loadFollowups } from "../features/item/followups.server";
 import { pageReuse } from "../lib/page-reuse";
 import { articleLd, breadcrumbLd, pageMeta, siteUrl, titled } from "../lib/seo";
-import { fullDateTime, timeAgo } from "../lib/format";
+import { collectedNote, fullDateTime, timeAgo } from "../lib/format";
 import { markRead } from "../lib/local-state";
 import { copyText } from "../lib/clipboard";
 import { SameEventBadge, SelectedBadge } from "../components/ui/Badge";
@@ -242,6 +242,7 @@ function ItemPreview({ preview }: { preview: FeedItemSummary }) {
   const isPost = isX && !preview.x!.article;
   // Without a reliable date from the original, the card's time is when it was collected, and says so.
   const shownAt = preview.publishedAt ?? preview.timelineAt;
+  const collected = collectedNote(preview.publishedAt, preview.timelineAt);
   return (
     <div className="mx-auto max-w-[var(--page-max-reading)] pb-8">
       <PhoneBar back={{ to: preview.selected ? "/" : "/all", label: preview.selected ? "精选" : "全部" }} title={isPost ? preview.x!.authorName : preview.title} />
@@ -252,6 +253,7 @@ function ItemPreview({ preview }: { preview: FeedItemSummary }) {
           <span>·</span>
           {!preview.publishedAt && <span>收录于</span>}
           <time dateTime={shownAt} className="mono">{fullDateTime(shownAt)}</time>
+          {collected && <span className="mono order-last basis-full text-[0.75rem] text-ink-4">{collected}</span>}
           {preview.selected && <span className="ml-1">{preview.sameEvent ? <SameEventBadge /> : <SelectedBadge />}</span>}
           {shownScore(preview.score) !== null && (
             <span className="ml-1">
@@ -358,6 +360,8 @@ function ItemView({ item, followups }: Loaded) {
   // Without a reliable date from the original, the time shown is when it was collected, labelled as such.
   const shownAt = item.publishedAt ?? item.discoveredAt;
   const timeLabel = item.publishedAt ? "发布时间" : "收录时间";
+  // The publish date leads; the day it was collected, when another, follows small on a line of its own.
+  const collected = collectedNote(item.publishedAt, item.discoveredAt);
   const summaryOnly = item.readingMode === "summary-only";
   const showOutline = item.outline.length >= 3;
   const originalLabel = isX ? "在 X 查看原推" : "打开原文";
@@ -446,6 +450,7 @@ function ItemView({ item, followups }: Loaded) {
       <div className="mt-1 text-[0.75rem] text-ink-4 empty:hidden" suppressHydrationWarning>
         {timeAgo(shownAt)}
       </div>
+      {collected && <div className="mono mt-1 text-[0.75rem] text-ink-4">{collected}</div>}
     </RailSection>
   );
   const outline = showOutline && <ArticleOutline outline={item.outline} />;
@@ -549,6 +554,7 @@ function ItemView({ item, followups }: Loaded) {
             {!item.publishedAt && <span>收录于</span>}
             <time dateTime={shownAt} className="mono">{fullDateTime(shownAt)}</time>
             <span className="empty:hidden" suppressHydrationWarning>{timeAgo(shownAt) && `· ${timeAgo(shownAt)}`}</span>
+            {collected && <span className="mono order-last basis-full text-[0.75rem] text-ink-4">{collected}</span>}
             {item.selected && (
               <span className="ml-1 side:hidden">
                 {item.sameEvent ? <SameEventBadge /> : <SelectedBadge />}

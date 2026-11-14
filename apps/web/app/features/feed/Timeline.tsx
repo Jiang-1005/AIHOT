@@ -12,7 +12,7 @@ import { IconChevronDown } from "../../components/icons";
 import { RingMark } from "@aihot/site/brand/Logo.tsx";
 import { EmptyState } from "../../components/ui/Page";
 import { beijingDate, beijingTime, beijingWeekday, monthDay } from "@aihot/contracts/time";
-import { byBeijingDay, weekdayShort } from "../../lib/format";
+import { byBeijingDay, rowDates, weekdayShort } from "../../lib/format";
 import { isHydrated } from "../../lib/hydration";
 import { markRead, setUnreadOnly, useReadSet, useUnreadOnly } from "../../lib/local-state";
 import { listPath, timelineApiParams } from "../../lib/seo";
@@ -118,8 +118,9 @@ export function slotClock(at: string | null | undefined): string | null {
   return beijingTime(at);
 }
 
-export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }: { at: string; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string }) {
-  const clock = slotClock(at);
+export function TimelineSlot({ at, publishedAt, children, fresh = false, delay = 0, dataKey }: { at: string; publishedAt?: string | null; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string }) {
+  // The rail leads with the publish date (rowDates); a list without one (policy, company updates) keeps its own time.
+  const { day, clock } = publishedAt === undefined ? { day: null, clock: slotClock(at) } : rowDates(publishedAt, at);
   return (
     <li
       data-card-key={dataKey}
@@ -128,7 +129,8 @@ export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }
     >
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
       <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-5 group-last/slot:border-b-0 lg:grid-cols-[56px_24px_minmax(0,1fr)] lg:border-b-0 lg:py-0">
-        <time dateTime={at} className="mono hidden text-ink-4 lg:block lg:pt-[24px] lg:text-[0.8125rem] lg:leading-[18px] lg:group-first/slot:pt-[16px]">
+        <time dateTime={publishedAt ?? at} className="mono hidden text-ink-4 lg:block lg:pt-[24px] lg:text-[0.8125rem] lg:leading-[18px] lg:group-first/slot:pt-[16px]">
+          {day && <span className="block text-[0.75rem]">{day}</span>}
           {clock ?? ""}
         </time>
         <span aria-hidden="true" className="hidden lg:block" />
@@ -345,7 +347,7 @@ export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnr
                     const fresh = freshKeys.has(c.key);
                     const delay = fresh ? Math.min(order++, 10) * 40 : 0;
                     return (
-                      <TimelineSlot key={c.key} dataKey={c.key} at={c.anchorAt} fresh={fresh} delay={delay}>
+                      <TimelineSlot key={c.key} dataKey={c.key} at={c.anchorAt} publishedAt={c.item.publishedAt} fresh={fresh} delay={delay}>
                         <FeedItem item={c.item} group={c.group} filters={filters} read={readSet.has(c.item.id) && !(unreadOnly && unreadVisible(c))} onOpen={markRead} at={c.anchorAt} />
                       </TimelineSlot>
                     );

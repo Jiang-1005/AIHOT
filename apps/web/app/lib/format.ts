@@ -68,6 +68,28 @@ export function fullDateTime(iso: string): string {
   return isDateOnly(iso) ? beijingDate(iso) : `${beijingDate(iso)} ${beijingTime(iso)}`;
 }
 
+/** The clock of a list time, or null for a time known only by its date (a bare YYYY-MM-DD or Beijing midnight). */
+function clockOf(at: string): string | null {
+  return /^\d{4}-\d{2}-\d{2}$/.test(at.trim()) || isDateOnly(at) ? null : beijingTime(at);
+}
+
+/**
+ * A list row's dates. The row sits under the day it was collected (`at`), but the date it leads with is when the
+ * original was published: its clock when that is the same day, else "11月13日 09:30" (or the date alone). Only then,
+ * on a second line, "收录 09:42": the day head above already names the collection day. No publish date: the list time.
+ */
+export function rowDates(publishedAt: string | null | undefined, at: string, now = Date.now()): { day: string | null; clock: string | null; collected: string | null } {
+  if (!publishedAt || beijingDate(publishedAt) === beijingDate(at)) return { day: null, clock: clockOf(publishedAt ?? at), collected: null };
+  const seen = clockOf(at);
+  return { day: monthDay(beijingDate(publishedAt), now), clock: clockOf(publishedAt), collected: seen && `收录 ${seen}` };
+}
+
+/** "收录 11月14日 09:42" beside a publish date of another day (an item's page), else null. */
+export function collectedNote(publishedAt: string | null | undefined, collectedAt: string): string | null {
+  if (!publishedAt || beijingDate(publishedAt) === beijingDate(collectedAt)) return null;
+  return `收录 ${isDateOnly(collectedAt) ? monthDay(beijingDate(collectedAt)) : monthDayTime(collectedAt)}`;
+}
+
 /** "9月24日 10:51" (Beijing), for lists that span days. */
 export function monthDayTime(iso: string): string {
   return `${monthDay(beijingDate(iso))} ${beijingTime(iso)}`;

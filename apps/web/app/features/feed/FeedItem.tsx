@@ -12,7 +12,7 @@ import { ITEM_COPY } from "@aihot/site";
 import { publicCopy } from "../../lib/public-copy";
 import { SameEventBadge, SelectedBadge } from "../../components/ui/Badge";
 import { ScoreLabel } from "../../components/ui/Score";
-import { slotClock } from "./Timeline";
+import { rowDates } from "../../lib/format";
 import { MediaThumbs, SourceLine, StarButton, readTone } from "./parts";
 import { GroupButton, GroupSources } from "./ReadingGroup";
 import { QuotedLine } from "../item/QuotedPost";
@@ -38,14 +38,17 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
   };
   const showSources = !!group && (group.additionalSourceCount > 0 || group.reportCount > 1);
   const tags = showTags ? item.tags.slice(0, 3) : [];
+  // Phones lead with the publish date in the source line; when the row was collected on a later day, "收录 09:42" follows.
+  const dates = at ? rowDates(item.publishedAt, at) : null;
+  const lead = dates && [dates.day, dates.clock].filter(Boolean).join(" ");
 
   return (
     <article className="relative min-w-0 lg:border-t lg:border-line lg:py-6 lg:group-first/slot:border-t-0 lg:group-first/slot:pt-4 lg:[&:has(a:hover)_h3]:text-accent" data-item-id={item.id}>
       <header className="flex min-h-[22px] items-center gap-2 text-[0.875rem] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
         <SourceLine item={item} className="text-ink-4" />
-        {at && slotClock(at) && (
-          <time dateTime={at} className="mono shrink-0 text-[0.75rem] lg:hidden">
-            · {slotClock(at)}
+        {lead && (
+          <time dateTime={item.publishedAt ?? at} className="mono shrink-0 text-[0.75rem] lg:hidden">
+            · {lead}
           </time>
         )}
         {item.selected && (
@@ -65,6 +68,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
           </span>
         </span>
       </header>
+      {dates?.collected && <p className="mono mt-1 text-[0.75rem] leading-[16px] text-ink-4">{dates.collected}</p>}
 
       {isX ? (
         item.summary ? <p className={`mt-2 whitespace-pre-line text-[0.875rem] leading-[1.75] line-clamp-5 lg:mt-2 lg:line-clamp-4 ${readTone(read, "text-ink")}`}>
