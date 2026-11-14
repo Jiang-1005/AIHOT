@@ -152,7 +152,7 @@ function CompanySection({ company, logoIndex, previewMax, expandAll, today }: { 
     <section className="min-w-0">
       <div className="mb-2 flex items-center gap-2">
         {logo ? <img src={logo} alt="" className="h-6 w-6 rounded object-contain" /> : null}
-        <h2 className="text-[17px] font-semibold text-ink">{company.name}</h2>
+        <h2 className="text-[16px] font-semibold text-ink">{company.name}</h2>
         {!company.empty ? <span className="text-[12px] text-ink-4">{company.items.length} 条</span> : null}
       </div>
       {company.empty ? (
@@ -161,7 +161,7 @@ function CompanySection({ company, logoIndex, previewMax, expandAll, today }: { 
         <>
           <CompanyDayList items={shown} today={today} />
           {hidden > 0 ? (
-            <button type="button" className="mt-2 text-[13px] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
+            <button type="button" className="mt-2 text-[14px] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
               {open ? "收起" : `展开全部（还有 ${hidden} 条）`}
             </button>
           ) : null}
@@ -188,7 +188,7 @@ function CompanyChips({ companies, active, allCount }: { companies: CompanyUpdat
               to={companyHref(chip.name)}
               preventScrollReset
               aria-current={on ? "page" : undefined}
-              className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium ring-1 transition-colors ${
                 on
                   ? "bg-surface text-ink ring-line shadow-[var(--shadow-thumb)] dark:bg-raised"
                   : "bg-well text-ink-3 ring-line-soft hover:text-ink"
@@ -224,14 +224,14 @@ export default function CompanyUpdatesPage() {
     <div className="pb-8">
       <PhoneBar
         leading={
-          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-2.5 pr-2 text-ink">
+          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-2 text-ink">
             <Wordmark size={17} />
           </Link>
         }
         title="国内公司动态"
       />
       <header className="mb-6">
-        <h1 data-page-title="" className="text-[24px] font-semibold leading-[1.3] text-ink">国内公司动态</h1>
+        <h1 data-page-title="" className="text-[28px] font-semibold leading-[1.3] text-ink">国内公司动态</h1>
         <p className="mt-2 text-[14px] leading-[1.7] text-ink-3">
           列出最近 90 天内已核对原文（或标明「未查到原文」）的报道。可按时间混看各公司，或按公司筛选。不走精选 60 分和 7 天/往期 30 天门槛，也不会把老条目送进首页精选。没有新动态的公司写「{EMPTY_COPY}」，不拿窗口外的旧稿凑数。
         </p>
@@ -260,7 +260,7 @@ export default function CompanyUpdatesPage() {
           <>
             <CompanyDayList items={timeShown} today={data.asOf} />
             {timeHidden > 0 ? (
-              <button type="button" className="mt-3 text-[13px] text-accent hover:underline" onClick={() => setTimeOpen((v) => !v)}>
+              <button type="button" className="mt-3 text-[14px] text-accent hover:underline" onClick={() => setTimeOpen((v) => !v)}>
                 {timeOpen ? "收起" : `展开全部（还有 ${timeHidden} 条）`}
               </button>
             ) : null}

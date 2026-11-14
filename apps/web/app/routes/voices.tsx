@@ -281,7 +281,7 @@ function FilterRow({ label, children }: { label: string; children: ReactNode }) 
   return (
     <div className="flex gap-2">
       <div className="w-16 shrink-0 pt-1 text-[12px] font-medium text-ink-4">{label}</div>
-      <div className="flex min-w-0 flex-wrap gap-1.5">{children}</div>
+      <div className="flex min-w-0 flex-wrap gap-2">{children}</div>
     </div>
   );
 }
@@ -558,14 +558,14 @@ export default function VoicesPage() {
     <div className="pb-8">
       <PhoneBar
         leading={
-          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-2.5 pr-2 text-ink">
+          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-2 text-ink">
             <Wordmark size={17} />
           </Link>
         }
         title="社区热帖"
       />
       <header className="mb-4">
-        <h1 data-page-title="" className="text-[24px] font-semibold leading-[1.3] text-ink">社区热帖</h1>
+        <h1 data-page-title="" className="text-[28px] font-semibold leading-[1.3] text-ink">社区热帖</h1>
         <p className="mt-2 text-[14px] leading-[1.7] text-ink-3">{label}</p>
         {fetchedAt ? <p className="mt-1 text-[12px] text-ink-4">数据截至 {fetchedAt}</p> : null}
       </header>
@@ -581,7 +581,7 @@ export default function VoicesPage() {
         </div>
       )}
 
-      <div className="mb-4 space-y-2.5">
+      <div className="mb-4 space-y-3">
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <FilterRow label="排序">
@@ -614,9 +614,9 @@ export default function VoicesPage() {
               <h2 className="text-[16px] font-semibold text-ink">筛选</h2>
               <div className="flex items-center gap-3">
                 {selected ? (
-                  <button type="button" className="text-[13px] text-ink-3" onClick={clearAll}>清空</button>
+                  <button type="button" className="text-[14px] text-ink-3" onClick={clearAll}>清空</button>
                 ) : null}
-                <button type="button" className="text-[13px] text-ink-3" onClick={() => setSheet(false)}>完成</button>
+                <button type="button" className="text-[14px] text-ink-3" onClick={() => setSheet(false)}>完成</button>
               </div>
             </div>
             <div className="mb-3">
@@ -641,7 +641,7 @@ export default function VoicesPage() {
             selected || platform !== "all" ? (
               <button
                 type="button"
-                className="text-[13px] text-accent hover:underline"
+                className="text-[14px] text-accent hover:underline"
                 onClick={() => { clearAll(); setPlatform("all"); }}
               >
                 清空
@@ -717,9 +717,9 @@ const VoiceTile = memo(function VoiceTile({ item, logoIndex }: { item: VoiceCard
       {open && summary ? <p className="voice-detail">{summary}</p> : null}
       {open && why ? <p className="voice-detail">和我们的关系：{why}</p> : null}
       {open && companies.length ? (
-        <div className="flex flex-wrap items-center gap-1.5 px-3 pt-2">
+        <div className="flex flex-wrap items-center gap-2 px-3 pt-2">
           {companies.map((name) => (
-            <span key={name} className="inline-flex items-center gap-1 text-[11px] text-ink-4">
+            <span key={name} className="inline-flex items-center gap-1 text-[12px] text-ink-4">
               <LogoMark name={name} src={logoFor(name, logoIndex)} />
               {name}
             </span>

@@ -64,7 +64,7 @@ function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
       <dt className="text-[12px] text-ink-4">{label}</dt>
-      <dd className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">{children}</dd>
+      <dd className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">{children}</dd>
     </div>
   );
 }
@@ -121,7 +121,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
     return { seen, last, peak, change, ticks, x, y, line, area, labels: timeTicks(t0, t1) };
   }, [series]);
   if (!geometry) {
-    return <p className="rounded-tile bg-bg-sunk px-4 py-8 text-center text-[13px] text-ink-4">还没有足够的连续观测数据，暂不绘制趋势。</p>;
+    return <p className="rounded-tile bg-bg-sunk px-4 py-8 text-center text-[14px] text-ink-4">还没有足够的连续观测数据，暂不绘制趋势。</p>;
   }
   const { seen, last, peak, change, ticks, x, y, line, area, labels } = geometry;
   const cur = active !== null ? seen[active] : null;
@@ -140,14 +140,14 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-start sm:justify-between">
         <dl className="grid grid-cols-3 gap-x-5 sm:flex sm:gap-x-10">
           <Stat label="可比范围当前">
-            <span className="mono text-[22px] font-semibold leading-none tracking-[-0.02em] text-ink">{Math.round(last.p!.heat)}</span>
+            <span className="mono text-[20px] font-semibold leading-none tracking-[-0.02em] text-ink">{Math.round(last.p!.heat)}</span>
           </Stat>
           <Stat label="可比范围峰值">
-            <span className="mono text-[22px] font-semibold leading-none tracking-[-0.02em] text-ink">{Math.round(peak.p!.heat)}</span>
+            <span className="mono text-[20px] font-semibold leading-none tracking-[-0.02em] text-ink">{Math.round(peak.p!.heat)}</span>
             <span className="num text-[12px] text-ink-4">{monthDayTime(new Date(peak.t).toISOString())}</span>
           </Stat>
           <Stat label="近 24 小时变化">
-            <span className={`mono text-[22px] font-semibold leading-none tracking-[-0.02em] ${change === null ? "text-ink-4" : change > 0 ? "text-hot" : "text-ink"}`}>
+            <span className={`mono text-[20px] font-semibold leading-none tracking-[-0.02em] ${change === null ? "text-ink-4" : change > 0 ? "text-hot" : "text-ink"}`}>
               {change === null ? "–" : `${change > 0 ? "+" : ""}${change}%`}
             </span>
           </Stat>
@@ -170,7 +170,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
 
       <div className="relative mt-6 h-[176px] pl-9 sm:h-[216px] lg:h-[236px]">
         {ticks.map((v) => (
-          <span key={v} className="num absolute left-0 w-7 -translate-y-1/2 text-right text-[11px] leading-none text-ink-4" style={{ top: `${y(v)}%` }} aria-hidden="true">
+          <span key={v} className="num absolute left-0 w-7 -translate-y-1/2 text-right text-[12px] leading-none text-ink-4" style={{ top: `${y(v)}%` }} aria-hidden="true">
             {v}
           </span>
         ))}
@@ -218,7 +218,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
           )}
           {cur && (
             <div
-              className="pointer-events-none absolute top-0 z-10 whitespace-nowrap rounded-control border border-line bg-raised px-2.5 py-1.5 text-[12px] shadow-[var(--shadow-pop)]"
+              className="pointer-events-none absolute top-0 z-10 whitespace-nowrap rounded-control border border-line bg-raised px-3 py-2 text-[12px] shadow-[var(--shadow-pop)]"
               style={x(cur.t) > 55 ? { right: `calc(${100 - x(cur.t)}% + 10px)` } : { left: `calc(${x(cur.t)}% + 10px)` }}
             >
               <div className="num text-ink-4">{monthDayTime(new Date(cur.t).toISOString())}</div>
@@ -231,13 +231,13 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
           )}
         </div>
       </div>
-      <div className="relative ml-9 mt-2.5 h-4" aria-hidden="true">
+      <div className="relative ml-9 mt-3 h-4" aria-hidden="true">
         {labels.map(({ t, label, wide }) => {
           const left = x(t);
           return (
             <span
               key={t}
-              className={`num absolute whitespace-nowrap text-[11px] leading-none text-ink-4 ${left < 6 ? "" : left > 94 ? "-translate-x-full" : "-translate-x-1/2"} ${wide ? "max-sm:hidden" : ""}`}
+              className={`num absolute whitespace-nowrap text-[12px] leading-none text-ink-4 ${left < 6 ? "" : left > 94 ? "-translate-x-full" : "-translate-x-1/2"} ${wide ? "max-sm:hidden" : ""}`}
               style={{ left: `${left}%` }}
             >
               {label}

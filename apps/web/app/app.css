@@ -49,6 +49,8 @@
   --color-accent-softer: var(--accent-softer);
   --color-accent-contrast: var(--accent-contrast);
   --color-note: var(--note);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
   --color-hot: var(--hot);
   --color-hot-soft: var(--hot-soft);
   --color-amber: var(--amber);
@@ -101,17 +103,21 @@
   --bar-h: 48px;
   --gutter-l: max(16px, env(safe-area-inset-left));
   --gutter-r: max(16px, env(safe-area-inset-right));
-  color-scheme: light;
+  /* Follows <meta name="color-scheme"> (lib/local-state applyTheme), per modern-web-guidance dark-mode-toggle. */
+  color-scheme: light dark;
+  &:has(> head > meta[name="color-scheme"][content="dark"]) { color-scheme: dark; }
+  &:has(> head > meta[name="color-scheme"][content="light"]) { color-scheme: light; }
+  /* Three grounds only (DESIGN.md): page, card white, and the light ink-green for selected/hover.
+     Sunk wells, the sidebar and day bars reuse the page or card ground. */
   --bg: #faf9f6;
-  --bg-sunk: #f3f3ef;
-  --bg-muted: #e9ede9;
-  /* Sunk fills: wells, pill tracks, search fields, quiet badges. */
-  --well: var(--bg-sunk);
+  --bg-sunk: var(--bg);
+  --bg-muted: var(--accent-soft);
+  --well: var(--bg);
   --surface: #ffffff;
-  --surface-2: #fdfdfb;
-  --raised: #ffffff;
-  --sidebar: #fdfdfb;
-  --daybar: #f0f2ee;
+  --surface-2: var(--surface);
+  --raised: var(--surface);
+  --sidebar: var(--surface);
+  --daybar: var(--bg);
   --ink: #202a30;
   --ink-2: #303c42;
   --ink-3: #59656b;
@@ -119,24 +125,27 @@
   --line: #dfe4e1;
   --line-strong: #d1d9d5;
   --line-soft: #e9ede9;
+  /* One accent (ink green). Orange is reserved for 未查到原文 / 未核实. */
   --accent: #176b75;
   --accent-ink: #145f68;
   --accent-soft: rgba(23, 107, 117, 0.08);
-  --accent-softer: rgba(23, 107, 117, 0.05);
+  --accent-softer: var(--accent-soft);
   --accent-contrast: #ffffff;
-  --note: #526f72;
-  --hot: #b3402a;
-  --hot-soft: rgba(179, 64, 42, 0.08);
-  --amber: #b8873a;
-  --amber-ink: #7c5a24;
-  --amber-soft: rgba(184, 135, 58, 0.1);
-  --ok: #2f7d5c;
-  --ok-soft: rgba(47, 125, 92, 0.1);
-  --ok-ink: #2a6e51;
-  --rank-1: #b3402a;
-  --rank-2: #a3642f;
-  --rank-3: #96702e;
-  --rank-rest: #6b7684;
+  --warn: #b4501c;
+  --warn-soft: rgba(192, 86, 33, 0.1);
+  --note: var(--ink-3);
+  --hot: var(--accent);
+  --hot-soft: var(--accent-soft);
+  --amber: var(--accent);
+  --amber-ink: var(--accent-ink);
+  --amber-soft: var(--accent-soft);
+  --ok: var(--accent);
+  --ok-soft: var(--accent-soft);
+  --ok-ink: var(--accent-ink);
+  --rank-1: var(--accent);
+  --rank-2: var(--accent);
+  --rank-3: var(--accent);
+  --rank-rest: var(--ink-4);
   --shadow-card: 0 1px 2px rgba(32, 42, 48, 0.025);
   --shadow-card-hover: 0 3px 12px rgba(32, 42, 48, 0.055);
   --shadow-soft: 0 4px 12px rgba(28, 39, 51, 0.06);
@@ -160,16 +169,15 @@
 }
 
 [data-theme="dark"] {
-  color-scheme: dark;
   --bg: #13191c;
-  --bg-sunk: #182024;
-  --bg-muted: #202a2f;
-  --well: color-mix(in oklab, var(--bg-muted) 60%, transparent);
+  --bg-sunk: var(--bg);
+  --bg-muted: var(--accent-soft);
+  --well: var(--bg);
   --surface: #1a2226;
-  --surface-2: #1d272b;
+  --surface-2: var(--surface);
   --raised: #202a2f;
-  --sidebar: #161e21;
-  --daybar: #182024;
+  --sidebar: var(--surface);
+  --daybar: var(--bg);
   --ink: #e7eceb;
   --ink-2: #d2dada;
   --ink-3: #a5b0b3;
@@ -180,21 +188,23 @@
   --accent: #12ccd8;
   --accent-ink: #2ce2e8;
   --accent-soft: rgba(18, 204, 216, 0.12);
-  --accent-softer: rgba(18, 204, 216, 0.06);
+  --accent-softer: var(--accent-soft);
   --accent-contrast: #000000;
-  --note: #8fb8a8;
-  --hot: #d86a52;
-  --hot-soft: rgba(216, 106, 82, 0.12);
-  --amber: #d3b26a;
-  --amber-ink: #d3b26a;
-  --amber-soft: rgba(211, 178, 106, 0.12);
-  --ok: #5fc79a;
-  --ok-soft: rgba(95, 199, 154, 0.12);
-  --ok-ink: #7fd1ad;
-  --rank-1: #d86a52;
-  --rank-2: #d18a5e;
-  --rank-3: #d3b26a;
-  --rank-rest: #7b869a;
+  --warn: #e8a070;
+  --warn-soft: rgba(192, 86, 33, 0.18);
+  --note: var(--ink-3);
+  --hot: var(--accent);
+  --hot-soft: var(--accent-soft);
+  --amber: var(--accent);
+  --amber-ink: var(--accent-ink);
+  --amber-soft: var(--accent-soft);
+  --ok: var(--accent);
+  --ok-soft: var(--accent-soft);
+  --ok-ink: var(--accent-ink);
+  --rank-1: var(--accent);
+  --rank-2: var(--accent);
+  --rank-3: var(--accent);
+  --rank-rest: var(--ink-4);
   --shadow-card: none;
   --shadow-card-hover: none;
   --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.35);
@@ -271,8 +281,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    height: 1.625rem;
-    padding: 0 0.625rem;
+    height: 2rem;
+    padding: 0 0.75rem;
     border-radius: 9999px;
     font-size: 12px;
     color: var(--ink-4);
@@ -463,13 +473,13 @@
  */
 .prose {
   color: var(--prose-ink);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.8;
   letter-spacing: 0.012em;
   overflow-wrap: anywhere;
 }
 @media (min-width: 80rem) {
-  .prose { font-size: 18px; }
+  .prose { font-size: 16px; }
 }
 /* One gap between any two blocks, whatever they are; headings and figures adjust it below. Paragraphs
    need no margin reset of their own (preflight has one): a `.prose p` rule outranked this one and left a
@@ -483,9 +493,9 @@
   letter-spacing: 0;
   scroll-margin-top: 88px;
 }
-.prose h2 { font-size: 1.26em; margin-top: 2.2em; }
-.prose h3 { font-size: 1.1em; margin-top: 1.8em; }
-.prose h4, .prose h5 { font-size: 1em; margin-top: 1.5em; }
+.prose h2 { font-size: 20px; margin-top: 2.2em; }
+.prose h3 { font-size: 16px; margin-top: 1.8em; }
+.prose h4, .prose h5 { font-size: 16px; margin-top: 1.5em; }
 .prose :is(h2, h3, h4, h5) + * { margin-top: 0.7em; }
 .prose a {
   color: var(--accent);
@@ -513,7 +523,7 @@
   background: var(--bg-sunk);
 }
 .prose figure { margin: 1.5em 0; }
-.prose figcaption { font-size: 13px; color: var(--ink-4); text-align: center; margin-top: 0.6em; }
+.prose figcaption { font-size: 14px; color: var(--ink-4); text-align: center; margin-top: 0.6em; }
 .prose figcaption > :is(b, strong):first-child { margin-right: 0.5em; }
 /* A figure whose picture did not come through and that is left with only words (a chart's own
    description, a panel of numbers) stands apart from the running text in a well. */
@@ -523,14 +533,14 @@
   background: var(--well);
   box-shadow: inset 0 0 0 1px var(--line-soft);
   color: var(--ink-2);
-  font-size: 0.88em;
+  font-size: 14px;
   line-height: 1.7;
 }
 .prose figure:not(:has(img, picture, video, table, pre, blockquote)) > * + * { margin-top: 0.5em; }
 .prose figure:not(:has(img, picture, video, table, pre, blockquote)) figcaption { text-align: left; }
 .prose code {
   font-family: var(--font-mono);
-  font-size: 0.86em;
+  font-size: 14px;
   background: var(--code-bg);
   border: 1px solid var(--line-soft);
   padding: 0.1em 0.35em;
@@ -539,7 +549,7 @@
 .prose pre {
   position: relative;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
   background: var(--code-bg);
   border: 1px solid var(--line);
@@ -580,13 +590,13 @@
 
 /* A quoted post's words, set as the post's own text is (QuotedPost), at the quote box's size: its
    original language under 原文 smaller and quieter. */
-.prose.prose-quote { font-size: 15px; line-height: 1.75; letter-spacing: 0; color: var(--ink-2); }
+.prose.prose-quote { font-size: 14px; line-height: 1.75; letter-spacing: 0; color: var(--ink-2); }
 .prose.prose-quote-original { font-size: 14px; line-height: 1.7; letter-spacing: 0; color: var(--ink-3); }
 .prose:is(.prose-quote, .prose-quote-original) > * + * { margin-top: 0.75em; }
 
 /* Policy pages read smaller and quieter than article bodies, with numbered sections set apart. */
 .prose-compact {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.85;
   color: var(--ink-2);
 }
@@ -594,7 +604,7 @@
   .prose-compact { font-size: 16px; line-height: 1.85; }
 }
 .prose-compact h2 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   margin-top: 2.2em;
   padding-top: 1.4em;
@@ -605,7 +615,7 @@
   margin-top: 1.6em;
 }
 .prose-compact table {
-  font-size: 13px;
+  font-size: 14px;
 }
 .prose-compact td:first-child {
   color: var(--ink);
@@ -616,7 +626,7 @@
 /* Report pages read on a faintly toned paper in the light theme, lighter than the site's page ground;
    the archive column is halfway between the site sidebar and white. */
 :root:not([data-theme="dark"]) body:has(.report-shell) {
-  background: color-mix(in srgb, var(--bg) 60%, var(--surface));
+  background: var(--bg);
 }
 
 
@@ -655,7 +665,7 @@
 }
 .voice-cover-title {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 650;
   line-height: 1.45;
   color: var(--ink);
@@ -665,7 +675,7 @@
   overflow: hidden;
 }
 @media (min-width: 768px) {
-  .voice-cover-title { font-size: 18px; }
+  .voice-cover-title { font-size: 16px; }
 }
 .voice-cover-badges {
   display: flex;
@@ -679,7 +689,7 @@
   align-items: center;
   border-radius: 3px;
   padding: 1px 6px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.4;
   background: #EFECE6;
@@ -704,7 +714,7 @@
 .voice-detail {
   margin: 0;
   padding: 8px 12px 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
   color: var(--ink-3);
 }
@@ -715,7 +725,7 @@
   min-width: 0;
   overflow: hidden;
   padding: 8px 12px 10px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
   color: var(--ink-4);
   white-space: nowrap;
@@ -726,7 +736,7 @@
   border: 0;
   background: none;
   color: var(--accent);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
 }
 .voice-expand:hover {
@@ -743,7 +753,7 @@
   color: #5C6568;
   border: 1px solid #E4E0D8;
   padding: 1px 6px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -761,7 +771,7 @@
   border-radius: 3px;
   background: transparent;
   color: #6A7274;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1;
 }

@@ -31,7 +31,7 @@ export function CodeBlock({ code, lang, title, wrap = false, className = "my-4" 
         <span className="text-[12px] text-ink-4">{title ?? lang ?? ""}</span>
         <CopyButton text={code} />
       </div>
-      <pre className={`mono bg-bg-sunk/60 px-4 py-4 text-[12.5px] leading-[1.75] text-ink-2 dark:bg-bg-muted/40 ${wrap ? "whitespace-pre-wrap break-words" : "overflow-x-auto"}`}>
+      <pre className={`mono bg-bg-sunk/60 px-4 py-4 text-[14px] leading-[1.75] text-ink-2 dark:bg-bg-muted/40 ${wrap ? "whitespace-pre-wrap break-words" : "overflow-x-auto"}`}>
         <code>{code}</code>
       </pre>
     </div>

@@ -60,8 +60,8 @@ function toggle(list: string[], value: string): string[] {
 }
 
 function chipClass(on: boolean): string {
-  return `inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] leading-none transition-colors ${
-    on ? "bg-ink text-white" : "bg-bg-sunk text-ink-2 hover:text-ink"
+  return `inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[12px] leading-none transition-colors ${
+    on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-2 hover:text-ink"
   }`;
 }
 
@@ -69,7 +69,7 @@ export function LogoMark({ name, src }: { name: string; src?: string }) {
   const [broken, setBroken] = useState(false);
   const ch = name.trim().charAt(0) || "?";
   const fallback = (
-    <span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center rounded-[3px] bg-bg-muted text-[10px] font-semibold text-ink-3">
+    <span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center rounded-[3px] bg-bg-muted text-[12px] font-semibold text-ink-3">
       {ch}
     </span>
   );
@@ -143,7 +143,7 @@ function FilterRow({ label, children }: { label: string; children: ReactNode }) 
   return (
     <div className="flex gap-2">
       <div className="w-16 shrink-0 pt-1 text-[12px] font-medium text-ink-4">{label}</div>
-      <div className="flex min-w-0 flex-wrap gap-1.5">{children}</div>
+      <div className="flex min-w-0 flex-wrap gap-2">{children}</div>
     </div>
   );
 }
@@ -170,11 +170,11 @@ export function SelectedFacetBars({
   });
   if (!pills.length) return null;
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-2">
       {pills.map((p) => (
-        <button key={p.key} type="button" onClick={p.onRemove} className="inline-flex items-center gap-1 rounded-full bg-ink px-2.5 py-1 text-[12px] text-white">
+        <button key={p.key} type="button" onClick={p.onRemove} className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-[12px] text-white">
           {p.label}
-          <span aria-hidden="true" className="text-[11px] opacity-70">×</span>
+          <span aria-hidden="true" className="text-[12px] opacity-70">×</span>
         </button>
       ))}
       <button type="button" onClick={onClearAll} className="text-[12px] text-accent hover:underline">
@@ -211,7 +211,7 @@ export function FacetChipRows({
   const companyList = showMore ? [...companies.visible, ...companies.more] : companies.visible;
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {extraRows}
       <FilterRow label="主题">
         {vocab.topic.map((v) => (

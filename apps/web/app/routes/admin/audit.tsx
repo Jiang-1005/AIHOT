@@ -36,7 +36,7 @@ export default function Audit({ loaderData }: Route.ComponentProps) {
           empty="没有记录"
           columns={[
             { key: "t", label: "时间", render: (r) => <span className="num whitespace-nowrap">{bj(r.created_at, true)}</span> },
-            { key: "a", label: "操作", render: (r) => <span className="font-mono text-[12.5px] text-ink">{r.action}</span> },
+            { key: "a", label: "操作", render: (r) => <span className="font-mono text-[14px] text-ink">{r.action}</span> },
             { key: "s", label: "对象", render: (r) => subjectLink(r.subject) },
             { key: "who", label: "操作人", render: (r) => r.actor },
             { key: "r", label: "原因", render: (r) => <span className="text-ink-2">{r.reason}</span> },

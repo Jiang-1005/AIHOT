@@ -76,14 +76,14 @@ export default function PolicyUpdatesPage() {
     <div className="pb-8">
       <PhoneBar
         leading={
-          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-2.5 pr-2 text-ink">
+          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-2 text-ink">
             <Wordmark size={17} />
           </Link>
         }
         title="国内政策"
       />
       <header className="mb-6">
-        <h1 data-page-title="" className="text-[24px] font-semibold leading-[1.3] text-ink">国内政策</h1>
+        <h1 data-page-title="" className="text-[28px] font-semibold leading-[1.3] text-ink">国内政策</h1>
         <p className="mt-2 text-[14px] leading-[1.7] text-ink-3">
           以近 90 天政策补录为准，已核对原文（或标明「未查到原文」），按文章自己的日期倒序。征求意见稿会标明「征求意见稿，未施行」。不走精选 7 天和往期 30 天新鲜度规则，也不会把老条目送进首页精选。
         </p>
@@ -105,7 +105,7 @@ export default function PolicyUpdatesPage() {
             render={(item) => <PolicyCard item={item} />}
           />
           {hidden > 0 ? (
-            <button type="button" className="mt-3 text-[13px] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
+            <button type="button" className="mt-3 text-[14px] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
               {open ? "收起" : `展开全部（还有 ${hidden} 条）`}
             </button>
           ) : null}

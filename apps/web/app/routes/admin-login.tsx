@@ -36,11 +36,11 @@ export default function AdminLogin() {
       <div className="w-full max-w-[360px]">
         <div className="flex items-center justify-center gap-2">
           <Wordmark size={28} className="text-ink" />
-          <span className="text-[15px] font-semibold text-ink-3">后台</span>
+          <span className="text-[14px] font-semibold text-ink-3">后台</span>
         </div>
         <form method="post" action="/api/auth/password" className="card mt-8 p-6">
           <input type="hidden" name="return" value={returnTo} />
-          <label htmlFor="password" className="block text-[13px] font-medium text-ink-2">
+          <label htmlFor="password" className="block text-[14px] font-medium text-ink-2">
             管理员密码
           </label>
           <input
@@ -53,7 +53,7 @@ export default function AdminLogin() {
             className="mt-2 h-10 w-full rounded-full border border-line-strong bg-surface px-4 text-[14px] text-ink outline-none transition-colors focus:border-accent"
           />
           {message && (
-            <p role="alert" className="mt-3 text-[12.5px] leading-relaxed text-hot">
+            <p role="alert" className="mt-3 text-[14px] leading-relaxed text-hot">
               {message}
             </p>
           )}

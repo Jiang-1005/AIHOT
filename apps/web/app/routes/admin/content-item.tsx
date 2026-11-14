@@ -24,10 +24,10 @@ function Step({ title, meta, children, tone = "accent", last }: { title: ReactNo
       {!last && <span className="absolute left-[7px] top-4 h-full w-px bg-line-strong" aria-hidden />}
       <span className={`absolute left-[3px] top-[7px] size-[9px] rounded-full ring-4 ring-bg ${dot}`} aria-hidden />
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <h3 className="text-[13.5px] font-semibold text-ink">{title}</h3>
+        <h3 className="text-[14px] font-semibold text-ink">{title}</h3>
         {meta && <div className="text-[12px] text-ink-4">{meta}</div>}
       </div>
-      <div className="mt-2 pb-6 text-[13px] text-ink-2">{children}</div>
+      <div className="mt-2 pb-6 text-[14px] text-ink-2">{children}</div>
     </li>
   );
 }
@@ -101,7 +101,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
         <Badge>处理 {a.processing_state}</Badge>
         {c.override && <Badge tone="info" title={c.override.reason ?? undefined}>有人工设置 v{c.override.version}</Badge>}
       </div>
-      {a.processing_error && <div className="mb-5 rounded-card bg-hot-soft px-4 py-3 text-[13px] text-hot ring-1 ring-hot/20">{a.processing_error}</div>}
+      {a.processing_error && <div className="mb-5 rounded-card bg-hot-soft px-4 py-3 text-[14px] text-hot ring-1 ring-hot/20">{a.processing_error}</div>}
 
       <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
         <Card title="处理链路">
@@ -155,9 +155,9 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
                         <span className="text-ink-4">{an.model} · {an.prompt_version} · 输入 v{an.input_revision} · {an.origin} · {bj(an.created_at)}</span>
                       </div>
                       {an.title_zh && <div className="mt-2 font-medium text-ink">{an.title_zh}</div>}
-                      {an.reason_zh && <div className="mt-1 text-[12.5px] leading-relaxed text-ink-3">{an.reason_zh}</div>}
+                      {an.reason_zh && <div className="mt-1 text-[14px] leading-relaxed text-ink-3">{an.reason_zh}</div>}
                       {an.receipts.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5 text-[11.5px]">
+                        <div className="mt-2 flex flex-wrap gap-1.5 text-[12px]">
                           {an.receipts.map((r) => (
                             <span key={r.id} className="num rounded-mark bg-surface px-1.5 py-0.5 text-ink-3 ring-1 ring-line">
                               回执 #{r.id} · {r.status} · {r.model ?? r.service}{r.cost !== null ? ` · ${money(r.cost)}` : ""}
@@ -229,7 +229,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
                 </div>
               ))}
               {c.decisions.length > 0 && (
-                <ul className="mt-2 space-y-1 text-[12.5px]">
+                <ul className="mt-2 space-y-1 text-[14px]">
                   {c.decisions.map((d, i) => (
                     <li key={i} className="flex flex-wrap gap-2">
                       <span className="num text-ink-4">{bj(d.created_at)}</span>
@@ -271,13 +271,13 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
                 ["原标题", a.title],
                 ["作者", a.author],
                 ["语言", a.language],
-                ["身份键", <span className="break-all font-mono text-[11.5px]">{a.identity_key}</span>],
+                ["身份键", <span className="break-all font-mono text-[12px]">{a.identity_key}</span>],
               ]}
             />
           </Card>
           <Card title="修改记录">
             {c.history.length ? (
-              <ul className="space-y-3 text-[12.5px]">
+              <ul className="space-y-3 text-[14px]">
                 {c.history.map((h, i) => (
                   <li key={i}>
                     <div className="text-ink-2"><span className="font-medium">{h.action}</span> · {h.actor} · {bj(h.created_at)}</div>
@@ -324,7 +324,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
           ] as const).map(([v, label, hint]) => (
             <label key={v} className={`cursor-pointer rounded-card p-3 ring-1 transition-colors ${visibility === v ? "bg-accent-soft ring-accent" : "ring-line-strong hover:bg-bg-sunk"}`}>
               <input type="radio" name="visibility" className="sr-only" checked={visibility === v} onChange={() => setVisibility(v)} />
-              <div className="text-[13.5px] font-medium text-ink">{label}</div>
+              <div className="text-[14px] font-medium text-ink">{label}</div>
               <div className="mt-0.5 text-[12px] text-ink-3">{hint}</div>
             </label>
           ))}
@@ -423,7 +423,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
           return result.applied;
         }}
       >
-        {presentation && <div className="space-y-2 text-[13px] text-ink-2">
+        {presentation && <div className="space-y-2 text-[14px] text-ink-2">
           <p>图片 {presentation.images.before} → {presentation.images.after}，链接 {presentation.links.before} → {presentation.links.after}。</p>
           <p>{presentation.reason ?? (presentation.changed ? "可以应用本次展示更新。" : "当前正文展示无需更新。")}</p>
           {presentation.translation === "reused" && <p>中文译文会保留原有文字，并同步图片和链接。</p>}

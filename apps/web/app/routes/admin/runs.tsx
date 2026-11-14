@@ -46,7 +46,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Stat
           label="worker"
-          value={<span className="inline-flex items-center gap-2 text-[18px]"><Dot tone={worker?.alive ? "ok" : "bad"} />{worker ? (worker.alive ? "运行中" : "心跳中断") : "无心跳"}</span>}
+          value={<span className="inline-flex items-center gap-2 text-[20px]"><Dot tone={worker?.alive ? "ok" : "bad"} />{worker ? (worker.alive ? "运行中" : "心跳中断") : "无心跳"}</span>}
           hint={worker ? `${worker.host} · 心跳 ${ago(worker.at)}` : "worker 未上报心跳"}
         />
         <Stat label="队列积压" value={num(queued)} tone={queued > 500 ? "warn" : undefined} hint="排队与等待重试" />
@@ -57,7 +57,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
 
       {r.grouping.waiting > 0 && (
         <Card className="mb-5" title="等待去重确认的精选" right={<span>{num(r.grouping.waiting)} 条等待 · {num(r.grouping.needsAttention)} 条超过 10 分钟</span>} pad={false} scrollable>
-          <p className="px-4 py-3 text-[13px] text-ink-3">这些新闻已达到精选条件，确认是否重复后才会进入精选。最多展示等待最久的 30 条。</p>
+          <p className="px-4 py-3 text-[14px] text-ink-3">这些新闻已达到精选条件，确认是否重复后才会进入精选。最多展示等待最久的 30 条。</p>
           <DataTable dense rows={r.grouping.items} rowKey={(item) => item.articleId} columns={[
             { key: "title", label: "新闻", render: (item) => <Link className="text-accent" to={`/admin/content/${item.articleId}`}>{item.title}</Link> },
             { key: "since", label: "开始等待", render: (item) => <Time at={item.since} /> },
@@ -75,7 +75,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
             rowKey={([name]) => name}
             empty="队列是空的"
             columns={[
-              { key: "n", label: "队列", render: ([name]) => <span className="font-mono text-[12.5px]">{name}</span> },
+              { key: "n", label: "队列", render: ([name]) => <span className="font-mono text-[14px]">{name}</span> },
               ...(["created", "retry", "active"] as const).map((st) => ({
                 key: st,
                 label: STATE_LABEL[st],
@@ -92,7 +92,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
             rows={r.jobs}
             rowKey={(j) => j.job}
             columns={[
-              { key: "j", label: "任务", render: (j) => <span className="font-mono text-[12.5px]">{j.job}</span> },
+              { key: "j", label: "任务", render: (j) => <span className="font-mono text-[14px]">{j.job}</span> },
               { key: "s", label: "上次", render: (j) => <Badge tone={j.status === "ok" ? "ok" : j.status === "failed" ? "bad" : "muted"} title={j.error ?? undefined}>{j.status ?? "运行中"}</Badge> },
               { key: "at", label: "时间", render: (j) => <Time at={j.started_at} /> },
               { key: "d", label: "耗时", align: "right", render: (j) => duration(j.started_at, j.finished_at) },
@@ -109,10 +109,10 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
             rows={r.failedJobs}
             rowKey={(j) => j.name}
             columns={[
-              { key: "n", label: "队列", render: (j) => <span className="font-mono text-[12.5px]">{j.name}</span> },
+              { key: "n", label: "队列", render: (j) => <span className="font-mono text-[14px]">{j.name}</span> },
               { key: "c", label: "失败", align: "right", render: (j) => num(j.failed) },
               { key: "l", label: "最近", render: (j) => <Time at={j.last} /> },
-              { key: "o", label: "最近错误", render: (j) => <span className="line-clamp-2 font-mono text-[11.5px] text-ink-3">{j.last_output}</span> },
+              { key: "o", label: "最近错误", render: (j) => <span className="line-clamp-2 font-mono text-[12px] text-ink-3">{j.last_output}</span> },
             ]}
           />
         </Card>
@@ -184,7 +184,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
             rowKey={(e) => e.error}
             empty="没有处理失败"
             columns={[
-              { key: "e", label: "错误", render: (e) => <span className="font-mono text-[11.5px] text-ink-2">{e.error}</span> },
+              { key: "e", label: "错误", render: (e) => <span className="font-mono text-[12px] text-ink-2">{e.error}</span> },
               { key: "n", label: "条数", align: "right", render: (e) => num(e.n) },
               { key: "x", label: "示例", render: (e) => <Link className="text-accent" to={`/admin/content/${e.example}`}>查看</Link> },
               { key: "l", label: "最近", render: (e) => <Time at={e.last} /> },
@@ -230,7 +230,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
 
       {r.processes.length > 0 && (
         <Card className="mt-5" title="进程">
-          <ul className="grid gap-2 text-[13px] sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-2 text-[14px] sm:grid-cols-2 lg:grid-cols-3">
             {r.processes.map((p) => (
               <li key={p.role} className="flex items-center gap-2">
                 <Dot tone={p.alive ? "ok" : "bad"} />

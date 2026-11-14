@@ -70,12 +70,12 @@ function Panel({ id, title, sub, right, children, className = "" }: { id?: strin
     <section id={id} className={`card scroll-mt-[calc(var(--bar-h)+64px)] p-5 lg:p-6 ${className}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[17px] font-[650] leading-[1.5] text-ink">{title}</h2>
-          {sub && <p className="mt-0.5 text-[12.5px] text-ink-4">{sub}</p>}
+          <h2 className="text-[16px] font-[650] leading-[1.5] text-ink">{title}</h2>
+          {sub && <p className="mt-1 text-[14px] text-ink-4">{sub}</p>}
         </div>
-        {right && <div className="shrink-0 text-[11.5px] text-ink-4">{right}</div>}
+        {right && <div className="shrink-0 text-[12px] text-ink-4">{right}</div>}
       </div>
-      <div className="mt-3.5">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -83,10 +83,10 @@ function Panel({ id, title, sub, right, children, className = "" }: { id?: strin
 /** A rail card: 14px title, 22px padding. */
 function RailCard({ title, right, children, className = "" }: { title: ReactNode; right?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`card p-5 lg:p-[22px] ${className}`}>
+    <section className={`card p-5 lg:p-[24px] ${className}`}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[14px] font-[650] text-ink">{title}</h2>
-        {right && <span className="num text-[11.5px] text-ink-4">{right}</span>}
+        {right && <span className="num text-[12px] text-ink-4">{right}</span>}
       </div>
       <div className="mt-2">{children}</div>
     </section>
@@ -108,11 +108,11 @@ function TimelineRow({ r }: { r: StoryReportView }) {
         {beijingTime(r.publishedAt)}
       </time>
       <div className="min-w-0">
-        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-[12px] leading-[20px] text-ink-4 lg:mt-0">
+        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-[12px] leading-[20px] text-ink-4 lg:mt-0">
           <span className="min-w-0 truncate">{r.source.name}</span>
           {r.selected && <SelectedBadge />}
         </div>
-        <IntentLink viewTransition to={`/items/${r.id}`} className="mt-1 block text-[16px] font-[650] leading-[1.6] text-ink transition-colors hover:text-accent lg:text-[15.5px]">
+        <IntentLink viewTransition to={`/items/${r.id}`} className="mt-1 block text-[16px] font-[650] leading-[1.6] text-ink transition-colors hover:text-accent lg:text-[14px]">
           {r.title}
         </IntentLink>
         {r.summary && (
@@ -121,7 +121,7 @@ function TimelineRow({ r }: { r: StoryReportView }) {
               <MentionText runs={addressRuns(r.summary)} />
             </p>
             {(clamped || open) && (
-              <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="mt-1 text-[12.5px] text-note transition-colors hover:text-accent">
+              <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="mt-1 text-[14px] text-note transition-colors hover:text-accent">
                 {open ? "收起摘要" : "展开摘要"}
               </button>
             )}
@@ -190,8 +190,8 @@ export default function StoryPage() {
   return (
     <div className="mx-auto max-w-[var(--page-max-reading)] pb-10">
       <PhoneBar back={{ to: UP.to, label: UP.back }} title={story.title} />
-      <nav aria-label="位置" className="hidden items-center gap-2.5 pb-5 pt-4 text-[12px] text-ink-4 lg:flex">
-        <Link to={UP.to} className="inline-flex items-center gap-1.5 transition-colors hover:text-ink">
+      <nav aria-label="位置" className="hidden items-center gap-3 pb-5 pt-4 text-[12px] text-ink-4 lg:flex">
+        <Link to={UP.to} className="inline-flex items-center gap-2 transition-colors hover:text-ink">
           <IconArrowLeft size={15} /> {UP.name}
         </Link>
         <span className="h-3 w-px bg-line-strong" aria-hidden="true" />
@@ -203,18 +203,18 @@ export default function StoryPage() {
           热点事件
           <Badge tone={status.tone}>{status.label}</Badge>
         </div>
-        <h1 data-page-title="" className="mt-2.5 text-[27px] font-bold leading-[1.5] tracking-[-0.01em] text-ink lg:mt-3 lg:text-[36px] lg:font-[730]">{story.title}</h1>
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] text-ink-3">
-          <span className="inline-flex items-center gap-1.5">
+        <h1 data-page-title="" className="mt-3 text-[28px] font-bold leading-[1.5] tracking-[-0.01em] text-ink lg:mt-3 lg:text-[28px] lg:font-[730]">{story.title}</h1>
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[14px] text-ink-3">
+          <span className="inline-flex items-center gap-2">
             <IconDoc size={15} className="text-ink-4" />
             <b className="num font-semibold text-ink">{story.reportCount}</b> 篇报道
           </span>
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-2">
             <IconUsers size={15} className="text-ink-4" />
             <b className="num font-semibold text-ink">{story.sourceCount}</b> 个报道来源
           </span>
           {story.firstReportAt && (
-            <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-2">
               <IconCalendar size={15} className="text-ink-4" />
               <b className="num font-semibold text-ink">
                 <time dateTime={story.firstReportAt}>{monthDay(beijingDate(story.firstReportAt))}</time>
@@ -223,7 +223,7 @@ export default function StoryPage() {
             </span>
           )}
           {story.latestAt && (
-            <span className="inline-flex items-center gap-1.5" suppressHydrationWarning>
+            <span className="inline-flex items-center gap-2" suppressHydrationWarning>
               <IconClock size={15} className="text-ink-4" />
               {relativeTime(story.latestAt)}更新
             </span>
@@ -252,7 +252,7 @@ export default function StoryPage() {
           <Panel id={SECTIONS.overview} title="先了解这件事" right={overview?.label} className="order-1">
             {overview ? (
               <>
-                <p className="whitespace-pre-line text-[15px] leading-[1.85] text-ink-2"><MentionText runs={overviewRuns} /></p>
+                <p className="whitespace-pre-line text-[14px] leading-[1.85] text-ink-2"><MentionText runs={overviewRuns} /></p>
                 {overview.note && (
                   <p className="mt-2 text-[12px] text-ink-4" suppressHydrationWarning>
                     {overview.note}
@@ -260,21 +260,21 @@ export default function StoryPage() {
                 )}
               </>
             ) : (
-              <p className="text-[13.5px] text-ink-4">还没有综述，先看下面的报道时间线。</p>
+              <p className="text-[14px] text-ink-4">还没有综述，先看下面的报道时间线。</p>
             )}
             {story.latest && (
               <div className="-mx-5 mt-5 border-t border-line-soft px-5 pt-4 lg:-mx-6 lg:px-6">
-                <div className="flex items-center gap-2.5 text-[12px]">
+                <div className="flex items-center gap-3 text-[12px]">
                   <span className="font-semibold text-ink">最新进展</span>
                   {story.latestAt && <span className="num text-ink-4">{monthDayTime(story.latestAt)}</span>}
                 </div>
                 {newest ? (
-                  <Link viewTransition to={`/items/${newest.id}`} className="group mt-1.5 inline text-[14px] leading-[1.7] text-ink-2 transition-colors hover:text-accent">
+                  <Link viewTransition to={`/items/${newest.id}`} className="group mt-2 inline text-[14px] leading-[1.7] text-ink-2 transition-colors hover:text-accent">
                     {story.latest}
-                    <IconChevronRight size={14} className="ml-0.5 inline -translate-y-px text-ink-4 transition-transform group-hover:translate-x-0.5" />
+                    <IconChevronRight size={14} className="ml-1 inline -translate-y-px text-ink-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 ) : (
-                  <p className="mt-1.5 text-[14px] leading-[1.7] text-ink-2">{story.latest}</p>
+                  <p className="mt-2 text-[14px] leading-[1.7] text-ink-2">{story.latest}</p>
                 )}
               </div>
             )}
@@ -294,10 +294,10 @@ export default function StoryPage() {
                     <div className="num text-[12px] text-ink-4">
                       {monthDayTime(d.firstReportAt)} · {d.reportCount} 篇报道
                     </div>
-                    <Link viewTransition to={`/items/${d.representative.id}`} className="mt-0.5 block text-[15px] font-semibold leading-snug text-ink transition-colors hover:text-accent">
+                    <Link viewTransition to={`/items/${d.representative.id}`} className="mt-1 block text-[14px] font-semibold leading-snug text-ink transition-colors hover:text-accent">
                       {d.title}
                     </Link>
-                    <div className="mt-0.5 truncate text-[12.5px] text-ink-4">
+                    <div className="mt-1 truncate text-[14px] text-ink-4">
                       {d.representative.source.name}：{d.representative.title}
                     </div>
                   </li>
@@ -331,11 +331,11 @@ export default function StoryPage() {
               ]}
             />
             {days.length === 0 ? (
-              <p className="py-10 text-center text-[13px] text-ink-4">这个筛选下没有报道。</p>
+              <p className="py-10 text-center text-[14px] text-ink-4">这个筛选下没有报道。</p>
             ) : (
               days.map(({ day, entries: rows }) => (
                 <div key={day}>
-                  <div className="pb-0.5 pt-5 text-[14px] font-semibold text-ink">{monthDay(day)}</div>
+                  <div className="pb-1 pt-5 text-[14px] font-semibold text-ink">{monthDay(day)}</div>
                   <ol>
                     {rows.map((r) => (
                       <TimelineRow key={r.id} r={r} />
@@ -364,7 +364,7 @@ export default function StoryPage() {
                   <li key={r.publicId}>
                     <Link viewTransition to={`/story/${r.publicId}`} className="group flex items-baseline gap-3 py-3">
                       <span className="shrink-0 text-[12px] text-ink-4">{r.relation === "storyline" ? "同一故事线" : "相关事件"}</span>
-                      <span className="min-w-0 flex-1 text-[14.5px] font-medium text-ink-2 transition-colors group-hover:text-accent">{r.title}</span>
+                      <span className="min-w-0 flex-1 text-[14px] font-medium text-ink-2 transition-colors group-hover:text-accent">{r.title}</span>
                       <IconChevronRight size={14} className="shrink-0 self-center text-ink-4" />
                     </Link>
                   </li>
@@ -377,7 +377,7 @@ export default function StoryPage() {
         <aside className="order-2 flex min-w-0 flex-col gap-4 lg:gap-5 side:order-none">
           {observed && (
             <RailCard title="为什么热">
-              <p className="text-[12.5px] leading-[1.75] text-ink-3">
+              <p className="text-[14px] leading-[1.75] text-ink-3">
                 过去 48 小时，有 <b className="num font-semibold text-ink">{story.whyHot.participants48h}</b> 个账号或机构报道、讨论了这件事，最近 6 小时新增{" "}
                 <b className="num font-semibold text-ink">{story.whyHot.newParticipants6h}</b> 个。
               </p>
@@ -401,10 +401,10 @@ export default function StoryPage() {
               <ul className="mt-1 divide-y divide-line-soft">
                 {story.officialReports.slice(0, 5).map((r) => (
                   <li key={r.id} className="py-3">
-                    <div className="truncate text-[11.5px] text-ink-4">{r.source.name}</div>
-                    <Link viewTransition to={`/items/${r.id}`} className="group mt-1 block text-[13.5px] font-semibold leading-[1.6] text-ink transition-colors hover:text-accent">
+                    <div className="truncate text-[12px] text-ink-4">{r.source.name}</div>
+                    <Link viewTransition to={`/items/${r.id}`} className="group mt-1 block text-[14px] font-semibold leading-[1.6] text-ink transition-colors hover:text-accent">
                       {r.title}
-                      <IconChevronRight size={13} className="ml-0.5 inline -translate-y-px text-ink-4 transition-transform group-hover:translate-x-0.5" />
+                      <IconChevronRight size={13} className="ml-1 inline -translate-y-px text-ink-4 transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </li>
                 ))}
@@ -418,7 +418,7 @@ export default function StoryPage() {
           )}
           {story.topics.length > 0 && (
             <RailCard title="相关主题">
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {story.topics.map((t) => (
                   <Link viewTransition key={t.slug} to={`/topics/${t.slug}`} className="chip">
                     {t.name}
@@ -428,7 +428,7 @@ export default function StoryPage() {
             </RailCard>
           )}
           <RailCard title="事件记录" className="hidden side:block">
-            <dl className="space-y-2 text-[12.5px]">
+            <dl className="space-y-2 text-[14px]">
               {story.firstReportAt && (
                 <div className="flex justify-between gap-3">
                   <dt className="text-ink-4">最早报道</dt>

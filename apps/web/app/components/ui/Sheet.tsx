@@ -142,10 +142,10 @@ export function Sheet({ open, onClose, title, children, label, centered = false 
           className={`sheet-panel anim-sheet-in relative mx-auto flex max-h-[88dvh] w-full max-w-[640px] flex-col rounded-t-sheet bg-surface shadow-[0_-12px_40px_rgba(0,0,0,0.16)] outline-none ${centered ? "sm:w-auto sm:min-w-[400px] sm:rounded-sheet sm:pb-2" : ""}`}
         >
           <div ref={handle} className="touch-none select-none">
-            <span aria-hidden="true" className={`mx-auto mt-[7px] block h-[5px] w-9 rounded-full bg-line-strong ${centered ? "sm:invisible" : ""}`} />
+            <span aria-hidden="true" className={`mx-auto mt-[8px] block h-[5px] w-9 rounded-full bg-line-strong ${centered ? "sm:invisible" : ""}`} />
             {title && (
               <div className="flex min-h-12 items-center gap-3 pl-5 pr-2">
-                <h2 id={titleId} className="min-w-0 flex-1 text-[17px] font-bold leading-snug text-ink">
+                <h2 id={titleId} className="min-w-0 flex-1 text-[16px] font-bold leading-snug text-ink">
                   {title}
                 </h2>
                 <button type="button" aria-label="关闭" onClick={onClose} className="grid size-11 shrink-0 place-items-center rounded-full text-ink-3">

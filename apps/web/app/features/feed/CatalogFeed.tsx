@@ -34,8 +34,8 @@ export function CatalogFeedItem({
   const visibleTags = (tags ?? []).filter((tag) => tag.label);
   const hasMarks = Boolean(unverified || consultationDraft || score != null);
   return (
-    <article className="relative min-w-0 lg:card lg:card-hover lg:px-[18px] lg:pb-[14px] lg:pt-[15px]">
-      <header className="flex min-h-[22px] items-center gap-1.5 text-[12.5px] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
+    <article className="relative min-w-0 lg:card lg:card-hover lg:px-[20px] lg:pb-[16px] lg:pt-[16px]">
+      <header className="flex min-h-[22px] items-center gap-2 text-[14px] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
         {source ? <span className="min-w-0 truncate">{source}</span> : null}
         {clock ? (
           <time dateTime={at ?? undefined} className="mono shrink-0 text-[12px] lg:hidden">
@@ -43,7 +43,7 @@ export function CatalogFeedItem({
           </time>
         ) : null}
         {hasMarks ? (
-          <span className="relative z-10 ml-auto flex shrink-0 items-center gap-1.5">
+          <span className="relative z-10 ml-auto flex shrink-0 items-center gap-2">
             {unverified ? <span className="soft-tag soft-tag-warn">未查到原文</span> : null}
             {consultationDraft ? (
               <span className="soft-tag" title="征求意见稿，未施行">
@@ -54,14 +54,14 @@ export function CatalogFeedItem({
           </span>
         ) : null}
       </header>
-      <h3 className="mt-1.5 line-clamp-2 text-[17px] font-[650] leading-[1.5] text-ink lg:mt-2 lg:line-clamp-none lg:leading-[1.55]">
+      <h3 className="mt-2 line-clamp-2 text-[16px] font-[650] leading-[1.5] text-ink lg:mt-2 lg:line-clamp-none lg:leading-[1.55]">
         <a href={url} target="_blank" rel="noopener noreferrer" className="text-inherit no-underline after:absolute after:inset-0 after:content-['']">
           {title}
         </a>
       </h3>
-      {text ? <p className="mt-1 line-clamp-2 text-[14.5px] leading-[1.7] text-ink-3 lg:mt-2 lg:text-[15px] lg:leading-[1.75]">{text}</p> : null}
+      {text ? <p className="mt-1 line-clamp-2 text-[14px] leading-[1.7] text-ink-3 lg:mt-2 lg:text-[14px] lg:leading-[1.75]">{text}</p> : null}
       {visibleTags.length > 0 ? (
-        <div className={`relative z-10 mt-2 flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-ink-4 ${mobileLeadTag ? "flex" : "hidden lg:flex"}`}>
+        <div className={`relative z-10 mt-2 flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-4 ${mobileLeadTag ? "flex" : "hidden lg:flex"}`}>
           {visibleTags.map((tag, i) => {
             const className = mobileLeadTag && i > 0 ? "max-lg:hidden" : undefined;
             return tag.href ? (

@@ -31,7 +31,7 @@ function FeedbackCard({ f }: { f: AdminFeedbackRow }) {
   const edited = note !== (f.note ?? "") || idea !== (f.idea ?? "");
   return (
     <article className="rounded-panel bg-surface p-4 ring-1 ring-line">
-      <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-ink-3">
+      <div className="flex flex-wrap items-center gap-2 text-[14px] text-ink-3">
         <span className="num font-medium text-ink-2">#{f.id}</span>
         <Badge tone={TONE[f.status] ?? "muted"}>{FEEDBACK_STATUS[f.status] ?? f.status}</Badge>
         {f.kind && <Badge tone="info">{FEEDBACK_KIND[f.kind] ?? f.kind}</Badge>}
@@ -52,8 +52,8 @@ function FeedbackCard({ f }: { f: AdminFeedbackRow }) {
           <img src={`${base}/screenshot`} alt="反馈截图" loading="lazy" className="max-h-48 rounded-control ring-1 ring-line" />
         </a>
       )}
-      {f.screenshot === "feishu" && <p className="mt-2 text-[12.5px] text-ink-4">截图已随反馈转到内部飞书群。</p>}
-      {f.screenshot === "gone" && <p className="mt-2 text-[12.5px] text-ink-4">截图未能转到飞书，已删除。</p>}
+      {f.screenshot === "feishu" && <p className="mt-2 text-[14px] text-ink-4">截图已随反馈转到内部飞书群。</p>}
+      {f.screenshot === "gone" && <p className="mt-2 text-[14px] text-ink-4">截图未能转到飞书，已删除。</p>}
       <div className="mt-3 grid gap-2 sm:grid-cols-[180px_1fr_auto] sm:items-start">
         <div className="grid gap-2">
           <Select
@@ -156,7 +156,7 @@ export default function FeedbackAdmin({ loaderData }: Route.ComponentProps) {
       <Pager page={page} hasMore={rows.length === 50} />
       {bans.length > 0 && (
         <Card className="mt-8" title="反馈封禁">
-          <ul className="space-y-2 text-[13px]">
+          <ul className="space-y-2 text-[14px]">
             {bans.map((b) => (
               <li key={b.source_hash} className="flex flex-wrap items-center justify-between gap-2">
                 <span>

@@ -31,7 +31,7 @@ export default function SearchBusy() {
   const base = pathname.startsWith("/all") ? "/all" : "/";
   const retry = kept.toString() ? `${base}?${kept}` : base;
   const hasSearch = kept.has("q");
-  const button = "inline-flex h-9 items-center rounded-full px-4 text-[13.5px]";
+  const button = "inline-flex h-9 items-center rounded-full px-4 text-[14px]";
   return (
     <>
     <PhoneBar back={{ to: base, label: base === "/all" ? "全部" : "精选" }} />
@@ -39,7 +39,7 @@ export default function SearchBusy() {
       <RingMark className="mx-auto mb-5 size-10 text-accent" spinning />
       <h1 className="text-[20px] font-bold text-ink">搜索有点忙</h1>
       <p className="mt-2 text-[14px] leading-relaxed text-ink-3">现在搜索的人比较多，请 {RETRY_AFTER_SECONDS} 秒以后重试。列表浏览不受影响。</p>
-      <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
         {hasSearch &&
           (wait > 0 ? (
             <span aria-disabled="true" className={`${button} num cursor-default bg-bg-sunk font-medium text-ink-4`}>{wait} 秒后可重试</span>

@@ -65,7 +65,7 @@ export default function TopicsPage() {
   const selected = !facetsEqualEmpty(value);
   const [sheet, setSheet] = useState(false);
   const unreadOnly = useUnreadOnly();
-  const chip = (on: boolean) => `inline-flex rounded-full px-2.5 py-1 text-[12px] ${on ? "bg-ink text-white" : "bg-bg-sunk text-ink-2"}`;
+  const chip = (on: boolean) => `inline-flex rounded-full px-3 py-1 text-[12px] ${on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-2"}`;
 
   const facetRows = (
     <FacetChipRows
@@ -82,18 +82,18 @@ export default function TopicsPage() {
     <div className="pb-6">
       <PhoneBar
         leading={
-          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-2.5 pr-2 text-ink">
+          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-2 text-ink">
             <Wordmark size={17} />
           </Link>
         }
         title="主题"
       />
       <header className="pb-2 pt-3 lg:pt-1">
-        <h1 data-page-title="" className="text-[24px] font-semibold leading-[1.3] text-ink">主题</h1>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-ink-3">按五组标签浏览媒体精选与往期报道。</p>
+        <h1 data-page-title="" className="text-[28px] font-semibold leading-[1.3] text-ink">主题</h1>
+        <p className="mt-2 text-[14px] leading-relaxed text-ink-3">按五组标签浏览媒体精选与往期报道。</p>
       </header>
 
-      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
           className={chip(slot === "featured")}
@@ -138,7 +138,7 @@ export default function TopicsPage() {
           <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface p-4 pb-8 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-[16px] font-semibold text-ink">筛选</h2>
-              <button type="button" className="text-[13px] text-ink-3" onClick={() => setSheet(false)}>完成</button>
+              <button type="button" className="text-[14px] text-ink-3" onClick={() => setSheet(false)}>完成</button>
             </div>
             {facetRows}
           </div>

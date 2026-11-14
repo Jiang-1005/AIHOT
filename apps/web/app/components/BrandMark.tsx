@@ -20,7 +20,7 @@ export function BrandMark({ brand, size = 28, className = "" }: { brand: Brand |
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center border border-line bg-accent-soft font-semibold text-accent ${className}`}
-      style={{ width: size, height: size, borderRadius: radius, fontSize: Math.round(size * 0.4) }}
+      style={{ width: size, height: size, borderRadius: radius, fontSize: [12, 14, 16, 20].reduce((a, b) => (Math.abs(b - size * 0.4) < Math.abs(a - size * 0.4) ? b : a)) }}
       aria-hidden="true"
     >
       {brand?.monogram ?? "?"}

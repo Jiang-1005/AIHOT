@@ -47,7 +47,7 @@ const tools = (): Row[] => [
 function Group({ title, children }: { title?: string; children: ReactNode }) {
   return (
     <section>
-      {title && <h2 className="px-4 pb-2 pt-6 text-[13px] font-semibold text-ink-3">{title}</h2>}
+      {title && <h2 className="px-4 pb-2 pt-6 text-[14px] font-semibold text-ink-3">{title}</h2>}
       <ul className="card divide-y divide-line-soft overflow-hidden">{children}</ul>
     </section>
   );
@@ -80,7 +80,7 @@ export default function MorePage() {
   return (
     <div className="mx-auto max-w-[var(--page-max-reading)] pb-8">
       <PhoneBar title="我的" large />
-      <h1 className="hidden pb-4 pt-1 text-[22px] font-bold text-ink lg:block">我的</h1>
+      <h1 className="hidden pb-4 pt-1 text-[20px] font-bold text-ink lg:block">我的</h1>
       <div className="wide:grid wide:grid-cols-2 wide:items-start wide:gap-x-4 2xl:grid-cols-3">
         <Group>
           <RowLink row={{ to: "/starred", label: "收藏", icon: <IconBookmark size={20} />, detail: here && starred.length > 0 ? <span className="num">{starred.length}</span> : undefined }} />

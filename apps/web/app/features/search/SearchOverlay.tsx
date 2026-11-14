@@ -103,7 +103,7 @@ export function SearchOverlay() {
   }
 
   const companies = (more?.topics ?? []).filter((t) => t.group === "company").slice(0, 6);
-  const chip = "inline-flex h-11 max-w-full items-center rounded-full px-3.5 text-[14px] transition-colors";
+  const chip = "inline-flex h-11 max-w-full items-center rounded-full px-4 text-[14px] transition-colors";
   return (
     <div
       ref={panel}
@@ -169,12 +169,12 @@ export function SearchOverlay() {
           {recent.length > 0 && (
             <section className="pt-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-[13px] font-semibold text-ink-3">最近搜索</h2>
-                <button type="button" onClick={clearRecentSearches} className="-mr-2 h-11 px-2 text-[13px] text-ink-4">
+                <h2 className="text-[14px] font-semibold text-ink-3">最近搜索</h2>
+                <button type="button" onClick={clearRecentSearches} className="-mr-2 h-11 px-2 text-[14px] text-ink-4">
                   清除
                 </button>
               </div>
-              <div className="mt-1.5 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {recent.map((q) => (
                   <Link key={q} to={`/all?q=${encodeURIComponent(q)}`} onClick={() => addRecentSearch(q)} className={`${chip} bg-surface text-ink-2 ring-1 ring-inset ring-line active:bg-bg-sunk`}>
                     <span className="truncate">{q}</span>
@@ -186,15 +186,15 @@ export function SearchOverlay() {
 
           {companies.length > 0 && (
             <section className="pt-6">
-              <h2 className="text-[13px] font-semibold text-ink-3">按主题找</h2>
-              <div className="mt-2.5 flex flex-wrap gap-2">
+              <h2 className="text-[14px] font-semibold text-ink-3">按主题找</h2>
+              <div className="mt-3 flex flex-wrap gap-2">
                 {companies.map((t) => (
                   <Link viewTransition key={t.slug} to={`/topics/${t.slug}`} className={`${chip} bg-well text-ink-2 ring-1 ring-inset ring-line-soft active:bg-bg-muted`}>
                     <span className="truncate">{t.name}</span>
                   </Link>
                 ))}
                 {inNav("/topics") && (
-                  <Link viewTransition to="/topics" className={`${chip} gap-0.5 font-medium text-accent`}>
+                  <Link viewTransition to="/topics" className={`${chip} gap-1 font-medium text-accent`}>
                     全部 {more!.topics.length} 个主题
                   </Link>
                 )}
@@ -204,13 +204,13 @@ export function SearchOverlay() {
 
           {(more?.hot.length ?? 0) > 0 && (
             <section className="pt-6">
-              <h2 className="text-[13px] font-semibold text-ink-3">正在热议</h2>
+              <h2 className="text-[14px] font-semibold text-ink-3">正在热议</h2>
               <ol className="mt-1 divide-y divide-line-soft">
                 {more!.hot.map((h, i) => (
                   <li key={h.to}>
                     <Link viewTransition to={h.to} className="grid h-12 grid-cols-[18px_minmax(0,1fr)] items-center gap-x-3 active:opacity-60">
-                      <span className={`num text-center text-[15px] font-black ${RANK_COLOR[i] ?? "text-rank-rest"}`}>{h.rank}</span>
-                      <span className="truncate text-[15px] text-ink">{h.title}</span>
+                      <span className={`num text-center text-[14px] font-black ${RANK_COLOR[i] ?? "text-rank-rest"}`}>{h.rank}</span>
+                      <span className="truncate text-[14px] text-ink">{h.title}</span>
                     </Link>
                   </li>
                 ))}

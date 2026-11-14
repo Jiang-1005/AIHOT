@@ -40,7 +40,7 @@ function useReadingDown(): boolean {
 }
 
 function Tool({ icon, label, onClick, href, pressed }: { icon: ReactNode; label: string; onClick?: () => void; href?: string; pressed?: boolean }) {
-  const cls = `flex flex-col items-center justify-center gap-[2px] text-[10.5px] transition-colors active:opacity-50 disabled:opacity-40 ${pressed ? "font-semibold text-accent" : "text-ink-3"}`;
+  const cls = `flex flex-col items-center justify-center gap-[4px] text-[12px] transition-colors active:opacity-50 disabled:opacity-40 ${pressed ? "font-semibold text-accent" : "text-ink-3"}`;
   return href ? (
     <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>
       {icon}
@@ -100,7 +100,7 @@ export interface ActionRow {
 
 /** The article's further actions as a sheet of rows (phones; desktop keeps its menu). */
 export function ActionsSheet({ open, onClose, rows }: { open: boolean; onClose: () => void; rows: ActionRow[] }) {
-  const row = "flex h-[52px] w-full items-center gap-3.5 rounded-tile px-3 text-left text-[16px] text-ink transition-colors active:bg-bg-sunk";
+  const row = "flex h-[52px] w-full items-center gap-4 rounded-tile px-3 text-left text-[16px] text-ink transition-colors active:bg-bg-sunk";
   return (
     <Sheet open={open} onClose={onClose} label="更多操作">
       <ul className="px-2 pt-2">
