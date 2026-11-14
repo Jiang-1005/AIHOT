@@ -1,12 +1,12 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { Link, PrefetchPageLinks, UNSAFE_DataRouterContext, UNSAFE_FrameworkContext, useHref, useLocation, type LinkProps } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { Link, PrefetchPageLinks, useHref, useLocation, type LinkProps } from "react-router";
 import { hasFreshPage } from '../../lib/page-reuse';
 
 /**
  * Prefetches when the reader means to open the link: a mouse resting on it for a moment (desktop: the
  * pointer passes over many cards, so only a pause of HOVER_INTENT_MS counts), a mouse or pen button going
  * down, or a touch held still for a moment; scrolling over a card does not. Uses the framework's own
- * prefetch (PrefetchPageLinks) and the loader's single-fetch URL.
+ * prefetch (PrefetchPageLinks) for the page's code.
  */
 const HOVER_INTENT_MS = 90;
 
@@ -17,10 +17,10 @@ export function IntentLink({ onPointerDown, onPointerEnter, onPointerLeave, onTo
   const [pressedOn, setPressedOn] = useState<string | null>(null);
   const ready = pressedOn === location.key;
   const href = useHref(props.to);
-  const context = useContext(UNSAFE_DataRouterContext);
-  const framework = useContext(UNSAFE_FrameworkContext);
-  // Router prefetch loads chunks but opts clientLoader routes out of data prefetch. Their
-  // serverLoader still reads this same single-fetch URL; prefetch it with the same browser TTL.
+  // Router prefetch loads chunks but opts clientLoader routes out of data prefetch. Their data is not
+  // prefetched here either: behind the CDN the response carries an Age past any short browser max-age, so
+  // the browser cannot reuse it, and an in-flight prefetch holds the HTTP cache lock on the very URL the
+  // click then fetches, adding a whole round trip to the tap.
   const target = new URL(href, 'http://page.local');
   const differentPage = target.pathname + target.search !== location.pathname + location.search;
   // Router prefetch also asks shouldRevalidate. A selected/remembered page needs neither its
@@ -28,12 +28,6 @@ export function IntentLink({ onPointerDown, onPointerEnter, onPointerLeave, onTo
   // mounted here rather than through Link's prop: Link keeps prefetching after the prop is switched
   // off, and would ask that question again about the page its own click has just opened.
   const shouldPrefetch = ready && differentPage && !hasFreshPage(target);
-  const clients = shouldPrefetch && href.startsWith('/') && !href.startsWith('//')
-    ? context?.router.match(href)?.filter(m => framework?.manifest.routes[m.route.id]?.hasLoader && framework.manifest.routes[m.route.id]?.hasClientLoader).map(m => m.route.id) ?? []
-    : [];
-  target.hash = '';
-  target.pathname += target.pathname.endsWith('/') ? '_.data' : '.data';
-  target.searchParams.set('_routes', clients.join(','));
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clear = () => {
     if (timer.current !== null) clearTimeout(timer.current);
@@ -64,5 +58,5 @@ export function IntentLink({ onPointerDown, onPointerEnter, onPointerLeave, onTo
     onTouchMove={(e) => { onTouchMove?.(e); cancel(); }}
     onTouchEnd={(e) => { onTouchEnd?.(e); cancel(); }}
     onTouchCancel={(e) => { onTouchCancel?.(e); cancel(); }}
-  />{shouldPrefetch && <PrefetchPageLinks page={href} />}{clients.length > 0 && <link rel="prefetch" as="fetch" href={target.pathname + target.search} />}</>;
+  />{shouldPrefetch && <PrefetchPageLinks page={href} />}</>;
 }
