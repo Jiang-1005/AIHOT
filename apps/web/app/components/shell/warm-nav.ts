@@ -27,11 +27,15 @@ export function useWarmSectionCode() {
       const manifest = w.__reactRouterManifest;
       if (!router || !manifest) return;
       const paths = new Set<string>();
+      let article = false;
       for (const a of document.querySelectorAll<HTMLAnchorElement>('a[href^="/"]')) {
         if (paths.size >= MAX_PAGES) break;
         const url = new URL(a.href);
-        if (url.origin !== location.origin || /^\/[^/]+\/./.test(url.pathname)) continue;
-        if (!a.getClientRects().length) continue;
+        if (url.origin !== location.origin || !a.getClientRects().length) continue;
+        // Sections, plus one article: every article shares the same route and loader chunk.
+        const deep = /^\/[^/]+\/./.test(url.pathname);
+        if (deep && (article || !url.pathname.startsWith("/items/"))) continue;
+        if (deep) article = true;
         paths.add(url.pathname);
       }
       const modules = new Set<string>();

@@ -50,9 +50,10 @@ type Preview = { item: null; preview: FeedItemSummary; detail: Promise<Loaded> }
  * Phones: an article tapped in a list opens at once with what the card showed (title, summary, reason),
  * while its full text loads. Opened any other way, or on desktop, the page waits for its data as usual.
  */
-const reuse = pageReuse<typeof loader>();
-export const { shouldRevalidate } = reuse;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 export async function clientLoader(args: ClientLoaderFunctionArgs) {
+  // Made here rather than shared with shouldRevalidate so the loader ships as its own chunk; reuse state is module-wide.
+  const reuse = pageReuse<typeof loader>();
   const { params } = args;
   const preview = isPhone() && params.id ? takePreview(params.id) : null;
   if (!preview) return reuse.clientLoader(args);
