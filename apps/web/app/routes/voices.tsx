@@ -409,24 +409,34 @@ export default function VoicesPage() {
     if (!data.itemsPartial) return;
     const ac = new AbortController();
     let started = false;
-    const start = () => {
-      if (started) return;
-      started = true;
-      fetch("/api/site/voices", { headers: { accept: "application/json" }, signal: ac.signal })
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const need = data.filteredCount ?? data.items.length;
+    const load = (attempt: number) => {
+      // A cold API instance can answer with an empty catalog (cached for a minute), so retry past the cache
+      // and never swap the good SSR slice for a smaller list.
+      const url = attempt ? `/api/site/voices?retry=${attempt}` : "/api/site/voices";
+      fetch(url, { headers: { accept: "application/json" }, signal: ac.signal })
         .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
         .then((full: VoicesResponse) => {
-          if (!Array.isArray(full.items)) return;
+          if (!Array.isArray(full.items) || full.items.length < need) throw new Error("short catalog");
           setItems(full.items);
           setPartial(false);
         })
         .catch((error: { name?: string } | undefined) => {
-          if (error?.name === "AbortError") return;
+          if (error?.name === "AbortError" || attempt >= 3) return;
+          timer = setTimeout(() => load(attempt + 1), 800 * (attempt + 1));
         });
+    };
+    const start = () => {
+      if (started) return;
+      started = true;
+      load(0);
     };
     prefetchNow.current = start;
     start();
     return () => {
       ac.abort();
+      clearTimeout(timer);
       prefetchNow.current = null;
     };
   }, [data.itemsPartial, data.catalog?.generatedAt]);
