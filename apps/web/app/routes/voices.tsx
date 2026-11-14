@@ -642,7 +642,7 @@ export default function VoicesPage() {
               </EmptyState>
             </div>
           ) : view === "compact" ? (
-            <ol className="card divide-y divide-line-soft overflow-hidden" data-voices-view="compact">
+            <ol className="divide-y divide-line-soft border-y border-line" data-voices-view="compact">
               {shown.map((item, i) => (
                 <VoiceRow key={item.id} item={item} today={today} index={i} onOpen={openReader} />
               ))}
@@ -709,7 +709,7 @@ const VoiceTile = memo(function VoiceTile({ item, today, onOpen }: { item: Voice
   const tags = tagLine(item);
   const who = item.platform === "X" ? item.author : item.source || item.poster;
   return (
-    <article className="card card-press voice-card" data-platform={item.platform} data-unverified={unverified ? "1" : "0"}>
+    <article className="voice-card" data-platform={item.platform} data-unverified={unverified ? "1" : "0"}>
       <div className="voice-card-head">
         <PlatformMark platform={item.platform} />
         <span className="min-w-0 truncate">{who}{item.platform === "X" && item.source ? ` · ${item.source}` : ""}</span>
@@ -855,7 +855,7 @@ function VoiceReader({ item, index, total, today, onClose, onStep, hasPrev, hasN
 
 function VoiceSkeleton() {
   return (
-    <article className="card voice-card voice-skel" aria-hidden="true">
+    <article className="voice-card voice-skel" aria-hidden="true">
       <div className="voice-skel-line" />
       <div className="voice-skel-line" />
       <div className="voice-skel-line" />

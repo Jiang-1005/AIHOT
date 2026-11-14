@@ -711,20 +711,23 @@
     border-radius: var(--radius-card);
   }
 }
+/* Posts as columns of a page: no boxes, a hairline over each (none over the first row). */
 .voices-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
 }
+.voices-grid > .voice-card:first-child { border-top: 0; }
 @media (min-width: 768px) {
-  .voices-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .voices-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+  .voices-grid > .voice-card:nth-child(2) { border-top: 0; }
 }
 .voice-card {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
   content-visibility: auto;
   contain-intrinsic-size: auto 200px;
 }
@@ -741,6 +744,8 @@
 }
 .voice-card-foot { margin-top: auto; padding-top: 4px; }
 .voice-card-foot > .text-accent { position: relative; z-index: 1; pointer-events: none; }
+.voice-card:has(a:hover) .voice-card-title,
+.voice-card:has(a:active) .voice-card-title { color: var(--accent); }
 .voice-card-title {
   margin: 0;
   text-wrap: balance;
