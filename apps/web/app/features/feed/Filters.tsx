@@ -58,24 +58,32 @@ export function DesktopFacetBlock({
   const warm = useWarmPage();
   return (
     <div className="hidden lg:block">
-      <div className="mb-3 flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className={titleHidden ? "sr-only" : "text-[1.75rem] font-semibold leading-[1.3] text-ink"}>{title}</h1>
-          {blurb}
+      {titleHidden ? (
+        <h1 className="sr-only">{title}</h1>
+      ) : (
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-[1.75rem] font-semibold leading-[1.3] text-ink">{title}</h1>
+            {blurb}
+          </div>
+          {search}
         </div>
-        {search}
-      </div>
-      <div className="mb-4">
-        <FacetChipRows
-          collapsible
-          vocab={meta.vocab}
-          value={value}
-          onIntent={(next) => warm(patchFacets(base, params, next))}
-          onChange={(next) => navigate(patchFacets(base, params, next), { preventScrollReset: true })}
-          counts={meta.counts}
-          logos={meta.logos?.index}
-          headCompanies={meta.headCompanies}
-        />
+      )}
+      {/* Without a visible heading, the search sits at the end of the chip row instead of on a row of its own. */}
+      <div className={titleHidden ? "mb-4 flex items-start justify-between gap-4" : "mb-4"}>
+        <div className="min-w-0 flex-1">
+          <FacetChipRows
+            collapsible
+            vocab={meta.vocab}
+            value={value}
+            onIntent={(next) => warm(patchFacets(base, params, next))}
+            onChange={(next) => navigate(patchFacets(base, params, next), { preventScrollReset: true })}
+            counts={meta.counts}
+            logos={meta.logos?.index}
+            headCompanies={meta.headCompanies}
+          />
+        </div>
+        {titleHidden && search}
       </div>
     </div>
   );

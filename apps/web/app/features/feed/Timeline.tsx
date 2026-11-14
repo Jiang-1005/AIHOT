@@ -130,7 +130,7 @@ export function TimelineSlot({ at, publishedAt, children, fresh = false, delay =
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
       <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-5 group-last/slot:border-b-0 lg:grid-cols-[56px_24px_minmax(0,1fr)] lg:border-b-0 lg:py-0">
         <time dateTime={publishedAt ?? at} className="mono hidden text-ink-4 lg:block lg:pt-[24px] lg:text-[0.8125rem] lg:leading-[18px] lg:group-first/slot:pt-[16px]">
-          {day && <span className="block text-[0.75rem]">{day}</span>}
+          {day && <span className="block whitespace-nowrap text-[0.6875rem]">{day}</span>}
           {clock ?? ""}
         </time>
         <span aria-hidden="true" className="hidden lg:block" />
