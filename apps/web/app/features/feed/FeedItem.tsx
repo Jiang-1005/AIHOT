@@ -1,4 +1,4 @@
-// One report in a feed. Desktop (≥ 700px): a white card beside the time rail. Phones: a compact row with
+// One report in a feed. Desktop (≥ 700px): a ruled row beside the time column (editorial: no card box). Phones: a compact row with
 // the time in the source line, the bookmark at hand, the reason in one line and duplicate reports
 // behind one button that opens a sheet. One markup, two presentations. The card is a link as a whole, so
 // addresses in its text read short as plain words.
@@ -40,7 +40,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
   const tags = showTags ? item.tags.slice(0, 3) : [];
 
   return (
-    <article className="relative min-w-0 lg:card lg:card-hover lg:card-press lg:px-[20px] lg:pb-[16px] lg:pt-[16px]" data-item-id={item.id}>
+    <article className="relative min-w-0 lg:border-t lg:border-line lg:py-6 lg:group-first/slot:border-t-0 lg:group-first/slot:pt-4 lg:[&:has(a:hover)_h3]:text-accent" data-item-id={item.id}>
       <header className="flex min-h-[22px] items-center gap-2 text-[0.875rem] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
         <SourceLine item={item} className="text-ink-4" />
         {at && slotClock(at) && (
@@ -74,7 +74,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
         </p> : <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} aria-label={`查看 ${item.x!.authorName} 的帖子`} className="absolute inset-0" />
       ) : (
         <>
-          <h3 className={`mt-2 line-clamp-2 text-[1rem] font-[650] leading-[1.5] lg:mt-2 lg:line-clamp-none lg:leading-[1.55] ${readTone(read, "text-ink")}`}>
+          <h3 className={`mt-2 line-clamp-2 text-[1.0625rem] font-semibold leading-[1.45] transition-colors lg:mt-2.5 lg:line-clamp-none lg:text-[1.25rem] lg:leading-[1.45] ${readTone(read, "text-ink")}`}>
             <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
               {item.title}
             </IntentLink>

@@ -44,9 +44,9 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
   const short = weekdayShort(day);
   const phoneRow = (
     <>
-      <span className="text-[0.875rem] font-bold text-ink">{day === today ? "今天" : date}</span>
-      {day === today && <span className="text-[0.875rem] text-ink-4">{date}</span>}
-      <span className="text-[0.875rem] text-ink-4">{short}</span>
+      <span className="text-[0.8125rem] font-bold tracking-[0.16em] text-ink">{day === today ? "今天" : date}</span>
+      {day === today && <span className="kicker font-normal">{date}</span>}
+      <span className="kicker font-normal">{short}</span>
       <span className="ml-auto flex items-center gap-1 text-[0.875rem] text-ink-4">
         {asideOnPhone && aside}
         {count !== null && (
@@ -62,20 +62,20 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
     <div className="bleed sticky top-[var(--bar-h)] z-20 bg-daybar lg:mx-0 lg:bg-bg lg:px-0">
       {/* Phones: a full-width day bar; on the timeline the whole bar folds the day. */}
       {onToggle ? (
-        <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={`${collapsed ? "展开" : "收起"}${date}`} className="flex h-11 w-full items-center gap-2 text-left lg:hidden">
+        <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={`${collapsed ? "展开" : "收起"}${date}`} className="flex h-11 w-full items-center gap-2 border-b border-line text-left lg:hidden">
           {phoneRow}
         </button>
       ) : (
-        <div className="flex h-9 items-center gap-2 lg:hidden">{phoneRow}</div>
+        <div className="flex h-10 items-center gap-2 border-b border-line lg:hidden">{phoneRow}</div>
       )}
       {/* Desktop: date text shares the page's left edge, regardless of how many digits it has. */}
-      <div className="hidden h-11 items-center gap-3 lg:flex">
+      <div className="hidden h-12 items-center gap-3 border-t border-ink lg:flex">
         {onToggle ? (
-          <button type="button" onClick={onToggle} aria-expanded={!collapsed} className="whitespace-nowrap text-left text-[1.25rem] font-semibold leading-6 text-ink">
+          <button type="button" onClick={onToggle} aria-expanded={!collapsed} className="whitespace-nowrap text-left text-[0.875rem] font-bold leading-6 tracking-[0.16em] text-ink">
             {date}
           </button>
         ) : (
-          <time dateTime={day} className="whitespace-nowrap text-[1.25rem] font-semibold leading-6 text-ink">{date}</time>
+          <time dateTime={day} className="whitespace-nowrap text-[0.875rem] font-bold leading-6 tracking-[0.16em] text-ink">{date}</time>
         )}
         {onToggle ? (
           <button
@@ -88,7 +88,7 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
             <IconChevronDown size={14} className={`transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} />
           </button>
         ) : null}
-        <span className="text-[0.875rem] text-ink-4">
+        <span className="kicker font-normal">
           {weekday}
           {count !== null && (
             <>
@@ -104,8 +104,8 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
 }
 
 /**
- * One dated slot: the time, the rail (desktop) and the item. As on the original timeline, the rail is a
- * 1px line from this node's centre to the next one's, so the day reads as one continuous thread.
+ * One dated slot: the time column (desktop) and the item. Items are separated by hairlines, as columns of a
+ * printed page are, rather than threaded on a rail.
  */
 /** Clock for the rail. A calendar date alone must not become 08:00 (UTC midnight). */
 export function slotClock(at: string | null | undefined): string | null {
@@ -127,14 +127,11 @@ export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }
       style={fresh ? { animationDelay: `${delay}ms` } : undefined}
     >
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
-      <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-4 group-last/slot:border-b-0 lg:grid-cols-[64px_22px_minmax(0,1fr)] lg:border-b-0 lg:py-0 lg:pb-3 lg:group-last/slot:pb-0">
-        <time dateTime={at} className="mono hidden text-ink-3 lg:block lg:pt-[16px] lg:text-[0.875rem] lg:font-semibold lg:leading-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-5 group-last/slot:border-b-0 lg:grid-cols-[56px_24px_minmax(0,1fr)] lg:border-b-0 lg:py-0">
+        <time dateTime={at} className="mono hidden text-ink-4 lg:block lg:pt-[24px] lg:text-[0.8125rem] lg:leading-[18px] lg:group-first/slot:pt-[16px]">
           {clock ?? ""}
         </time>
-        <span aria-hidden="true" className="relative hidden lg:block">
-          <span className="absolute -bottom-[41px] left-[10.5px] top-[29px] w-px bg-line-strong group-last/slot:hidden" />
-          <span className="absolute left-[7.5px] top-[25.5px] size-[7px] rounded-full bg-accent shadow-[0_0_0_4px_var(--bg)] transition-transform duration-300 group-hover/slot:scale-[1.15]" />
-        </span>
+        <span aria-hidden="true" className="hidden lg:block" />
         {children}
       </div>
     </li>

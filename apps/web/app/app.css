@@ -24,6 +24,9 @@
 
 @theme {
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+  /* Headlines, the masthead and section heads: the system's Song face, never a downloaded font. Many Android
+     phones have no Chinese serif and fall back to the sans; size, weight and rules carry the layout then. */
+  --font-serif: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
   /* Semantic colours. */
@@ -69,9 +72,9 @@
      sheets, hero shells); pills are rounded-full. Arbitrary radii are not used. */
   --radius-mark: 5px;
   --radius-control: 8px;
-  --radius-tile: 10px;
-  --radius-card: 12px;
-  --radius-panel: 14px;
+  --radius-tile: 6px;
+  --radius-card: 6px;
+  --radius-panel: 8px;
   --radius-sheet: 16px;
 
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -146,8 +149,9 @@
   --rank-2: var(--accent);
   --rank-3: var(--accent);
   --rank-rest: var(--ink-4);
-  --shadow-card: 0 1px 2px rgba(32, 42, 48, 0.025);
-  --shadow-card-hover: 0 3px 12px rgba(32, 42, 48, 0.055);
+  /* Editorial: cards are ruled, not lifted. */
+  --shadow-card: none;
+  --shadow-card-hover: none;
   --shadow-soft: 0 4px 12px rgba(28, 39, 51, 0.06);
   --shadow-thumb: 0 1px 2px rgba(28, 39, 51, 0.1), 0 1px 1px rgba(28, 39, 51, 0.04);
   --shadow-pop: 0 12px 32px rgba(28, 39, 51, 0.12);
@@ -245,6 +249,11 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-serif);
+    text-wrap: balance;
   }
   ::selection {
     background: var(--selection);
@@ -270,6 +279,13 @@
 }
 
 @layer components {
+  /* A section head: small, widely spaced, over a hairline (the masthead's 期号 line, day heads). */
+  .kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+    color: var(--ink-3);
+  }
   .num {
     font-variant-numeric: tabular-nums;
   }
@@ -368,9 +384,7 @@
 @utility card-hover {
   transition: box-shadow 200ms var(--ease-out-quart), border-color 200ms, transform 200ms var(--ease-out-quart);
   &:hover {
-    box-shadow: var(--shadow-card-hover);
     border-color: var(--line-strong);
-    transform: translateY(-1px);
   }
 }
 
