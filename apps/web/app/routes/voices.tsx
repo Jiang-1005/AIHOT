@@ -20,7 +20,7 @@ import {
   type FacetVocab,
 } from "../components/facets/FacetChips";
 
-export const handle: Screen = { tab: "featured", name: "社区热帖" };
+export const handle: Screen = { tab: "voices", name: "社区热帖" };
 export { pageHeaders as headers } from "../lib/api.server";
 // Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
 export const clientLoader = pageReuse<typeof loader>().clientLoader;

@@ -5,7 +5,8 @@ import { Collapse } from "../../components/ui/Presence";
 import { Sheet } from "../../components/ui/Sheet";
 import type { GroupInfo, GroupReport, GroupReportsResponse, TimelineFilters } from "@aihot/contracts/site";
 import { IconArrowUpRight, IconChevronDown, IconChevronRight } from "../../components/icons";
-import { monthDayTime } from "../../lib/format";
+import { isDateOnly, monthDay, monthDayTime } from "../../lib/format";
+import { beijingDate } from "@aihot/contracts/time";
 import { useReadSet } from "../../lib/local-state";
 import { readTone } from "./parts";
 import { isReload } from "../../lib/restore";
@@ -193,7 +194,7 @@ function GroupSheet({ open, onClose, group, filters, parentId }: {
             <li key={r.id} className="flex items-start gap-2 py-3">
               <Link viewTransition to={`/items/${r.id}`} className="min-w-0 flex-1 active:opacity-60">
                 <span className="block text-[0.875rem] text-ink-4">
-                  {r.source.name} · <span className="num">{monthDayTime(r.timelineAt)}</span>
+                  {r.source.name} · <span className="num">{isDateOnly(r.timelineAt) ? monthDay(beijingDate(r.timelineAt)) : monthDayTime(r.timelineAt)}</span>
                 </span>
                 <span className={`mt-1 line-clamp-2 text-[0.875rem] leading-[1.5] ${readTone(read.has(r.id), "text-ink-2")}`}>{r.title}</span>
               </Link>

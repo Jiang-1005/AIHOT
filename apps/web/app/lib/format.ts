@@ -29,8 +29,29 @@ export function relativeTime(iso: string, now = Date.now()): string {
   return timeAgo(iso, now) ?? beijingDate(iso);
 }
 
-/** "3 天前" while that is under a month, else null: beside a full time, the date it would fall back to says nothing new. */
+/**
+ * A report known only by its date is stored at Beijing midnight to the second (T00:00:00+08:00); it has no
+ * clock, so it shows no 00:00 (as on the lists, Timeline slotClock).
+ */
+export function isDateOnly(iso: string): boolean {
+  const t = Date.parse(iso);
+  return Number.isFinite(t) && t % 60_000 === 0 && beijingTime(iso) === "00:00";
+}
+
+/** Whole Beijing calendar days from `iso`'s day to `now`'s. */
+function beijingDaysBetween(iso: string, now: number): number {
+  return Math.round((Date.parse(beijingDate(now)) - Date.parse(beijingDate(iso))) / 86_400_000);
+}
+
+/**
+ * "3 天前" while that is under a month, else null: beside a full time, the date it would fall back to says nothing new.
+ * A date without a time counts Beijing calendar days (今天, 昨天, 2 天前), not hours since a made-up midnight.
+ */
 export function timeAgo(iso: string, now = Date.now()): string | null {
+  if (isDateOnly(iso)) {
+    const days = Math.max(0, beijingDaysBetween(iso, now));
+    return days === 0 ? "今天" : days === 1 ? "昨天" : days < 30 ? `${days} 天前` : null;
+  }
   const t = Date.parse(iso);
   const s = Math.max(0, Math.round((now - t) / 1000));
   if (s < 60) return "刚刚";
@@ -42,8 +63,9 @@ export function timeAgo(iso: string, now = Date.now()): string | null {
   return d < 30 ? `${d} 天前` : null;
 }
 
+/** "2026-11-13 09:40" (Beijing), or the date alone for a report known only by its date. */
 export function fullDateTime(iso: string): string {
-  return `${beijingDate(iso)} ${beijingTime(iso)}`;
+  return isDateOnly(iso) ? beijingDate(iso) : `${beijingDate(iso)} ${beijingTime(iso)}`;
 }
 
 /** "9月24日 10:51" (Beijing), for lists that span days. */
