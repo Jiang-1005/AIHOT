@@ -1,6 +1,7 @@
 // Public pages already rendered in this document can be revisited until their server deadline.
 // Nothing persists across a document reload; list snapshots separately own the reader's position.
-import type { ClientLoaderFunctionArgs, ShouldRevalidateFunction } from 'react-router';
+import { useCallback, useEffect, useRef } from 'react';
+import { useFetcher, type ClientLoaderFunctionArgs, type ShouldRevalidateFunction } from 'react-router';
 
 const pages = new Map<string, unknown>();
 const MAX_PAGES = 16;
@@ -44,4 +45,26 @@ export function pageReuse<T>(key: (url: URL) => string = addressOf) {
   };
 
   return { clientLoader, shouldRevalidate };
+}
+
+/**
+ * Warms the result an address will need when the pointer rests on what opens it (a filter chip), so the
+ * click that follows reads it from `pages` instead of waiting on the server. One request at a time: a newer
+ * intent replaces the one in flight. Only for pages built with `pageReuse`.
+ */
+export function useWarmPage(delayMs = 60): (href: string) => void {
+  const fetcher = useFetcher();
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const last = useRef<string | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  return useCallback((href: string) => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      const url = new URL(href, window.location.origin);
+      if (hasFreshPage(url) || last.current === href) return;
+      last.current = href;
+      fetcher.load(href);
+    }, delayMs);
+  }, [fetcher, delayMs]);
 }

@@ -12,6 +12,9 @@ import { BarButton, PhoneBar } from "../../components/shell/PhoneBar";
 import { openSearch } from "../search/SearchOverlay";
 import { EMPTY_FACETS, FacetChipRows, SelectedFacetBars, facetsEqualEmpty, facetsFromRecord, type FacetState, type FacetsMeta } from "../../components/facets/FacetChips";
 import { facetParams, facetsActive, readFacets } from "../../lib/seo";
+import { setUnreadOnly, useUnreadOnly } from "../../lib/local-state";
+import { useWarmPage } from "../../lib/page-reuse";
+import { ToggleChip } from "../../components/ui/Controls";
 
 /** Same page with some query parameters changed (paging state dropped). */
 function hrefWith(base: string, params: URLSearchParams, patch: Record<string, string | null>) {
@@ -46,20 +49,26 @@ export function DesktopFacetBlock({
 }) {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const value = currentFacets(params);
+  const navigation = useNavigation();
+  // While the next list loads, the chips already show the choice just made (selected at once, not after the data).
+  const pending = navigation.state === "loading" && navigation.location?.pathname === base ? new URLSearchParams(navigation.location.search) : null;
+  const value = currentFacets(pending ?? params);
+  const warm = useWarmPage();
   return (
     <div className="hidden lg:block">
-      <div className="mb-4 flex items-start justify-between gap-4">
+      <div className="mb-3 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[24px] font-semibold leading-[1.3] text-ink">{title}</h1>
+          <h1 className="text-[28px] font-semibold leading-[1.3] text-ink">{title}</h1>
           {blurb}
         </div>
         {search}
       </div>
-      <div className="mb-5">
+      <div className="mb-4">
         <FacetChipRows
+          collapsible
           vocab={meta.vocab}
           value={value}
+          onIntent={(next) => warm(patchFacets(base, params, next))}
           onChange={(next) => navigate(patchFacets(base, params, next), { preventScrollReset: true })}
           counts={meta.counts}
           logos={meta.logos?.index}
@@ -78,14 +87,15 @@ export function FeedBar({ base, category, channel, meta }: { base: "/" | "/archi
   const [params] = useSearchParams();
   const [sheet, setSheet] = useState(false);
   const scope = (to: string) => hrefWith(to, params, { q: null, tab: null, search: null, slot: null });
-  const filtered = facetsActive(readFacets(params)) || channel === "firstParty" || !!category;
+  const unreadOnly = useUnreadOnly();
+  const filtered = facetsActive(readFacets(params)) || channel === "firstParty" || !!category || (base !== "/all" && unreadOnly);
   const active = base === "/" ? "featured" : base === "/archive" ? "archive" : "all";
   return (
     <>
       <PhoneBar
         leading={
-          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-2.5 pr-2 text-ink">
-            <Wordmark size={17} />
+          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-1 text-ink">
+            <Wordmark size={16} />
           </Link>
         }
         center={
@@ -111,14 +121,15 @@ export function FeedBar({ base, category, channel, meta }: { base: "/" | "/archi
           </>
         }
       />
-      <FilterSheet open={sheet} onClose={() => setSheet(false)} base={base} meta={meta} />
+      <FilterSheet open={sheet} onClose={() => setSheet(false)} base={base} meta={meta} unread={base !== "/all"} />
     </>
   );
 }
 
 /** Phones: the five-dimension filters in a sheet; 完成 applies them. */
-function FilterSheet({ open, onClose, base, meta }: { open: boolean; onClose: () => void; base: string; meta?: FacetsMeta }) {
+function FilterSheet({ open, onClose, base, meta, unread = false }: { open: boolean; onClose: () => void; base: string; meta?: FacetsMeta; unread?: boolean }) {
   const [params] = useSearchParams();
+  const unreadOnly = useUnreadOnly();
   const navigate = useNavigate();
   const [draft, setDraft] = useState<FacetState>(currentFacets(params));
   const [loaded, setLoaded] = useState<FacetsMeta | undefined>(meta);
@@ -143,8 +154,14 @@ function FilterSheet({ open, onClose, base, meta }: { open: boolean; onClose: ()
     <Sheet open={open} onClose={onClose} title="筛选">
       <div className="px-4 pb-6">
         <div className="mb-3 flex items-center justify-end gap-3">
-          <button type="button" className="text-[13px] text-ink-3" onClick={() => setDraft(EMPTY_FACETS)}>清空</button>
-          <button type="button" className="text-[13px] font-medium text-accent" onClick={() => apply(draft)}>完成</button>
+          {/* 只看未读 lives in the filter sheet on phones, so the bar and the list start without an extra row. */}
+          {unread && (
+            <span className="mr-auto">
+              <ToggleChip on={unreadOnly} onToggle={() => setUnreadOnly(!unreadOnly)}>只看未读</ToggleChip>
+            </span>
+          )}
+          <button type="button" className="text-[14px] text-ink-3" onClick={() => setDraft(EMPTY_FACETS)}>清空</button>
+          <button type="button" className="text-[14px] font-medium text-accent" onClick={() => apply(draft)}>完成</button>
         </div>
         {loaded ? (
           <FacetChipRows
@@ -156,7 +173,7 @@ function FilterSheet({ open, onClose, base, meta }: { open: boolean; onClose: ()
             headCompanies={loaded.headCompanies}
           />
         ) : (
-          <p className="py-6 text-center text-[13px] text-ink-4">加载筛选…</p>
+          <p className="py-6 text-center text-[14px] text-ink-4">加载筛选…</p>
         )}
       </div>
     </Sheet>
@@ -171,7 +188,7 @@ export function ActiveFilters({ base, category, channel, tag }: { base: string; 
   const label = channel === "firstParty" ? CHANNEL_LABELS.firstParty : category ? CATEGORY_LABELS[category] : null;
   const hasFacets = !facetsEqualEmpty(facets);
   if (!label && !tag && !hasFacets) return null;
-  const chip = "inline-flex min-h-11 max-w-full items-center gap-1 rounded-full bg-accent-soft pl-3 pr-2 text-[13px] font-medium text-accent transition-opacity active:opacity-60";
+  const chip = "inline-flex min-h-11 max-w-full items-center gap-1 rounded-full bg-accent-soft pl-3 pr-2 text-[14px] font-medium text-accent transition-opacity active:opacity-60";
   return (
     <div className="flex flex-wrap items-center gap-2 pb-3 pt-1 lg:hidden">
       {label && (
@@ -262,7 +279,7 @@ export function SearchField({ defaultValue = "", keep = {} }: { defaultValue?: s
           <IconClose size={13} />
         </button>
       ) : (
-        <kbd className="mono pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 rounded-mark border border-line-strong bg-surface px-1.5 text-[10.5px] leading-4 text-ink-4 lg:block">/</kbd>
+        <kbd className="mono pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 rounded-mark border border-line-strong bg-surface px-2 text-[12px] leading-4 text-ink-4 lg:block">/</kbd>
       )}
     </Form>
   );
