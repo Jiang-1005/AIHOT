@@ -194,6 +194,7 @@ export function FacetChipRows({
   headCompanies,
   extraRows,
   collapsible = false,
+  onlyCompany = false,
   onIntent,
 }: {
   vocab: FacetVocab;
@@ -205,6 +206,8 @@ export function FacetChipRows({
   extraRows?: ReactNode;
   /** Desktop lists: one row of the five dimensions; a dimension's chips show when it is opened. */
   collapsible?: boolean;
+  /** Only the 公司与产品 row (a page that lays out the other dimensions itself). */
+  onlyCompany?: boolean;
   /** The state a chip would set, when the pointer rests on it (lets the page warm that result). */
   onIntent?: (next: FacetState) => void;
 }) {
@@ -275,6 +278,15 @@ export function FacetChipRows({
         </div>
         {openKey && <div className="anim-drop-in mt-3 flex flex-wrap gap-2">{chipsOf(openKey)}</div>}
       </div>
+    );
+  }
+
+  if (onlyCompany) {
+    return (
+      <section>
+        <h3 className="mb-2 text-[12px] font-medium text-ink-4">{FACET_LABELS.company}</h3>
+        <div className="flex flex-wrap gap-2">{chipsOf("company")}</div>
+      </section>
     );
   }
 
