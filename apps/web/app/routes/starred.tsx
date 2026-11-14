@@ -150,7 +150,7 @@ export default function StarredPage() {
             const status = current?.status;
             const unavailable = status === "unavailable";
             return (
-              <li key={s.id} data-card-key={s.id} className={`relative border-b border-line-soft py-4 lg:card lg:px-[20px] lg:py-[16px] ${unavailable ? "opacity-70" : "lg:card-hover"}`}>
+              <li key={s.id} data-card-key={s.id} className={`relative border-b border-line-soft py-4 lg:card lg:px-[20px] lg:py-[16px] ${unavailable ? "opacity-70" : "lg:card-hover lg:card-press"}`}>
                 <div className="flex items-center gap-2 text-[14px] text-ink-4">
                   <span className="min-w-0 truncate text-ink-3">{current?.sourceName ?? s.sourceName}</span>
                   {s.publishedAt && <span className="num shrink-0">· {fullDateTime(s.publishedAt)}</span>}

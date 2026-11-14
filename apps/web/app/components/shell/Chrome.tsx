@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { IconArrowUp } from "../icons";
 import { scrollBehavior } from "../../lib/motion";
 
-/** A thin accent line while a navigation is in flight (shown only if it takes a moment). */
+/** A thin accent line while a navigation is in flight: it starts at once (a click gets an answer within
+ *  a frame), so even a slow page shows that the click was heard. */
 export function NavigationProgress({ active }: { active: boolean }) {
   const [visible, setVisible] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (active) timer.current = setTimeout(() => setVisible(true), 150);
+    if (active) timer.current = setTimeout(() => setVisible(true), 0);
     else {
       if (timer.current) clearTimeout(timer.current);
       setVisible(false);
@@ -21,8 +22,8 @@ export function NavigationProgress({ active }: { active: boolean }) {
       <div
         className="h-full origin-left bg-accent"
         style={{
-          transform: `scaleX(${visible ? 0.85 : active ? 0 : 1})`,
-          opacity: visible ? 1 : 0,
+          transform: `scaleX(${visible ? 0.85 : active ? 0.12 : 1})`,
+          opacity: visible || active ? 1 : 0,
           transition: visible ? "transform 2.4s cubic-bezier(0.1, 0.7, 0.2, 1), opacity 120ms" : "transform 200ms, opacity 300ms 120ms",
         }}
       />

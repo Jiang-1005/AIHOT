@@ -355,6 +355,16 @@
   background-color: var(--well);
   box-shadow: inset 0 0 0 1px var(--line-soft);
 }
+/* Press feedback (modern-web-guidance natural-interactions): a card whose link is pressed sinks a little and
+   takes the accent edge at once, before the next page has loaded; hover keeps its lift. */
+@utility card-press {
+  transition: box-shadow 200ms var(--ease-out-quart), border-color 120ms, scale 120ms var(--ease-out-quart);
+  &:has(a:active) {
+    scale: 0.995;
+    border-color: var(--accent);
+    box-shadow: none;
+  }
+}
 @utility card-hover {
   transition: box-shadow 200ms var(--ease-out-quart), border-color 200ms, transform 200ms var(--ease-out-quart);
   &:hover {

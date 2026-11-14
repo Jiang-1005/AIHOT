@@ -40,7 +40,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
   const tags = showTags ? item.tags.slice(0, 3) : [];
 
   return (
-    <article className="relative min-w-0 lg:card lg:card-hover lg:px-[20px] lg:pb-[16px] lg:pt-[16px]" data-item-id={item.id}>
+    <article className="relative min-w-0 lg:card lg:card-hover lg:card-press lg:px-[20px] lg:pb-[16px] lg:pt-[16px]" data-item-id={item.id}>
       <header className="flex min-h-[22px] items-center gap-2 text-[14px] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
         <SourceLine item={item} className="text-ink-4" />
         {at && (

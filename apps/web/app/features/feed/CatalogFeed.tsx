@@ -34,7 +34,7 @@ export function CatalogFeedItem({
   const visibleTags = (tags ?? []).filter((tag) => tag.label);
   const hasMarks = Boolean(unverified || consultationDraft || score != null);
   return (
-    <article className="relative min-w-0 lg:card lg:card-hover lg:px-[20px] lg:pb-[16px] lg:pt-[16px]">
+    <article className="relative min-w-0 lg:card lg:card-hover lg:card-press lg:px-[20px] lg:pb-[16px] lg:pt-[16px]">
       <header className="flex min-h-[22px] items-center gap-2 text-[14px] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
         {source ? <span className="min-w-0 truncate">{source}</span> : null}
         {clock ? (

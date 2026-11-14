@@ -120,7 +120,7 @@ function HeatPanel({ e }: { e: HotEntryView }) {
 function Lead({ e }: { e: HotEntryView }) {
   const panel = !e.cover && e.spark.filter((v) => v !== null).length >= 3;
   return (
-    <article className="card card-hover group relative flex flex-col overflow-hidden p-5 sm:p-6">
+    <article className="card card-hover card-press group relative flex flex-col overflow-hidden p-5 sm:p-6">
       <div className="flex items-center gap-3">
         <span className={`mono text-[12px] font-bold tracking-[0.16em] ${rankColor(e.rank)}`}>NO.{pad(e.rank)}</span>
         <Badges e={e} />
@@ -172,7 +172,7 @@ function Lead({ e }: { e: HotEntryView }) {
 /** No. 2 and 3: the same card, smaller, without the picture. */
 function Runner({ e }: { e: HotEntryView }) {
   return (
-    <article className="card card-hover group relative flex flex-col px-5 py-4">
+    <article className="card card-hover card-press group relative flex flex-col px-5 py-4">
       <div className="flex items-center gap-3">
         <span className={`mono text-[12px] font-bold tracking-[0.16em] ${rankColor(e.rank)}`}>NO.{pad(e.rank)}</span>
         <Badges e={e} />

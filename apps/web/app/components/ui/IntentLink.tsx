@@ -3,12 +3,14 @@ import { Link, PrefetchPageLinks, UNSAFE_DataRouterContext, UNSAFE_FrameworkCont
 import { hasFreshPage } from '../../lib/page-reuse';
 
 /**
- * Prefetches when the reader presses the link: a mouse or pen button going down, or a touch held
- * still for a moment; scrolling over a card does not. The click follows a press by about a tenth
- * of a second, so the page still arrives early; hovering does not prefetch, because a pointer
- * passing over a list rests on far more links than the reader opens.
+ * Prefetches when the reader means to open the link: a mouse resting on it for a moment (desktop: the
+ * pointer passes over many cards, so only a pause of HOVER_INTENT_MS counts), a mouse or pen button going
+ * down, or a touch held still for a moment; scrolling over a card does not. Uses the framework's own
+ * prefetch (PrefetchPageLinks) and the loader's single-fetch URL.
  */
-export function IntentLink({ onPointerDown, onTouchStart, onTouchMove, onTouchEnd, onTouchCancel, ...props }: Omit<LinkProps, "prefetch">) {
+const HOVER_INTENT_MS = 90;
+
+export function IntentLink({ onPointerDown, onPointerEnter, onPointerLeave, onTouchStart, onTouchMove, onTouchEnd, onTouchCancel, ...props }: Omit<LinkProps, "prefetch">) {
   const location = useLocation();
   // A press belongs to the page it was made on: it serves the navigation it starts, and a link that
   // stays on screen (a tab) does not keep prefetching once the reader is somewhere else.
@@ -40,6 +42,14 @@ export function IntentLink({ onPointerDown, onTouchStart, onTouchMove, onTouchEn
   const cancel = () => { clear(); setPressedOn(null); };
   useEffect(() => { cancel(); return clear; }, [props.to]);
   return <><Link {...props} prefetch="none"
+    onPointerEnter={(e) => {
+      onPointerEnter?.(e);
+      if (e.pointerType !== "mouse") return;
+      clear();
+      const on = location.key;
+      timer.current = setTimeout(() => { timer.current = null; setPressedOn(on); }, HOVER_INTENT_MS);
+    }}
+    onPointerLeave={(e) => { onPointerLeave?.(e); clear(); }}
     onPointerDown={(e) => {
       onPointerDown?.(e);
       if (!e.defaultPrevented && e.pointerType !== "touch" && e.button === 0) setPressedOn(location.key);
