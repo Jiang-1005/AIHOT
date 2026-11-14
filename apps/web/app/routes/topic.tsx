@@ -21,7 +21,9 @@ import { loadParts } from "../site-modules";
 const UP = navUp("/topics");
 export const handle: Screen = { home: UP.tab };
 export { pageHeaders as headers } from "../lib/api.server";
-export const { clientLoader, shouldRevalidate } = pageReuse<typeof loader>();
+// Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
+export const clientLoader = pageReuse<typeof loader>().clientLoader;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
 /** Selected items of a topic: shared caches keep the page as long as its api answer (one minute). */
 export async function loader({ params, request }: Route.LoaderArgs) {

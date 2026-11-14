@@ -12,7 +12,9 @@ import { CatalogDayList, CatalogFeedItem } from "../features/feed/CatalogFeed";
 
 export const handle: Screen = { tab: "featured", name: "国内政策" };
 export { pageHeaders as headers } from "../lib/api.server";
-export const { clientLoader, shouldRevalidate } = pageReuse<typeof loader>();
+// Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
+export const clientLoader = pageReuse<typeof loader>().clientLoader;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
 interface PolicyUpdateItem {
   id: string;

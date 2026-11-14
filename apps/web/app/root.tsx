@@ -12,6 +12,7 @@ import { Sidebar } from "./components/shell/Sidebar";
 import { TabBar } from "./components/shell/TabBar";
 import { PullToRefresh } from "./components/shell/PullToRefresh";
 import { usePageTransition } from "./components/shell/transitions";
+import { useWarmSectionCode } from "./components/shell/warm-nav";
 import { SearchOverlay } from "./features/search/SearchOverlay";
 import { BackToTop, NavigationProgress } from "./components/shell/Chrome";
 import { buttonClass } from "./components/ui/Controls";
@@ -119,6 +120,7 @@ export default function App() {
   const { pathname, search } = useLocation();
   useEffect(() => rememberPage(pathname + search), [pathname, search]);
   usePageTransition();
+  useWarmSectionCode();
   // iOS Safari only shows :active (pressed) styles once the document listens for touches.
   useEffect(() => {
     const noop = () => {};

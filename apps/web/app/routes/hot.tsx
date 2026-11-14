@@ -23,7 +23,9 @@ import type { Screen } from "../components/shell/screens";
 
 export const handle: Screen = { tab: navUp("/hot").tab, name: "热点" };
 export { pageHeaders as headers } from "../lib/api.server";
-export const { clientLoader, shouldRevalidate } = pageReuse<typeof loader>();
+// Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
+export const clientLoader = pageReuse<typeof loader>().clientLoader;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
 export async function loader({ request }: { request: Request }) {
   return cachedPage(120, { hot: await loadOr404<HotResponse>("/api/site/hot", { signal: request.signal }) });

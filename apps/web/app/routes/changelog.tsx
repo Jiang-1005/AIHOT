@@ -15,7 +15,9 @@ import type { Screen } from "../components/shell/screens";
 
 export const handle: Screen = { tab: "me", name: "更新日志" };
 export { pageHeaders as headers } from "../lib/api.server";
-export const { clientLoader, shouldRevalidate } = pageReuse<typeof loader>();
+// Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
+export const clientLoader = pageReuse<typeof loader>().clientLoader;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
 type Release = ChangelogRelease;
 
