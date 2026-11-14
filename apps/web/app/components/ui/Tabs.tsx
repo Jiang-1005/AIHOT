@@ -53,8 +53,8 @@ export interface TabItem {
 
 const SIZES = {
   md: "h-11 px-4 text-[14px] lg:h-9",
-  sm: "h-11 px-3.5 text-[13px] lg:h-8",
-  xs: "h-11 px-3 text-[12.5px] lg:h-7",
+  sm: "h-10 min-w-12 px-2 text-[14px] lg:h-8 lg:px-4",
+  xs: "h-11 px-3 text-[14px] lg:h-7",
 } as const;
 
 /**
@@ -84,7 +84,7 @@ export function PillTabs({
         data-pill-track=""
         aria-label={label}
         role={links ? undefined : "tablist"}
-        className={`${fill ? "grid w-full" : "inline-flex w-max"} gap-0.5 rounded-full bg-well p-0.5 lg:p-[3px] ring-1 ring-inset ring-line-soft`}
+        className={`${fill ? "grid w-full" : "inline-flex w-max"} gap-1 rounded-full bg-well p-1 lg:p-[4px] ring-1 ring-inset ring-line-soft`}
         style={fill ? { gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` } : undefined}
       >
         {items.map((t) => {
@@ -94,7 +94,7 @@ export function PillTabs({
               {on && <Thumb id={layoutId} />}
               <span className="relative inline-flex items-center gap-1">
                 {t.label}
-                {t.count !== undefined && t.count !== null && <span className={`num text-[0.86em] font-normal ${on ? "text-ink-3" : "text-ink-4"}`}>{t.count}</span>}
+                {t.count !== undefined && t.count !== null && <span className={`num text-[12px] font-normal ${on ? "text-ink-3" : "text-ink-4"}`}>{t.count}</span>}
               </span>
             </>
           );

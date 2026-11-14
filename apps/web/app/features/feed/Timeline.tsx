@@ -45,9 +45,9 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
   const phoneRow = (
     <>
       <span className="text-[14px] font-bold text-ink">{day === today ? "今天" : date}</span>
-      {day === today && <span className="text-[12.5px] text-ink-4">{date}</span>}
-      <span className="text-[12.5px] text-ink-4">{short}</span>
-      <span className="ml-auto flex items-center gap-1 text-[12.5px] text-ink-4">
+      {day === today && <span className="text-[14px] text-ink-4">{date}</span>}
+      <span className="text-[14px] text-ink-4">{short}</span>
+      <span className="ml-auto flex items-center gap-1 text-[14px] text-ink-4">
         {asideOnPhone && aside}
         {count !== null && (
           <span>
@@ -71,11 +71,11 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
       {/* Desktop: date text shares the page's left edge, regardless of how many digits it has. */}
       <div className="hidden h-11 items-center gap-3 lg:flex">
         {onToggle ? (
-          <button type="button" onClick={onToggle} aria-expanded={!collapsed} className="whitespace-nowrap text-left text-[18px] font-semibold leading-6 text-ink">
+          <button type="button" onClick={onToggle} aria-expanded={!collapsed} className="whitespace-nowrap text-left text-[20px] font-semibold leading-6 text-ink">
             {date}
           </button>
         ) : (
-          <time dateTime={day} className="whitespace-nowrap text-[18px] font-semibold leading-6 text-ink">{date}</time>
+          <time dateTime={day} className="whitespace-nowrap text-[20px] font-semibold leading-6 text-ink">{date}</time>
         )}
         {onToggle ? (
           <button
@@ -88,7 +88,7 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
             <IconChevronDown size={14} className={`transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} />
           </button>
         ) : null}
-        <span className="text-[13px] text-ink-4">
+        <span className="text-[14px] text-ink-4">
           {weekday}
           {count !== null && (
             <>
@@ -123,8 +123,8 @@ export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }
       style={fresh ? { animationDelay: `${delay}ms` } : undefined}
     >
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
-      <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-3.5 group-last/slot:border-b-0 lg:grid-cols-[64px_22px_minmax(0,1fr)] lg:border-b-0 lg:py-0 lg:pb-3 lg:group-last/slot:pb-0">
-        <time dateTime={at} className="mono hidden text-ink-3 lg:block lg:pt-[17px] lg:text-[12.5px] lg:font-semibold lg:leading-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-4 group-last/slot:border-b-0 lg:grid-cols-[64px_22px_minmax(0,1fr)] lg:border-b-0 lg:py-0 lg:pb-3 lg:group-last/slot:pb-0">
+        <time dateTime={at} className="mono hidden text-ink-3 lg:block lg:pt-[16px] lg:text-[14px] lg:font-semibold lg:leading-6">
           {clock ?? ""}
         </time>
         <span aria-hidden="true" className="relative hidden lg:block">
@@ -312,8 +312,9 @@ export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnr
   return (
     <div className="relative">
       {/* Desktop puts it on the first date row; phones, and a list the filter left empty, keep its own row. */}
-      {!hidePhoneUnread && (
-        <div className={`mb-2 flex justify-end ${days.length ? "lg:hidden" : ""}`}>{unreadToggle}</div>
+      {/* Phones reach it from the bar's filter sheet; a list the filter left empty keeps it here to turn it off. */}
+      {!hidePhoneUnread && !days.length && (
+        <div className="mb-2 flex justify-end">{unreadToggle}</div>
       )}
 
       {days.length === 0 && !loadingMore && (
@@ -365,16 +366,16 @@ function FeedEnd({ loading, error, hasMore, manual, empty, onMore }: { loading: 
   return (
     <div className="flex justify-center py-6">
       {loading ? (
-        <span className="inline-flex items-center gap-2 text-[12.5px] text-ink-4">
+        <span className="inline-flex items-center gap-2 text-[14px] text-ink-4">
           <RingMark className="size-4 text-accent" spinning /> 正在加载
         </span>
       ) : error ? (
-        <button type="button" onClick={onMore} className="h-9 rounded-full border border-hot/30 px-4 text-[13px] text-hot hover:bg-hot-soft">
+        <button type="button" onClick={onMore} className="h-9 rounded-full border border-hot/30 px-4 text-[14px] text-hot hover:bg-hot-soft">
           加载失败，点此重试
         </button>
       ) : hasMore ? (
         manual && (
-          <button type="button" onClick={onMore} className="h-9 rounded-full border border-line-strong bg-surface px-5 text-[13px] font-medium text-ink-2 transition-colors hover:border-ink-4 hover:text-ink">
+          <button type="button" onClick={onMore} className="h-9 rounded-full border border-line-strong bg-surface px-5 text-[14px] font-medium text-ink-2 transition-colors hover:border-ink-4 hover:text-ink">
             加载更多
           </button>
         )

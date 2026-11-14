@@ -38,15 +38,15 @@ export function PhoneBar({ back, title, large = false, sub, leading, center, act
         data-phone-bar=""
         className={`bleed sticky top-0 z-40 bg-bg/85 backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-200 lg:hidden ${scrolled ? "shadow-[0_1px_0_var(--line-soft)]" : ""}`}
       >
-        <div className={`-mx-2.5 grid h-[var(--bar-h)] items-center ${wideCenter ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"}`}>
-          {!wideCenter && <div className="flex min-w-0 items-center">{back ? <BackButton {...back} /> : leading}</div>}
+        <div className={`-mx-3 grid h-[var(--bar-h)] items-center ${wideCenter ? "grid-cols-[minmax(0,1fr)_auto]" : center && leading ? "grid-cols-[auto_minmax(0,1fr)_auto] gap-1" : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"}`}>
+          {!wideCenter && <div className="flex min-w-0 shrink-0 items-center">{back ? <BackButton {...back} /> : leading}</div>}
           {/* A title not shown yet takes no width, so the back label is not cut short before it appears. */}
           <div className={`flex min-w-0 justify-center ${wideCenter ? "" : "max-w-[calc(100vw-184px)]"}`} style={!center && !titleShown ? { maxWidth: 0 } : undefined}>
             {center ?? (
               title && (
                 <span
                   aria-hidden={!titleShown}
-                  className={`truncate text-[15.5px] font-semibold text-ink transition-[opacity,transform] duration-200 ${titleShown ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
+                  className={`truncate text-[14px] font-semibold text-ink transition-[opacity,transform] duration-200 ${titleShown ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
                 >
                   {title}
                 </span>
@@ -57,11 +57,11 @@ export function PhoneBar({ back, title, large = false, sub, leading, center, act
         </div>
       </header>
       {large && title && (
-        <div className="pb-3 pt-0.5 lg:hidden">
-          <h1 data-page-title="" className="text-[30px] font-bold leading-[1.25] tracking-[-0.01em] text-ink">
+        <div className="pb-3 pt-1 lg:hidden">
+          <h1 data-page-title="" className="text-[28px] font-bold leading-[1.25] tracking-[-0.01em] text-ink">
             {title}
           </h1>
-          {sub && <div className="mt-1 text-[12.5px] leading-relaxed text-ink-4">{sub}</div>}
+          {sub && <div className="mt-1 text-[14px] leading-relaxed text-ink-4">{sub}</div>}
         </div>
       )}
     </>
