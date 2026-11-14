@@ -111,6 +111,10 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
 export function slotClock(at: string | null | undefined): string | null {
   if (!at) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(at.trim())) return null;
+  // A report known only by its date is stored at Beijing midnight to the second (T00:00:00+08:00):
+  // it shows no clock rather than a made-up 00:00. Real times (an X post at 00:06:16) still show.
+  const t = Date.parse(at);
+  if (Number.isFinite(t) && (t + 8 * 3600_000) % 86_400_000 === 0) return null;
   return beijingTime(at);
 }
 

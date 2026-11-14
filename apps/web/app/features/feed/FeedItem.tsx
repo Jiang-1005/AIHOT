@@ -12,7 +12,7 @@ import { ITEM_COPY } from "@aihot/site";
 import { publicCopy } from "../../lib/public-copy";
 import { SameEventBadge, SelectedBadge } from "../../components/ui/Badge";
 import { ScoreLabel } from "../../components/ui/Score";
-import { beijingTime } from "@aihot/contracts/time";
+import { slotClock } from "./Timeline";
 import { MediaThumbs, SourceLine, StarButton, readTone } from "./parts";
 import { GroupButton, GroupSources } from "./ReadingGroup";
 import { QuotedLine } from "../item/QuotedPost";
@@ -43,9 +43,9 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
     <article className="relative min-w-0 lg:card lg:card-hover lg:card-press lg:px-[20px] lg:pb-[16px] lg:pt-[16px]" data-item-id={item.id}>
       <header className="flex min-h-[22px] items-center gap-2 text-[14px] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
         <SourceLine item={item} className="text-ink-4" />
-        {at && (
+        {at && slotClock(at) && (
           <time dateTime={at} className="mono shrink-0 text-[12px] lg:hidden">
-            · {beijingTime(at)}
+            · {slotClock(at)}
           </time>
         )}
         {item.selected && (
