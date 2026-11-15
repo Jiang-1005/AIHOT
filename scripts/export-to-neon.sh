@@ -31,10 +31,7 @@ case "$DEST" in
         RESOLVED="${RESOLVED_ENV:-$ROOT/.secrets/neon.resolved.env}"
         if [[ -f "$NEON_ENV" ]]; then
           python3 "$ROOT/scripts/resolve-neon-urls.py" --src "$NEON_ENV" --out "$RESOLVED"
-          set -a
-          # shellcheck disable=SC1090
-          . "$RESOLVED"
-          set +a
+          eval "$(python3 "$ROOT/scripts/env-exports.py" "$RESOLVED")"
           DEST="${DEST_DATABASE_URL:-$DEST}"
         fi
         ;;

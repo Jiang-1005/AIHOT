@@ -2,7 +2,7 @@
 """Rewrite Neon URLs so libpq uses a real IP (hostaddr) and write a host→IP map for Node.
 Never prints URL values.
 """
-import argparse, json, os, shlex, sys, urllib.request
+import argparse, json, os, sys, urllib.request
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse, quote
 
@@ -57,9 +57,16 @@ def main():
     if not resolved:
         raise SystemExit("no DATABASE_URL / DEST_DATABASE_URL in src")
     out.parent.mkdir(mode=0o700, exist_ok=True)
+    # Write unquoted KEY=VALUE. docker --env-file does not strip quotes, so
+    # shlex.quote() made dest URLs look like they started with a quote and
+    # failed with Invalid URL. bash callers must load via env-exports.py
+    # (which also accepts older quoted files), not `.` the file directly,
+    # because hostaddr query strings contain `&`.
     lines = ["# Resolved Neon IPs (DoH hostaddr). Do not commit or print.", "DATABASE_SSL=true"]
     for k, v in resolved.items():
-        lines.append(f"{k}={shlex.quote(v)}")
+        if "\n" in v or "\r" in v:
+            raise SystemExit(f"refusing to write a URL with a newline for {k}")
+        lines.append(f"{k}={v}")
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     os.chmod(out, 0o600)
     hosts_out.write_text(json.dumps(hosts, indent=2) + "\n", encoding="utf-8")

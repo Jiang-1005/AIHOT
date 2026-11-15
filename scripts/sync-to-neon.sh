@@ -39,10 +39,10 @@ fi
 RESOLVED="${RESOLVED_ENV:-$ROOT/.secrets/neon.resolved.env}"
 python3 "$ROOT/scripts/resolve-neon-urls.py" --src "$NEON_ENV" --out "$RESOLVED"
 
-set -a
-# shellcheck disable=SC1090
-. "$RESOLVED"
-set +a
+# Load via env-exports.py so quoted or unquoted values both work, and so
+# `&` in hostaddr query strings is not interpreted by the shell. Do not `.`
+# the resolved file; do not set -x.
+eval "$(python3 "$ROOT/scripts/env-exports.py" "$RESOLVED")"
 
 if [[ -z "${DEST_DATABASE_URL:-}" ]]; then
   echo "DEST_DATABASE_URL is not set after resolving Neon URLs." >&2
@@ -68,6 +68,12 @@ fi
 echo "Staging local data into Neon (hot_stage → swap)…"
 python3 "$ROOT/scripts/sync-to-neon-stage.py"
 
+# Sequences stay in public across the swap and are not copied, so they can
+# lag max(id) and the next insert hits a primary key. setval only; no data
+# change. Run now so migrate.ts does not collide, and again after catalogs.
+echo "Resetting sequences on Neon (setval only)…"
+python3 "$ROOT/scripts/reset-dest-sequences.py"
+
 # 2) migrations on the direct URL (poolers are a poor fit for DDL)
 # neon-doh-dns.mjs pins Neon hostnames so postgres.js does not follow fake-IP DNS.
 echo "Applying migrations on Neon (direct)…"
@@ -80,6 +86,9 @@ DATABASE_URL="$DEST_DATABASE_URL" node --import ./scripts/neon-doh-dns.mjs --env
 python3 "$ROOT/scripts/stamp-site-sync.py"
 echo "Upserting site_blobs…"
 DATABASE_URL="$DEST_DATABASE_URL" node --import ./scripts/neon-doh-dns.mjs --env-file-if-exists=.env scripts/sync-site-blobs.ts
+
+echo "Resetting sequences on Neon after catalog upsert (setval only)…"
+python3 "$ROOT/scripts/reset-dest-sequences.py"
 
 # 4) Drop the Vercel CDN entries tagged edu-hot-public so visitors do not
 # keep seeing pre-sync HTML / /api/site/* for up to s-maxage + SWR.
