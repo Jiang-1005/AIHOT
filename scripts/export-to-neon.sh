@@ -3,7 +3,7 @@
 # Usage:
 #   DEST_DATABASE_URL='postgres://…' ./scripts/export-to-neon.sh
 # Optional:
-#   SOURCE_CONTAINER=edu-hot-db-1
+#   SOURCE_CONTAINER=xintian-edu-hot-db-1
 #   SOURCE_DATABASE_URL='postgres://…'   # if you are not using the Docker db
 # The destination URL is never printed. Do not enable `set -x` around this script.
 set -euo pipefail
@@ -31,10 +31,7 @@ case "$DEST" in
         RESOLVED="${RESOLVED_ENV:-$ROOT/.secrets/neon.resolved.env}"
         if [[ -f "$NEON_ENV" ]]; then
           python3 "$ROOT/scripts/resolve-neon-urls.py" --src "$NEON_ENV" --out "$RESOLVED"
-          set -a
-          # shellcheck disable=SC1090
-          . "$RESOLVED"
-          set +a
+          eval "$(python3 "$ROOT/scripts/env-exports.py" "$RESOLVED")"
           DEST="${DEST_DATABASE_URL:-$DEST}"
         fi
         ;;
@@ -50,7 +47,7 @@ if [[ -n "${SOURCE_DATABASE_URL:-}" ]]; then
   echo "Dumping source database…"
   pg_dump --no-owner --no-acl -Fc -d "$SOURCE_DATABASE_URL" -f "$DUMP"
 else
-  CONTAINER="${SOURCE_CONTAINER:-edu-hot-db-1}"
+  CONTAINER="${SOURCE_CONTAINER:-xintian-edu-hot-db-1}"
   export DOCKER_HOST="${DOCKER_HOST:-tcp://127.0.0.1:2375}"
   echo "Dumping Docker database from ${CONTAINER}…"
   docker exec "$CONTAINER" pg_dump -U aihot -d aihot --no-owner --no-acl -Fc > "$DUMP"

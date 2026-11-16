@@ -9,7 +9,7 @@
 # 「数据截至」label matches this sync. Do not run this at the same moment an
 # import is still writing the local database.
 #
-# Usage (from the repo root; do not set -x, do not print env):
+# Usage (from /workspace/edu-hot; do not set -x, do not print env):
 #   ./scripts/sync-to-neon.sh
 #   SKIP_DAILY_REFRESH=1 ./scripts/sync-to-neon.sh   # skip the local daily rewrite
 #
@@ -17,7 +17,7 @@
 # swapped with public in one transaction. site_blobs is preserved if the
 # local table is empty, then upserted so Vercel /tmp catalogs refresh.
 #
-# Loads .secrets/neon.env (override with NEON_ENV)
+# Loads /workspace/edu-hot/.secrets/neon.env
 #   DATABASE_URL         = pooled (not used for DDL or restore)
 #   DEST_DATABASE_URL    = direct (restore, migrate, site_blobs)
 # Never enable `set -x`; URLs are never printed.
@@ -39,10 +39,10 @@ fi
 RESOLVED="${RESOLVED_ENV:-$ROOT/.secrets/neon.resolved.env}"
 python3 "$ROOT/scripts/resolve-neon-urls.py" --src "$NEON_ENV" --out "$RESOLVED"
 
-set -a
-# shellcheck disable=SC1090
-. "$RESOLVED"
-set +a
+# Load via env-exports.py so quoted or unquoted values both work, and so
+# `&` in hostaddr query strings is not interpreted by the shell. Do not `.`
+# the resolved file; do not set -x.
+eval "$(python3 "$ROOT/scripts/env-exports.py" "$RESOLVED")"
 
 if [[ -z "${DEST_DATABASE_URL:-}" ]]; then
   echo "DEST_DATABASE_URL is not set after resolving Neon URLs." >&2
@@ -55,7 +55,8 @@ fi
 if [[ "${SKIP_DAILY_REFRESH:-}" != "1" ]]; then
   TODAY="$(TZ=Asia/Shanghai date +%F)"
   echo "Refreshing today's daily ($TODAY, 北京时间)…"
-  if docker exec -w /app "${API_CONTAINER:-edu-hot-api-1}" node /app/scripts/compose-daily.ts "$TODAY"; then
+  API_CONTAINER="${API_CONTAINER:-xintian-edu-hot-api-1}"
+  if docker exec -w /app "$API_CONTAINER" node /app/scripts/compose-daily.ts "$TODAY"; then
     echo "today's daily refreshed."
   else
     echo "warning: today's daily refresh failed or was skipped; continuing sync." >&2
@@ -67,6 +68,12 @@ fi
 # public schema. Staging itself does not write the local database.
 echo "Staging local data into Neon (hot_stage → swap)…"
 python3 "$ROOT/scripts/sync-to-neon-stage.py"
+
+# Sequences stay in public across the swap and are not copied, so they can
+# lag max(id) and the next insert hits a primary key. setval only; no data
+# change. Run now so migrate.ts does not collide, and again after catalogs.
+echo "Resetting sequences on Neon (setval only)…"
+python3 "$ROOT/scripts/reset-dest-sequences.py"
 
 # 2) migrations on the direct URL (poolers are a poor fit for DDL)
 # neon-doh-dns.mjs pins Neon hostnames so postgres.js does not follow fake-IP DNS.
@@ -80,6 +87,9 @@ DATABASE_URL="$DEST_DATABASE_URL" node --import ./scripts/neon-doh-dns.mjs --env
 python3 "$ROOT/scripts/stamp-site-sync.py"
 echo "Upserting site_blobs…"
 DATABASE_URL="$DEST_DATABASE_URL" node --import ./scripts/neon-doh-dns.mjs --env-file-if-exists=.env scripts/sync-site-blobs.ts
+
+echo "Resetting sequences on Neon after catalog upsert (setval only)…"
+python3 "$ROOT/scripts/reset-dest-sequences.py"
 
 # 4) Drop the Vercel CDN entries tagged edu-hot-public so visitors do not
 # keep seeing pre-sync HTML / /api/site/* for up to s-maxage + SWR.

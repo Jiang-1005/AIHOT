@@ -15,7 +15,9 @@ import type { Screen } from "../components/shell/screens";
 
 export const handle: Screen = { tab: "me", name: "关于" };
 export { pageHeaders as headers } from "../lib/api.server";
-export const { clientLoader, shouldRevalidate } = pageReuse<typeof loader>();
+// Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
+export const clientLoader = pageReuse<typeof loader>().clientLoader;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
 export async function loader({ request }: { request: Request }) {
   const [contact, stats] = await Promise.all([
@@ -120,11 +122,11 @@ function MakerFace({ src }: { src: string }) {
 function QrCard({ src, kind, title, note }: { src: string; kind: string; title: string; note: string }) {
   return (
     <figure className="card flex items-center gap-5 p-5">
-      <img src={src} alt={`${kind}二维码`} width={112} height={112} loading="lazy" className="size-[104px] shrink-0 rounded-tile border border-line bg-white object-contain p-1.5 sm:size-[112px]" />
+      <img src={src} alt={`${kind}二维码`} width={112} height={112} loading="lazy" className="size-[104px] shrink-0 rounded-tile border border-line bg-white object-contain p-2 sm:size-[112px]" />
       <figcaption className="min-w-0">
-        <div className="text-[12px] text-ink-4">{kind}</div>
-        <div className="mt-1 text-[16px] font-semibold leading-snug text-ink">{title}</div>
-        <p className="mt-2 text-[13px] leading-[1.7] text-ink-3">{note}</p>
+        <div className="text-[0.75rem] text-ink-4">{kind}</div>
+        <div className="mt-1 text-[1rem] font-semibold leading-snug text-ink">{title}</div>
+        <p className="mt-2 text-[0.875rem] leading-[1.7] text-ink-3">{note}</p>
       </figcaption>
     </figure>
   );
@@ -149,7 +151,7 @@ function Maker({ maker, contact }: { maker: NonNullable<typeof ABOUT.maker>; con
             嗨，我是 <span className="whitespace-nowrap text-accent">{maker.name}</span>
           </span>
         </h2>
-        <div className="mt-5 space-y-4 text-[15.5px] leading-[1.9] text-ink-2 xl:text-[16.5px]">
+        <div className="mt-5 space-y-4 text-[0.875rem] leading-[1.9] text-ink-2 xl:text-[1rem]">
           {maker.greeting.map((line) => (
             <p key={line}>{line}</p>
           ))}
@@ -168,7 +170,7 @@ function Maker({ maker, contact }: { maker: NonNullable<typeof ABOUT.maker>; con
       </div>
       {codes.length > 0 && (
         <div className="grid content-start gap-3">
-          <h3 className="text-[15px] font-semibold text-ink">如果觉得有点用，欢迎加入</h3>
+          <h3 className="text-[0.875rem] font-semibold text-ink">如果觉得有点用，欢迎加入</h3>
           {codes}
         </div>
       )}
@@ -181,10 +183,10 @@ function Latest({ item, className = "" }: { item: SiteStats["latest"][number] | 
   if (!item) return null;
   return (
     <IntentLink viewTransition to={`/items/${item.id}`} className={`group block ${className}`}>
-      <span className="text-[11px] font-semibold tracking-[0.2em] text-accent">最近精选</span>
-      <span key={item.id} className="animate-fade-up mt-1.5 block">
-        <span className="line-clamp-2 text-[13.5px] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span>
-        <span className="mt-1 block truncate text-[12px] text-ink-4">{item.source}</span>
+      <span className="text-[0.75rem] font-semibold tracking-[0.2em] text-accent">最近精选</span>
+      <span key={item.id} className="animate-fade-up mt-2 block">
+        <span className="line-clamp-2 text-[0.875rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span>
+        <span className="mt-1 block truncate text-[0.75rem] text-ink-4">{item.source}</span>
       </span>
     </IntentLink>
   );
@@ -217,7 +219,7 @@ export default function AboutPage() {
             <br />
             <span className="text-accent">{ABOUT.headline[1]}</span>
           </h1>
-          <p className="mt-5 max-w-[36em] text-[15.5px] leading-[1.85] text-ink-3 xl:text-[17px]">
+          <p className="mt-5 max-w-[36em] text-[0.875rem] leading-[1.85] text-ink-3 xl:text-[1rem]">
             {ABOUT.lead.split("{sources}").map((part, i) => (
               <Fragment key={i}>
                 {i > 0 && (stats ? <>{" "}<span className="num font-semibold text-ink">{stats.sources}</span>{" "}</> : ABOUT.sourcesFallback)}
@@ -261,8 +263,8 @@ export default function AboutPage() {
                 <h3 className="text-[1rem] font-semibold text-ink">{s.title}</h3>
               </div>
               {s.figure && <div className="mt-4">{s.figure}</div>}
-              <p className="mt-3 text-[14px] leading-[1.8] text-ink-3">{s.text}</p>
-              {s.note && <p className="mt-3 text-[12px] text-ink-4">{s.note}</p>}
+              <p className="mt-3 text-[0.875rem] leading-[1.8] text-ink-3">{s.text}</p>
+              {s.note && <p className="mt-3 text-[0.75rem] text-ink-4">{s.note}</p>}
             </li>
           ))}
         </ol>
@@ -270,7 +272,7 @@ export default function AboutPage() {
 
       {ABOUT.maker && <Maker maker={ABOUT.maker} contact={contact} />}
 
-      <p className="mt-16 well rounded-card px-5 py-4 text-[13px] leading-[1.85] text-ink-3">
+      <p className="mt-16 well rounded-card px-5 py-4 text-[0.875rem] leading-[1.85] text-ink-3">
         {ABOUT.copyright[0]}
         <Link viewTransition to="/feedback" className="text-accent hover:underline">
           反馈页
@@ -278,7 +280,7 @@ export default function AboutPage() {
         {ABOUT.copyright[1]}
       </p>
 
-      <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[12.5px] text-ink-4">
+      <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[0.875rem] text-ink-4">
         <span>{SITE.footerNote}</span>
         <nav className="flex gap-5" aria-label="规则与隐私">
           <Link

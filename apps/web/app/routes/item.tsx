@@ -10,7 +10,7 @@ import { cachedPage, loadOr404 } from "../lib/api.server";
 import { loadFollowups } from "../features/item/followups.server";
 import { pageReuse } from "../lib/page-reuse";
 import { articleLd, breadcrumbLd, pageMeta, siteUrl, titled } from "../lib/seo";
-import { fullDateTime, timeAgo } from "../lib/format";
+import { collectedNote, fullDateTime, timeAgo } from "../lib/format";
 import { markRead } from "../lib/local-state";
 import { copyText } from "../lib/clipboard";
 import { SameEventBadge, SelectedBadge } from "../components/ui/Badge";
@@ -50,9 +50,10 @@ type Preview = { item: null; preview: FeedItemSummary; detail: Promise<Loaded> }
  * Phones: an article tapped in a list opens at once with what the card showed (title, summary, reason),
  * while its full text loads. Opened any other way, or on desktop, the page waits for its data as usual.
  */
-const reuse = pageReuse<typeof loader>();
-export const { shouldRevalidate } = reuse;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 export async function clientLoader(args: ClientLoaderFunctionArgs) {
+  // Made here rather than shared with shouldRevalidate so the loader ships as its own chunk; reuse state is module-wide.
+  const reuse = pageReuse<typeof loader>();
   const { params } = args;
   const preview = isPhone() && params.id ? takePreview(params.id) : null;
   if (!preview) return reuse.clientLoader(args);
@@ -133,10 +134,10 @@ function ArticleOutline({ outline }: { outline: SiteItemDetail["outline"] }) {
   return (
     <RailSection title="本文目录" shrink>
       <nav ref={nav} aria-label="本文目录" tabIndex={overscroll ? 0 : undefined} onKeyDown={containKeys} className={`scrollbar-thin min-h-[calc(6*(12.5px*1.375+8px))] overflow-y-auto ${overscroll}`}>
-        <ol className="space-y-0.5 border-l border-line">
+        <ol className="space-y-1 border-l border-line">
           {outline.map((o) => (
             <li key={o.id}>
-              <a href={`#${o.id}`} onClick={(e) => jumpTo(e, o.id)} className={`-ml-px block border-l border-transparent py-1 text-[12.5px] leading-snug text-ink-3 transition-colors hover:border-accent hover:text-ink focus-visible:outline-offset-[-2px] ${o.level > 2 ? "pl-5" : "pl-3"}`}>
+              <a href={`#${o.id}`} onClick={(e) => jumpTo(e, o.id)} className={`-ml-px block border-l border-transparent py-1 text-[0.875rem] leading-snug text-ink-3 transition-colors hover:border-accent hover:text-ink focus-visible:outline-offset-[-2px] ${o.level > 2 ? "pl-5" : "pl-3"}`}>
                 {o.text}
               </a>
             </li>
@@ -215,7 +216,7 @@ function useToast(): [string | null, (text: string) => void] {
 function Toast({ text }: { text: string | null }) {
   if (!text) return null;
   return (
-    <div role="status" className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-[13px] text-bg shadow-[var(--shadow-pop)] lg:bottom-8">
+    <div role="status" className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-[0.875rem] text-bg shadow-[var(--shadow-pop)] lg:bottom-8">
       {text}
     </div>
   );
@@ -241,16 +242,18 @@ function ItemPreview({ preview }: { preview: FeedItemSummary }) {
   const isPost = isX && !preview.x!.article;
   // Without a reliable date from the original, the card's time is when it was collected, and says so.
   const shownAt = preview.publishedAt ?? preview.timelineAt;
+  const collected = collectedNote(preview.publishedAt, preview.timelineAt);
   return (
     <div className="mx-auto max-w-[var(--page-max-reading)] pb-8">
       <PhoneBar back={{ to: preview.selected ? "/" : "/all", label: preview.selected ? "精选" : "全部" }} title={isPost ? preview.x!.authorName : preview.title} />
       <article className="pb-6 pt-3" aria-busy="true">
-        <div className="mb-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-ink-3">
+        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.875rem] text-ink-3">
           <span className="font-semibold text-ink-2">{isX ? preview.x!.authorName : preview.source.name}</span>
           {isX && <span>· @{preview.x!.handle} · X</span>}
           <span>·</span>
           {!preview.publishedAt && <span>收录于</span>}
           <time dateTime={shownAt} className="mono">{fullDateTime(shownAt)}</time>
+          {collected && <span className="mono order-last basis-full text-[0.75rem] text-ink-4">{collected}</span>}
           {preview.selected && <span className="ml-1">{preview.sameEvent ? <SameEventBadge /> : <SelectedBadge />}</span>}
           {shownScore(preview.score) !== null && (
             <span className="ml-1">
@@ -267,8 +270,8 @@ function ItemPreview({ preview }: { preview: FeedItemSummary }) {
         )}
         {preview.reason && (
           <section className="mt-6 border-t border-line pt-4">
-            <div className="mb-1 text-[12px] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
-            <p className="text-[15px] leading-[1.75] text-ink-2">{publicCopy(preview.reason)}</p>
+            <div className="mb-1 text-[0.75rem] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
+            <p className="text-[0.875rem] leading-[1.75] text-ink-2">{publicCopy(preview.reason)}</p>
           </section>
         )}
         <div className="mt-9 space-y-3 border-t border-line pt-6" aria-hidden="true">
@@ -301,7 +304,7 @@ function ItemGone() {
         <div className="text-[1.25rem] font-semibold leading-[1.3] text-ink">{gone ? "找不到这篇内容" : "暂时无法加载"}</div>
         <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-3">{gone ? "链接可能有误，或者这篇内容已经下架。" : "服务暂时繁忙，请稍后再试。"}</p>
         {!gone && (
-          <button type="button" onClick={() => void revalidator.revalidate()} className="mt-6 h-11 rounded-full border border-line-strong bg-surface px-5 text-[14px] font-medium text-ink-2 active:bg-bg-sunk">
+          <button type="button" onClick={() => void revalidator.revalidate()} className="mt-6 h-11 rounded-full border border-line-strong bg-surface px-5 text-[0.875rem] font-medium text-ink-2 active:bg-bg-sunk">
             重试
           </button>
         )}
@@ -357,6 +360,8 @@ function ItemView({ item, followups }: Loaded) {
   // Without a reliable date from the original, the time shown is when it was collected, labelled as such.
   const shownAt = item.publishedAt ?? item.discoveredAt;
   const timeLabel = item.publishedAt ? "发布时间" : "收录时间";
+  // The publish date leads; the day it was collected, when another, follows small on a line of its own.
+  const collected = collectedNote(item.publishedAt, item.discoveredAt);
   const summaryOnly = item.readingMode === "summary-only";
   const showOutline = item.outline.length >= 3;
   const originalLabel = isX ? "在 X 查看原推" : "打开原文";
@@ -372,7 +377,7 @@ function ItemView({ item, followups }: Loaded) {
   };
   // In the left rail (a flex column) it keeps its own height and width.
   const backButton = (
-    <button type="button" onClick={back} className="-ml-1.5 inline-flex h-8 shrink-0 items-center gap-1.5 self-start rounded-full px-1.5 text-[13px] text-ink-3 transition-colors hover:text-ink touch:h-11">
+    <button type="button" onClick={back} className="-ml-2 inline-flex h-8 shrink-0 items-center gap-2 self-start rounded-full px-2 text-[0.875rem] text-ink-3 transition-colors hover:text-ink touch:h-11">
       <IconArrowLeft size={16} /> 返回
     </button>
   );
@@ -410,7 +415,7 @@ function ItemView({ item, followups }: Loaded) {
       href={item.links.original}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-line-strong bg-surface px-3.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-ink-4 hover:text-ink ${className}`}
+      className={`inline-flex h-8 items-center justify-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-[0.875rem] font-medium text-ink-2 transition-colors hover:border-ink-4 hover:text-ink ${className}`}
     >
       {originalLabel} <IconExternal size={13} />
     </a>
@@ -434,17 +439,18 @@ function ItemView({ item, followups }: Loaded) {
   // under the facts (or under the notes when only the right rail shows).
   const facts = (
     <RailSection title="来源">
-      <div className="text-[14px] font-semibold leading-snug text-ink">{isX ? item.x!.authorName : item.source.name}</div>
-      <div className="mt-1 text-[12.5px] leading-relaxed text-ink-3">
+      <div className="text-[0.875rem] font-semibold leading-snug text-ink">{isX ? item.x!.authorName : item.source.name}</div>
+      <div className="mt-1 text-[0.875rem] leading-relaxed text-ink-3">
         {isX ? `@${item.x!.handle} · X` : byline ?? hostOf(item.links.original)}
       </div>
-      <div className="mt-3 text-[12px] text-ink-4">{timeLabel}</div>
-      <time dateTime={shownAt} className="mono mt-0.5 block text-[12.5px] text-ink-2">
+      <div className="mt-3 text-[0.75rem] text-ink-4">{timeLabel}</div>
+      <time dateTime={shownAt} className="mono mt-1 block text-[0.875rem] text-ink-2">
         {fullDateTime(shownAt)}
       </time>
-      <div className="mt-0.5 text-[12px] text-ink-4 empty:hidden" suppressHydrationWarning>
+      <div className="mt-1 text-[0.75rem] text-ink-4 empty:hidden" suppressHydrationWarning>
         {timeAgo(shownAt)}
       </div>
+      {collected && <div className="mono mt-1 text-[0.75rem] text-ink-4">{collected}</div>}
     </RailSection>
   );
   const outline = showOutline && <ArticleOutline outline={item.outline} />;
@@ -453,14 +459,14 @@ function ItemView({ item, followups }: Loaded) {
       {item.reason && !summaryOnly ? (
         <RailSection title={ITEM_COPY.reasonLabel}>
           {verdict && <div className="mb-3">{verdict}</div>}
-          <p className="text-[13.5px] leading-[1.8] text-ink-2">{publicCopy(item.reason)}</p>
+          <p className="text-[0.875rem] leading-[1.8] text-ink-2">{publicCopy(item.reason)}</p>
         </RailSection>
       ) : (
         verdict && <RailSection title={shownScore(item.score) !== null ? "AI 评分" : undefined}>{verdict}</RailSection>
       )}
       {daily && (
         <RailSection title="收录于">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             <Link viewTransition to={daily.to} className="chip">
               {daily.name}
             </Link>
@@ -469,7 +475,7 @@ function ItemView({ item, followups }: Loaded) {
       )}
       {item.topics.length > 0 && (
         <RailSection title="主题">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {item.topics.map((t) => (
               <Link viewTransition key={t.slug} to={`/topics/${t.slug}`} className="chip">
                 {t.name}
@@ -480,7 +486,7 @@ function ItemView({ item, followups }: Loaded) {
       )}
       {tags.length > 0 && (
         <RailSection title="标签">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {tags.slice(0, 8).map(({ tag, to }) => (
               <Link key={tag} to={to} className="chip">
                 #{tag}
@@ -530,7 +536,7 @@ function ItemView({ item, followups }: Loaded) {
           {backButton}
           <div className="flex items-center gap-1 side:hidden">
             {showOutline && (
-              <button type="button" onClick={() => setOutlineOpen(true)} className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-medium text-ink-3 transition-colors hover:bg-bg-sunk hover:text-ink touch:h-11">
+              <button type="button" onClick={() => setOutlineOpen(true)} className="inline-flex h-8 items-center gap-2 rounded-full px-3 text-[0.875rem] font-medium text-ink-3 transition-colors hover:bg-bg-sunk hover:text-ink touch:h-11">
                 <IconList size={15} /> 目录
               </button>
             )}
@@ -540,7 +546,7 @@ function ItemView({ item, followups }: Loaded) {
           </div>
         </div>
         <article className="pb-6 pt-3 lg:pt-2 2xl:pt-1">
-          <div className={`flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-ink-3 2xl:hidden ${isPost ? "" : "mb-3"}`}>
+          <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.875rem] text-ink-3 2xl:hidden ${isPost ? "" : "mb-3"}`}>
             <span className="font-semibold text-ink-2">{isX ? item.x!.authorName : item.source.name}</span>
             {isX && <span>· @{item.x!.handle} · X</span>}
             {byline && <span>· {byline}</span>}
@@ -548,6 +554,7 @@ function ItemView({ item, followups }: Loaded) {
             {!item.publishedAt && <span>收录于</span>}
             <time dateTime={shownAt} className="mono">{fullDateTime(shownAt)}</time>
             <span className="empty:hidden" suppressHydrationWarning>{timeAgo(shownAt) && `· ${timeAgo(shownAt)}`}</span>
+            {collected && <span className="mono order-last basis-full text-[0.75rem] text-ink-4">{collected}</span>}
             {item.selected && (
               <span className="ml-1 side:hidden">
                 {item.sameEvent ? <SameEventBadge /> : <SelectedBadge />}
@@ -571,13 +578,13 @@ function ItemView({ item, followups }: Loaded) {
 
           {item.reason && !summaryOnly && (
             <section className="mt-6 border-t border-line pt-4 side:hidden">
-              <div className="mb-1 text-[12px] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
-              <p className="text-[15px] leading-[1.75] text-ink-2">{publicCopy(item.reason)}</p>
+              <div className="mb-1 text-[0.75rem] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
+              <p className="text-[0.875rem] leading-[1.75] text-ink-2">{publicCopy(item.reason)}</p>
             </section>
           )}
 
           {item.sameEvent && (
-            <p className="mt-5 text-[13px] leading-relaxed text-ink-4">
+            <p className="mt-5 text-[0.875rem] leading-relaxed text-ink-4">
               同一件事，精选收录的是
               <Link viewTransition to={`/items/${item.sameEvent.id}`} className="text-ink-3 transition-colors hover:text-accent">
                 《{item.sameEvent.title}》
@@ -592,12 +599,12 @@ function ItemView({ item, followups }: Loaded) {
             </div>
           )}
 
-          {summaryOnly && <p className="mt-7 rounded-control bg-bg-sunk px-4 py-3 text-[13.5px] leading-relaxed text-ink-3">应来源方要求，这里只提供摘要与原文入口。完整内容请阅读原文。</p>}
+          {summaryOnly && <p className="mt-7 rounded-control bg-bg-sunk px-4 py-3 text-[0.875rem] leading-relaxed text-ink-3">应来源方要求，这里只提供摘要与原文入口。完整内容请阅读原文。</p>}
 
           {item.body && bodyHtml && (
             <section className="mt-9 border-t border-line pt-4 xl:mt-10">
               <div className="mb-6 flex items-center justify-between gap-3">
-                <span className="text-[12px] text-ink-4">{bodyLabel}</span>
+                <span className="text-[0.75rem] text-ink-4">{bodyLabel}</span>
                 {hasTranslation && (
                   <PillTabs
                     size="xs"
@@ -612,7 +619,7 @@ function ItemView({ item, followups }: Loaded) {
                 )}
               </div>
               {hasTranslation && lang === "zh" && !item.body.complete && (
-                <p className="mb-5 rounded-control bg-bg-sunk px-3 py-2 text-[13px] text-ink-3">译文尚不完整，完整内容请切换到原文。</p>
+                <p className="mb-5 rounded-control bg-bg-sunk px-3 py-2 text-[0.875rem] text-ink-3">译文尚不完整，完整内容请切换到原文。</p>
               )}
               <ArticleBody html={bodyHtml} />
             </section>
@@ -621,7 +628,7 @@ function ItemView({ item, followups }: Loaded) {
           {isX && item.x!.media.length > 0 && <MediaGallery media={item.x!.media} postUrl={item.links.original} />}
           {isX && item.x!.quoted?.html && <QuotedPost quoted={item.x!.quoted} original={lang === "original"} />}
 
-          <p className="mt-8 text-[13px] text-ink-4">
+          <p className="mt-8 text-[0.875rem] text-ink-4">
             来源：
             <a href={item.links.original} target="_blank" rel="noopener noreferrer" className="text-ink-3 hover:text-accent">
               {isX ? item.x!.authorName : item.source.name}
@@ -630,7 +637,7 @@ function ItemView({ item, followups }: Loaded) {
           </p>
 
           {(daily || item.topics.length > 0 || tags.length > 0) && (
-            <div className="mt-4 flex flex-wrap gap-1.5 side:hidden">
+            <div className="mt-4 flex flex-wrap gap-2 side:hidden">
               {daily && (
                 <Link viewTransition to={daily.to} className="chip">
                   收录于 {daily.name}
@@ -653,11 +660,11 @@ function ItemView({ item, followups }: Loaded) {
 
           {related.length > 0 && (
             <section className="mt-8">
-              <h2 className="mb-2 text-[14px] font-semibold text-ink">相关事件</h2>
+              <h2 className="mb-2 text-[0.875rem] font-semibold text-ink">相关事件</h2>
               <ul className="divide-y divide-line-soft">
                 {related.map((s) => (
                   <li key={s.publicId}>
-                    <Link viewTransition to={`/story/${s.publicId}`} className="block py-2.5 text-[14px] text-ink-2 hover:text-accent">
+                    <Link viewTransition to={`/story/${s.publicId}`} className="block py-3 text-[0.875rem] text-ink-2 hover:text-accent">
                       {s.title}
                     </Link>
                   </li>

@@ -21,7 +21,9 @@ import { loadParts } from "../site-modules";
 const UP = navUp("/topics");
 export const handle: Screen = { home: UP.tab };
 export { pageHeaders as headers } from "../lib/api.server";
-export const { clientLoader, shouldRevalidate } = pageReuse<typeof loader>();
+// Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
+export const clientLoader = pageReuse<typeof loader>().clientLoader;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
 /** Selected items of a topic: shared caches keep the page as long as its api answer (one minute). */
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -99,7 +101,7 @@ export default function TopicRoute() {
   return (
     <div className="pb-6">
       <PhoneBar back={{ to: UP.to, label: UP.back }} title={topic.name} />
-      <Link to={UP.to} className="hidden items-center gap-1.5 py-2 text-[13px] text-ink-3 transition-colors hover:text-accent lg:inline-flex">
+      <Link to={UP.to} className="hidden items-center gap-2 py-2 text-[0.875rem] text-ink-3 transition-colors hover:text-accent lg:inline-flex">
         <IconArrowLeft size={14} /> 返回{UP.back}
       </Link>
       <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 pb-5 pt-3 lg:pt-1">
@@ -112,8 +114,8 @@ export default function TopicRoute() {
               <span className="whitespace-nowrap font-semibold text-ink-4">最新动态</span>
             </span>
           </h1>
-          <p className="mt-1.5 text-pretty text-[13.5px] leading-relaxed text-ink-3">{topic.definition}</p>
-          <p className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-ink-4">
+          <p className="mt-2 text-pretty text-[0.875rem] leading-relaxed text-ink-3">{topic.definition}</p>
+          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[0.875rem] text-ink-4">
             <span>
               <span className="num font-semibold text-ink-2">{topic.total.toLocaleString("zh-CN")}</span>{` ${REPORTS.metricUnits.selectedCount}`}
             </span>
@@ -125,7 +127,7 @@ export default function TopicRoute() {
             </span>
           </p>
         </div>
-        <div className="flex items-center gap-4 text-[12px] text-ink-4">
+        <div className="flex items-center gap-4 text-[0.75rem] text-ink-4">
           {topic.latest && (
             <span>
               <time dateTime={topic.latest.at} className="num">{monthDayTime(topic.latest.at)}</time> 更新

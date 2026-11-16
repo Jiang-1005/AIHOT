@@ -14,7 +14,7 @@ function hrefOf(e: HotStripEntry): string {
 function TrendMark({ trend }: { trend: HotStripEntry["trend"] }) {
   if (trend === "up") return <IconTrendUp size={14} strokeWidth={2.2} className="text-hot" aria-label="热度上升" />;
   if (trend === "down") return <IconTrendDown size={14} strokeWidth={2.2} className="text-ink-4" aria-label="热度回落" />;
-  if (trend === "new") return <span className="rounded-full bg-accent-soft px-1.5 text-[10.5px] font-semibold leading-4 text-accent">新</span>;
+  if (trend === "new") return <span className="rounded-full bg-accent-soft px-2 text-[0.75rem] font-semibold leading-4 text-accent">新</span>;
   if (trend === "unknown") return null; // sources behind on collection: no comparison to show
   return <IconMinus size={14} strokeWidth={2.2} className="text-ink-4" aria-label="热度持平" />;
 }
@@ -30,7 +30,7 @@ export function HotTopics({ entries }: { entries: HotStripEntry[] }) {
   return (
     <section
       aria-labelledby="hot-topics"
-      className="card relative mb-4 overflow-hidden bg-[radial-gradient(120%_90%_at_100%_0%,var(--hot-soft),transparent_55%)] px-3.5 pb-1 pt-2.5 lg:mb-6 lg:px-5 lg:pb-2 lg:pt-3.5"
+      className="card relative mb-4 overflow-hidden bg-[radial-gradient(120%_90%_at_100%_0%,var(--hot-soft),transparent_55%)] px-4 pb-1 pt-3 lg:mb-6 lg:px-5 lg:pb-2 lg:pt-4"
     >
       <div className="flex items-center justify-between lg:mb-1">
         <h2 id="hot-topics" className="flex items-center gap-2 text-[0.875rem] font-semibold text-ink">
@@ -46,16 +46,16 @@ export function HotTopics({ entries }: { entries: HotStripEntry[] }) {
           <li key={e.rank} className={i >= 3 ? "max-sm:hidden" : undefined}>
             <Link viewTransition
               to={hrefOf(e)}
-              className="group -mx-2 grid min-h-10 sm:min-h-0 grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-tile px-2 py-1.5 transition-colors hover:bg-bg-sunk/70 active:bg-bg-sunk sm:grid-cols-[20px_minmax(0,1fr)_120px_64px_20px] sm:gap-x-4 sm:py-2 dark:hover:bg-bg-muted/40"
+              className="group -mx-2 grid min-h-10 sm:min-h-0 grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-tile px-2 py-2 transition-colors hover:bg-bg-sunk/70 active:bg-bg-sunk sm:grid-cols-[20px_minmax(0,1fr)_120px_64px_20px] sm:gap-x-4 sm:py-2 dark:hover:bg-bg-muted/40"
             >
-              <span className={`num text-center leading-none ${RANK_COLOR[i] ?? "text-[14px] font-bold text-rank-rest"}`}>{e.rank}</span>
-              <span className="line-clamp-1 min-w-0 text-[14.5px] font-semibold leading-[1.5] text-ink transition-colors group-hover:text-accent lg:text-[14px]">{e.title}</span>
+              <span className={`num text-center leading-none ${RANK_COLOR[i] ?? "text-[0.875rem] font-bold text-rank-rest"}`}>{e.rank}</span>
+              <span className="line-clamp-1 min-w-0 text-[0.875rem] font-semibold leading-[1.5] text-ink transition-colors group-hover:text-accent lg:text-[0.875rem]">{e.title}</span>
               <span className="hidden justify-end sm:flex">
                 <Faces participants={e.participants} total={e.participantCount} size={20} interactive={false} />
               </span>
-              <span className="flex items-center justify-end gap-2.5 sm:contents">
-                <span className="whitespace-nowrap text-right text-[12.5px] text-ink-4" title="热度指数">
-                  <span className="num text-[13.5px] font-semibold text-ink-2">{Math.round(e.heat)}</span> 热度
+              <span className="flex items-center justify-end gap-3 sm:contents">
+                <span className="whitespace-nowrap text-right text-[0.875rem] text-ink-4" title="热度指数">
+                  <span className="num text-[0.875rem] font-semibold text-ink-2">{Math.round(e.heat)}</span> 热度
                 </span>
                 <span className="flex w-5 justify-center">
                   <TrendMark trend={e.trend} />

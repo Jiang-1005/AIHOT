@@ -48,7 +48,7 @@ export function PhoneBar({ back, title, large = false, sub, leading, center, act
               title && (
                 <span
                   aria-hidden={!titleShown}
-                  className={`truncate text-[15.5px] font-semibold text-ink transition-[opacity,transform] duration-200 ${titleShown ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
+                  className={`truncate text-[0.875rem] font-semibold text-ink transition-[opacity,transform] duration-200 ${titleShown ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
                 >
                   {title}
                 </span>
@@ -63,7 +63,7 @@ export function PhoneBar({ back, title, large = false, sub, leading, center, act
           <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">
             {title}
           </h1>
-          {sub && <div className="mt-1 text-[12.5px] leading-relaxed text-ink-4">{sub}</div>}
+          {sub && <div className="mt-1 text-[0.875rem] leading-relaxed text-ink-4">{sub}</div>}
         </div>
       )}
     </>
@@ -88,7 +88,7 @@ function BackButton({ to, label }: BackTarget) {
         if (historyIndex() > 0) navigate(-1);
         else navigate(to, { viewTransition: true });
       }}
-      className="flex h-11 min-w-11 items-center pl-1 pr-2 text-[16px] text-accent transition-opacity active:opacity-50"
+      className="flex h-11 min-w-11 items-center pl-1 pr-2 text-[1rem] text-accent transition-opacity active:opacity-50"
     >
       <IconChevronLeft size={25} strokeWidth={2.1} />
       <span className="max-w-[7em] truncate">{text}</span>

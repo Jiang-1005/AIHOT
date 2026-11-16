@@ -11,17 +11,27 @@
  *               function root, where site/, industry/, assets/, static/ are copied.
  *   ssr.func  — React Router SSR, fully bundled.
  */
-import { spawnSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import {
   cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync,
 } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { brotliCompressSync, constants as zlibConstants } from "node:zlib";
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, ".vercel/output");
+
+function gitSha() {
+  return execSync("git rev-parse HEAD", { cwd: ROOT, encoding: "utf8" }).trim();
+}
+
+const RELEASE = (process.env.AIHOT_RELEASE || gitSha()).trim();
+process.env.AIHOT_RELEASE = RELEASE;
+const RELEASE_DEFINE = `--define:process.env.AIHOT_RELEASE=${JSON.stringify(RELEASE)}`;
 
 function run(cmd, args, opts = {}) {
   const r = spawnSync(cmd, args, { cwd: ROOT, stdio: "inherit", ...opts });
@@ -97,13 +107,39 @@ ensureEsbuild();
 
 const client = path.join(ROOT, "apps/web/build/client");
 const server = path.join(ROOT, "apps/web/build/server/index.js");
-if (!existsSync(client) || !existsSync(server)) {
-  console.log("building @aihot/web…");
-  run("npm", ["run", "build", "-w", "@aihot/web"]);
+const releaseStamp = path.join(ROOT, "apps/web/build/AIHOT_RELEASE");
+const webHasRelease = existsSync(client) && existsSync(server) && existsSync(releaseStamp)
+  && readFileSync(releaseStamp, "utf8").trim() === RELEASE;
+if (!webHasRelease) {
+  console.log(`building @aihot/web (AIHOT_RELEASE=${RELEASE})…`);
+  run("npm", ["run", "build", "-w", "@aihot/web"], { env: { ...process.env, AIHOT_RELEASE: RELEASE } });
+  mkdirSync(path.dirname(releaseStamp), { recursive: true });
+  writeFileSync(releaseStamp, `${RELEASE}\n`);
 }
 
 // Static client assets
 cpSync(client, path.join(OUT, "static"), { recursive: true });
+
+// The CDN compresses on the fly at a low brotli level (framework.js: 111 KB vs 93 KB at level 11).
+// Hashed JS/CSS over 8 KB (where the difference is worth a file) ship a level-11 twin that a route below
+// serves to clients that accept br.
+const ASSET_TYPES = { ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
+const overrides = {};
+const brotliNames = [];
+const assetsDir = path.join(OUT, "static/assets");
+for (const name of existsSync(assetsDir) ? readdirSync(assetsDir) : []) {
+  const type = ASSET_TYPES[path.extname(name)];
+  if (!type) continue;
+  const raw = readFileSync(path.join(assetsDir, name));
+  if (raw.length < 8192) continue;
+  brotliNames.push(name);
+  const br = brotliCompressSync(raw, {
+    params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11, [zlibConstants.BROTLI_PARAM_SIZE_HINT]: raw.length },
+  });
+  writeFileSync(path.join(assetsDir, `${name}.br`), br);
+  overrides[`assets/${name}.br`] = { contentType: type };
+}
+const brotliAssets = `^/assets/(${brotliNames.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})$`;
 
 const apiRoot = path.join(OUT, "functions/api.func");
 const apiFile = path.join(apiRoot, "packages/backend/src/index.js");
@@ -114,6 +150,7 @@ bundle(path.join(ROOT, "api/index.ts"), apiFile, {
   minify: true,
   extra: [
     "--banner:js=import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+    RELEASE_DEFINE,
   ],
 });
 
@@ -126,15 +163,12 @@ for (const rel of [
   "industry/topics.json",
   "industry/prompts",
   "assets/og-fonts",
-  // Optional company logos (sources.json + images); not shipped in this repository.
   "static/logos",
   "apps/web/public/logos",
 ]) {
   const src = path.join(ROOT, rel);
   const dest = path.join(apiRoot, rel);
-  const st = statSync(src, { throwIfNoEntry: false });
-  if (!st) continue;
-  if (st.isDirectory()) copyDir(src, dest);
+  if (statSync(src, { throwIfNoEntry: false })?.isDirectory()) copyDir(src, dest);
   else copyFile(src, dest);
 }
 
@@ -228,6 +262,7 @@ bundle(ssrEntry, path.join(ssrRoot, "index.js"), {
     "--loader:.svg=file",
     "--loader:.png=file",
     "--banner:js=import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+    RELEASE_DEFINE,
   ],
 });
 writeFileSync(path.join(ssrRoot, "package.json"), JSON.stringify({ type: "module" }) + "\n");
@@ -242,9 +277,17 @@ writeFileSync(path.join(ssrRoot, ".vc-config.json"), JSON.stringify({
 
 const config = {
   version: 3,
+  overrides,
   routes: [
     { src: "/(.*)", headers: { "X-Robots-Tag": "noindex, nofollow" }, continue: true },
     { src: "^/assets/(.*)$", headers: { "Cache-Control": "public, max-age=31536000, immutable" }, continue: true },
+    {
+      src: brotliAssets,
+      has: [{ type: "header", key: "accept-encoding", value: "(?:^|.*[\\s,])br(?:[\\s,;].*|$)" }],
+      headers: { "Content-Encoding": "br", Vary: "Accept-Encoding" },
+      dest: "/assets/$1.br",
+    },
+    { src: brotliAssets, headers: { Vary: "Accept-Encoding" }, continue: true },
     { handle: "filesystem" },
     { src: "^/api(?:/.*)?$", dest: "/api" },
     { src: "^/(?:feed(?:\\.xml)?|rss(?:\\.xml)?|atom\\.xml|openapi-v1\\.json|llms\\.txt|robots\\.txt|sitemap\\.xml)(?:/.*)?$", dest: "/api" },
@@ -259,6 +302,21 @@ const config = {
   ],
 };
 writeFileSync(path.join(OUT, "config.json"), JSON.stringify(config, null, 2) + "\n");
+
+const cssNames = existsSync(assetsDir)
+  ? readdirSync(assetsDir).filter((n) => /^root-.*\.css$/.test(n) && !n.endsWith(".br"))
+  : [];
+const css = cssNames[0]
+  ? {
+      file: `assets/${cssNames[0]}`,
+      sha256: createHash("sha256").update(readFileSync(path.join(assetsDir, cssNames[0]))).digest("hex"),
+      size: statSync(path.join(assetsDir, cssNames[0])).size,
+    }
+  : null;
+const releaseInfo = { sha: RELEASE, builtAt: new Date().toISOString(), css };
+writeFileSync(path.join(OUT, "release.json"), JSON.stringify(releaseInfo, null, 2) + "\n");
+console.log(`release: ${RELEASE}`);
+if (css) console.log(`css: ${css.file} sha256=${css.sha256} size=${css.size}`);
 
 function walk(dir, acc = []) {
   for (const name of readdirSync(dir)) {

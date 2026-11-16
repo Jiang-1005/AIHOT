@@ -145,7 +145,7 @@ export async function loadPolicyUpdatesPage(now = new Date()) {
     if (!isDomestic({ source_name: row.source_name, title: row.title, country: row.country })) continue;
     const title = scrubPublic(row.title);
     const source = scrubPublic(publicSourceName(row.source_name));
-    if (!title) continue;
+    if (!title || /心田|花啦啦|xintian/i.test(title) || /心田|花啦啦|xintian/i.test(source)) continue;
     if (seenUrl.has(row.id) || seenUrl.has(row.url)) continue;
     seenUrl.add(row.id);
     seenUrl.add(row.url);

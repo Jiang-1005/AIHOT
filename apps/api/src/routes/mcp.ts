@@ -254,6 +254,19 @@ function hostnameFromAuthority(authority: string | string[] | undefined): string
 
 const SITE_ADDRESS = new URL(config.siteUrl);
 
+/** Old tool prefix, accepted on tools/call only; never listed or written into public pages. */
+const LEGACY_MCP_PREFIX = "xintian_edu_";
+
+function rewriteLegacyMcpBody(body: unknown): unknown {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return body;
+  const msg = body as { method?: unknown; params?: { name?: unknown } };
+  if (msg.method !== "tools/call" || typeof msg.params?.name !== "string") return body;
+  const name = msg.params.name;
+  if (!name.startsWith(LEGACY_MCP_PREFIX)) return body;
+  return { ...msg, params: { ...msg.params, name: `${SITE.mcpPrefix}_${name.slice(LEGACY_MCP_PREFIX.length)}` } };
+}
+
+
 /** The site, deployment origin, local addresses, and extra hosts in MCP_ALLOWED_HOSTS. */
 function allowedHosts(): Set<string> {
   return new Set([
@@ -337,12 +350,13 @@ export function registerMcp(app: FastifyInstance) {
       if (v === undefined || k === "content-length" || k === "host") continue;
       headers.set(k, Array.isArray(v) ? v.join(", ") : String(v));
     }
-    const body = req.method === "POST" ? (typeof req.body === "string" ? req.body : JSON.stringify(req.body ?? null)) : undefined;
+    const mcpBody = req.method === "POST" && typeof req.body === "object" ? rewriteLegacyMcpBody(req.body) : req.body;
+    const body = req.method === "POST" ? (typeof mcpBody === "string" ? mcpBody : JSON.stringify(mcpBody ?? null)) : undefined;
     // A client that goes away ends the exchange in the SDK too.
     const gone = new AbortController();
     reply.raw.once("close", () => gone.abort());
     const request = new Request(`${config.siteUrl}${(req.raw.url ?? "/api/mcp")}`, { method: req.method, headers, body, signal: gone.signal });
-    const parsed = req.method === "POST" && typeof req.body === "object" ? { parsedBody: req.body } : undefined;
+    const parsed = req.method === "POST" && typeof mcpBody === "object" ? { parsedBody: mcpBody } : undefined;
     try {
       return respond(reply, await requestLog.run(req.log, () => handler.fetch(request, parsed)));
     } catch (error) {

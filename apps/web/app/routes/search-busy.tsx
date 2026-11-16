@@ -31,7 +31,7 @@ export default function SearchBusy() {
   const base = pathname.startsWith("/all") ? "/all" : "/";
   const retry = kept.toString() ? `${base}?${kept}` : base;
   const hasSearch = kept.has("q");
-  const button = "inline-flex h-9 items-center rounded-full px-4 text-[13.5px]";
+  const button = "inline-flex h-9 items-center rounded-full px-4 text-[0.875rem]";
   return (
     <>
     <PhoneBar back={{ to: base, label: base === "/all" ? "全部" : "精选" }} />

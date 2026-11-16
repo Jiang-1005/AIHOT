@@ -29,8 +29,29 @@ export function relativeTime(iso: string, now = Date.now()): string {
   return timeAgo(iso, now) ?? beijingDate(iso);
 }
 
-/** "3 天前" while that is under a month, else null: beside a full time, the date it would fall back to says nothing new. */
+/**
+ * A report known only by its date is stored at Beijing midnight to the second (T00:00:00+08:00); it has no
+ * clock, so it shows no 00:00 (as on the lists, Timeline slotClock).
+ */
+export function isDateOnly(iso: string): boolean {
+  const t = Date.parse(iso);
+  return Number.isFinite(t) && t % 60_000 === 0 && beijingTime(iso) === "00:00";
+}
+
+/** Whole Beijing calendar days from `iso`'s day to `now`'s. */
+function beijingDaysBetween(iso: string, now: number): number {
+  return Math.round((Date.parse(beijingDate(now)) - Date.parse(beijingDate(iso))) / 86_400_000);
+}
+
+/**
+ * "3 天前" while that is under a month, else null: beside a full time, the date it would fall back to says nothing new.
+ * A date without a time counts Beijing calendar days (今天, 昨天, 2 天前), not hours since a made-up midnight.
+ */
 export function timeAgo(iso: string, now = Date.now()): string | null {
+  if (isDateOnly(iso)) {
+    const days = Math.max(0, beijingDaysBetween(iso, now));
+    return days === 0 ? "今天" : days === 1 ? "昨天" : days < 30 ? `${days} 天前` : null;
+  }
   const t = Date.parse(iso);
   const s = Math.max(0, Math.round((now - t) / 1000));
   if (s < 60) return "刚刚";
@@ -42,8 +63,31 @@ export function timeAgo(iso: string, now = Date.now()): string | null {
   return d < 30 ? `${d} 天前` : null;
 }
 
+/** "2026-11-13 09:40" (Beijing), or the date alone for a report known only by its date. */
 export function fullDateTime(iso: string): string {
-  return `${beijingDate(iso)} ${beijingTime(iso)}`;
+  return isDateOnly(iso) ? beijingDate(iso) : `${beijingDate(iso)} ${beijingTime(iso)}`;
+}
+
+/** The clock of a list time, or null for a time known only by its date (a bare YYYY-MM-DD or Beijing midnight). */
+function clockOf(at: string): string | null {
+  return /^\d{4}-\d{2}-\d{2}$/.test(at.trim()) || isDateOnly(at) ? null : beijingTime(at);
+}
+
+/**
+ * A list row's dates. The row sits under the day it was collected (`at`), but the date it leads with is when the
+ * original was published: its clock when that is the same day, else "11月13日 09:30" (or the date alone). Only then,
+ * on a second line, "收录 09:42": the day head above already names the collection day. No publish date: the list time.
+ */
+export function rowDates(publishedAt: string | null | undefined, at: string, now = Date.now()): { day: string | null; clock: string | null; collected: string | null } {
+  if (!publishedAt || beijingDate(publishedAt) === beijingDate(at)) return { day: null, clock: clockOf(publishedAt ?? at), collected: null };
+  const seen = clockOf(at);
+  return { day: monthDay(beijingDate(publishedAt), now), clock: clockOf(publishedAt), collected: seen && `收录 ${seen}` };
+}
+
+/** "收录 11月14日 09:42" beside a publish date of another day (an item's page), else null. */
+export function collectedNote(publishedAt: string | null | undefined, collectedAt: string): string | null {
+  if (!publishedAt || beijingDate(publishedAt) === beijingDate(collectedAt)) return null;
+  return `收录 ${isDateOnly(collectedAt) ? monthDay(beijingDate(collectedAt)) : monthDayTime(collectedAt)}`;
 }
 
 /** "9月24日 10:51" (Beijing), for lists that span days. */

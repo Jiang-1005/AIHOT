@@ -1,13 +1,12 @@
 // 国内公司动态：可按时间（各公司混排、最新在前，每条标明公司）或按公司查看已核对（或标明「未查到原文」）的报道。
 // 不走精选 60 分 / 7 天门槛；窗口以文章自己的日期为主，默认最近 90 个北京日历日。
-// 没有动态的公司写「近 90 天未查到」，不拿旧稿凑数。名单里每家公司地位相同，不置顶任何一家。
-// 公开输出按 site/public-copy.ts 去掉站点配置的隐藏词。
+// 没有动态的公司写「近 90 天未查到」，不拿旧稿凑数。心田花开（含花啦啦）作为普通一家公司收录，不以它为站点框架。
+// 公开输出仍去掉「与心田花开相关」等内部字段，以及 xintian 这类代码/元数据泄漏；公司名「心田花开」「花啦啦」可以出现。
 // 同一事件若有 items-backfill*.csv 补录，保留补录那条原媒体链接；否则原媒体优先于转载。X / 小红书等社区帖不进本栏目，只在 /voices。
 import { sql } from "../db.ts";
 import { beijingDate, beijingTime } from "@aihot/contracts/time";
 import { publicSourceName } from "./rules.ts";
 import { loadContentTagMap, loadLogoIndex } from "./facets.ts";
-import { publicCopy } from "@aihot/site/public-copy";
 
 export const COMPANY_LOOKBACK_DAYS = 90;
 export const COMPANY_WINDOW_DAYS = COMPANY_LOOKBACK_DAYS;
@@ -21,7 +20,7 @@ export interface CompanyRosterEntry {
   aliases: string[];
 }
 
-/** 栏目名单：taxonomy 里的主体与别名，再加上栏目标明要收录的品牌。 */
+/** 栏目名单：taxonomy 里的主体与别名，再加上栏目标明要收录的品牌。心田花开为普通一项，不置顶。 */
 export const COMPANY_ROSTER: readonly CompanyRosterEntry[] = [
   { id: "zuoyebang", name: "作业帮", aliases: ["作业帮", "ZYBANG", "喵喵机"] },
   { id: "yuanfudao", name: "猿辅导", aliases: ["猿辅导", "小猿", "猿力科技", "小猿口算", "小猿搜题", "Yuanfudao"] },
@@ -84,6 +83,8 @@ export function companiesForItem(item: { tags: string[]; companies: string[]; ra
     ...(item.companies?.length ? item.companies : item.tags),
     item.rawCompany ?? "",
   ].filter(Boolean);
+  // 标题里的「心田花开」「花啦啦」归入心田花开；不扫摘要，以免把相关说明误标成该公司新闻。
+  if (/心田花开|花啦啦/.test(item.title ?? "")) tokens.push("心田花开");
   const hits: CompanyRosterEntry[] = [];
   const seen = new Set<string>();
   for (const token of tokens) {
@@ -119,7 +120,11 @@ export function windowStartDay(now = new Date(), days = COMPANY_LOOKBACK_DAYS): 
 }
 
 export function scrubPublic(text: string | null | undefined): string {
-  return publicCopy(String(text ?? ""))
+  // 保留公司名「心田花开」「花啦啦」；去掉内部相关字段措辞和 xintian 标识泄漏。
+  return String(text ?? "")
+    .replace(/与心田花开(产品)?(的)?(直接)?相关[：:]?/g, "")
+    .replace(/xintianhuaikai/gi, "")
+    .replace(/xintian/gi, "")
     .replace(/[ \t]{2,}/g, " ")
     .replace(/，{2,}/g, "，")
     .replace(/^[-—、，。\s]+/, "")
@@ -406,7 +411,7 @@ export async function loadCompanyUpdatesPage(now = new Date()) {
       )
   `;
 
-  const buckets = new Map<string, Array<CompanyUpdateItem & { fromBackfill?: boolean }>>();
+  const buckets = new Map<string, CompanyUpdateItem[]>();
   const itemCompanies = new Map<string, Set<string>>();
   for (const company of COMPANY_ROSTER) buckets.set(company.id, []);
 

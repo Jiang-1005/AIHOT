@@ -14,7 +14,7 @@ import {
   type CompanyUpdateSection,
 } from "@aihot/backend/publication/company-updates";
 
-test("心田花开 and 花啦啦 map to the 心田花开 company like any other roster entry", () => {
+test("心田花开 and 花啦啦 map to the ordinary 心田花开 company, not first in the roster", () => {
   const label = mapCompanyLabel("心田花开");
   const alias = mapCompanyLabel("花啦啦");
   const nested = mapCompanyLabel("心田花开 › 花啦啦");
@@ -28,9 +28,11 @@ test("心田花开 and 花啦啦 map to the 心田花开 company like any other 
   assert.ok(index < COMPANY_ROSTER.length);
 });
 
-test("scrubPublic keeps company names and tidies whitespace", () => {
+test("scrubPublic keeps company names but strips the internal relevance field and xintian slugs", () => {
   assert.equal(scrubPublic("心田花开推出花啦啦新课"), "心田花开推出花啦啦新课");
-  assert.equal(scrubPublic("  作业帮   发布新品  "), "作业帮 发布新品");
+  assert.equal(scrubPublic("与心田花开相关：情商语文"), "情商语文");
+  assert.match(scrubPublic("见 xintian 内部说明"), /内部说明/);
+  assert.doesNotMatch(scrubPublic("见 xintian 内部说明"), /xintian/i);
 });
 
 test("X posts stay out of /companies even when tagged 心田花开 › 花啦啦", () => {

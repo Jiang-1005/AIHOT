@@ -12,6 +12,7 @@ import { Sidebar } from "./components/shell/Sidebar";
 import { TabBar } from "./components/shell/TabBar";
 import { PullToRefresh } from "./components/shell/PullToRefresh";
 import { usePageTransition } from "./components/shell/transitions";
+import { useWarmSectionCode } from "./components/shell/warm-nav";
 import { SearchOverlay } from "./features/search/SearchOverlay";
 import { BackToTop, NavigationProgress } from "./components/shell/Chrome";
 import { buttonClass } from "./components/ui/Controls";
@@ -25,7 +26,6 @@ export const headers: Route.HeadersFunction = () => ({ "X-Robots-Tag": "noindex,
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.ico", sizes: "any" },
-  { rel: "icon", type: "image/png", href: "/icon.png" },
   { rel: "apple-touch-icon", href: "/apple-icon.png" },
   { rel: "manifest", href: "/manifest.webmanifest" },
   { rel: "alternate", type: "application/rss+xml", title: `${SITE.name} — 精选`, href: "/feed.xml" },
@@ -54,8 +54,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <html lang={SITE.locale} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
+        {documentRelease && <meta name="release" content={documentRelease} />}
         {documentRelease && <meta name="aihot-release" content={documentRelease} />}
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="color-scheme" content="light dark" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf9f6" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#13191c" />
         <meta name="apple-mobile-web-app-title" content={SITE.name} />
@@ -119,6 +121,7 @@ export default function App() {
   const { pathname, search } = useLocation();
   useEffect(() => rememberPage(pathname + search), [pathname, search]);
   usePageTransition();
+  useWarmSectionCode();
   // iOS Safari only shows :active (pressed) styles once the document listens for touches.
   useEffect(() => {
     const noop = () => {};
@@ -153,7 +156,7 @@ export function ErrorBoundary() {
         <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-3">
           {notFound ? "链接可能有误，或者这条内容已经下架。" : "页面暂时无法显示，请重新加载后再试。"}
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           {!notFound && <Link reloadDocument to={pathname + search + hash} className={buttonClass("primary")}>
             重新加载
           </Link>}

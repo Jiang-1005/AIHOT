@@ -1,14 +1,14 @@
 // Import 国内公司动态 / 国内政策 backfill CSVs (daily 12 columns, optional 13th 「公司」).
 // Reads every items-backfill*.csv and policy-backfill*.csv under the briefing dirs
-// (including rows appended to items-backfill.csv).
+// (including items-backfill-xintian.csv and rows appended to items-backfill.csv).
 // Policy rows are recognized by filename (policy-backfill*) or 信源类型 / 分类. Dedupe by 原文链接. Idempotent.
 // Does not change 精选门槛 and never sets selected=true.
-// CSV 里多出来的内部备注列不写入公开输出。
+// 公司名「心田花开」「花啦啦」可写入公司栏目；「与心田花开相关」列和 xintianRelevance 等内部字段不进公开输出。
 // Existing selected publications are not rewritten.
 //
-// Usage (from the repo root; the folder holds items-backfill*.csv / policy-backfill*.csv):
-//   docker cp ./backfill/. edu-hot-api-1:/tmp/backfill/
-//   docker exec -w /app -e COMPANY_BACKFILL_DIR=/tmp/backfill edu-hot-api-1 node /app/scripts/import-company-backfill.ts
+// Usage (from /workspace/edu-hot):
+//   docker cp /workspace/ai-edu/briefs/backfill-2026-11-10/. xintian-edu-hot-api-1:/tmp/backfill-2026-11-10/
+//   docker exec -w /app -e COMPANY_BACKFILL_DIR=/tmp/backfill-2026-11-10 xintian-edu-hot-api-1 node /app/scripts/import-company-backfill.ts
 //   node --import ./scripts/neon-doh-dns.mjs scripts/import-company-backfill.ts   # host, if DATABASE_URL is set
 import { existsSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -30,6 +30,8 @@ const BACKFILL_NAME = /^(items-backfill.*|policy-backfill.*)\.csv$/i;
 function defaultDirs(): string[] {
   const dirs = [
     process.env.COMPANY_BACKFILL_DIR,
+    "/workspace/ai-edu/briefs/backfill-2026-11-10",
+    "/workspace/ai-edu/backfill",
     "/data",
     "/tmp",
   ].filter((p): p is string => !!p);
@@ -237,7 +239,7 @@ function mergeContentTags(entries: Array<{ id: string; url: string; title: strin
   writeFileSync(file, JSON.stringify(current, null, 2) + "\n");
   // Host run: also drop a copy into the api volume if that container is up.
   if (file !== "/data/content-tags.json") {
-    const copied = spawnSync("docker", ["cp", file, `${process.env.API_CONTAINER ?? "edu-hot-api-1"}:/data/content-tags.json`], { encoding: "utf8" });
+    const copied = spawnSync("docker", ["cp", file, "xintian-edu-hot-api-1:/data/content-tags.json"], { encoding: "utf8" });
     if (copied.status !== 0) {
       console.error("content-tags.json written to", file, "(docker cp skipped)");
     }
@@ -414,7 +416,7 @@ for (const { row: r, policy } of byUrl.values()) {
         company: companies.map((c) => c.name).join("、"),
         country: r["国家"] || "",
         age: r["学生年龄段"] || "",
-        // 故意不写入 CSV 里的内部备注列。
+        // 故意不写入「与心田花开相关」及任何 xintian* 内部字段。
       },
     });
     if (res.created) summary.created += 1;

@@ -59,9 +59,10 @@ function toggle(list: string[], value: string): string[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
 
+/** A filter chip: 32px tall (the smallest target the site uses), pressed and selected states told apart. */
 function chipClass(on: boolean): string {
-  return `inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] leading-none transition-colors ${
-    on ? "bg-ink text-white" : "bg-bg-sunk text-ink-2 hover:text-ink"
+  return `inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-[0.75rem] leading-none transition-[color,background-color,scale] duration-150 active:scale-[0.97] ${
+    on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-2 ring-1 ring-inset ring-line-soft hover:text-ink hover:ring-line-strong"
   }`;
 }
 
@@ -111,7 +112,7 @@ export function logoFor(name: string, index: LogoIndex): string | undefined {
 }
 
 export function companyChipName(token: string): string | null {
-  if (!token || ["不涉及", "未查到", "待定", "小红书", "X", "Twitter", "x.com"].includes(token)) return null;
+  if (!token || ["不涉及", "未查到", "待定", "小红书", "X", "Twitter", "x.com", "心田花开", "心田"].includes(token)) return null;
   if (/^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$/.test(token) && !/[›>/]/.test(token)) return null;
   const parts = token.split(/\s*[›>／/]\s*/).map((s) => s.trim()).filter(Boolean);
   if (!parts.length) return null;
@@ -142,8 +143,8 @@ export function buildCompanyRow(counts: Record<string, number>, head: string[], 
 function FilterRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex gap-2">
-      <div className="w-16 shrink-0 pt-1 text-[12px] font-medium text-ink-4">{label}</div>
-      <div className="flex min-w-0 flex-wrap gap-1.5">{children}</div>
+      <div className="flex h-8 w-16 shrink-0 items-center text-[0.75rem] font-medium text-ink-4">{label}</div>
+      <div className="flex min-w-0 flex-wrap gap-2">{children}</div>
     </div>
   );
 }
@@ -170,14 +171,14 @@ export function SelectedFacetBars({
   });
   if (!pills.length) return null;
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-2">
       {pills.map((p) => (
-        <button key={p.key} type="button" onClick={p.onRemove} className="inline-flex items-center gap-1 rounded-full bg-ink px-2.5 py-1 text-[12px] text-white">
+        <button key={p.key} type="button" onClick={p.onRemove} className="inline-flex h-8 items-center gap-1 rounded-full bg-accent px-3 text-[0.75rem] text-accent-contrast active:scale-[0.97]">
           {p.label}
-          <span aria-hidden="true" className="text-[11px] opacity-70">×</span>
+          <span aria-hidden="true" className="text-[0.75rem] opacity-70">×</span>
         </button>
       ))}
-      <button type="button" onClick={onClearAll} className="text-[12px] text-accent hover:underline">
+      <button type="button" onClick={onClearAll} className="inline-flex h-8 items-center px-2 text-[0.75rem] text-accent hover:underline">
         清空
       </button>
     </div>
@@ -192,6 +193,9 @@ export function FacetChipRows({
   logos,
   headCompanies,
   extraRows,
+  collapsible = false,
+  onlyCompany = false,
+  onIntent,
 }: {
   vocab: FacetVocab;
   value: FacetState;
@@ -200,52 +204,98 @@ export function FacetChipRows({
   logos?: LogoIndex;
   headCompanies?: string[];
   extraRows?: ReactNode;
+  /** Desktop lists: one row of the five dimensions; a dimension's chips show when it is opened. */
+  collapsible?: boolean;
+  /** Only the 公司与产品 row (a page that lays out the other dimensions itself). */
+  onlyCompany?: boolean;
+  /** The state a chip would set, when the pointer rests on it (lets the page warm that result). */
+  onIntent?: (next: FacetState) => void;
 }) {
   const [showMore, setShowMore] = useState(false);
+  const [openKey, setOpenKey] = useState<FacetKey | null>(null);
   const logoIndex = logos ?? {};
   const companies = useMemo(
     () => buildCompanyRow(counts?.company ?? {}, headCompanies ?? HEAD_DEFAULT),
     [counts?.company, headCompanies],
   );
   const setKey = (key: FacetKey, name: string) => onChange({ ...value, [key]: toggle(value[key], name) });
+  const intent = (key: FacetKey, name: string) => onIntent?.({ ...value, [key]: toggle(value[key], name) });
   const companyList = showMore ? [...companies.visible, ...companies.more] : companies.visible;
+  const chip = (key: FacetKey, name: string, children: ReactNode = name) => (
+    <button
+      type="button"
+      key={name}
+      aria-pressed={value[key].includes(name)}
+      className={chipClass(value[key].includes(name))}
+      onPointerEnter={onIntent ? () => intent(key, name) : undefined}
+      onFocus={onIntent ? () => intent(key, name) : undefined}
+      onClick={() => setKey(key, name)}
+    >
+      {children}
+    </button>
+  );
+  const chipsOf = (key: FacetKey): ReactNode => {
+    if (key === "company") {
+      return (
+        <>
+          {companyList.map((c) => chip("company", c.name, <><LogoMark name={c.name} src={logoFor(c.name, logoIndex)} />{c.name}</>))}
+          {companies.more.length > 0 && (
+            <button type="button" className={chipClass(showMore)} onClick={() => setShowMore((s) => !s)}>
+              {showMore ? "收起" : "更多"}
+            </button>
+          )}
+        </>
+      );
+    }
+    return vocab[key].map((v) => chip(key, v));
+  };
+  const ORDER: FacetKey[] = ["topic", "subject", "company", "form", "content_type"];
+
+  if (collapsible) {
+    return (
+      <div>
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="筛选">
+          {ORDER.map((key) => {
+            const n = value[key].length;
+            const opened = openKey === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-expanded={opened}
+                onClick={() => setOpenKey(opened ? null : key)}
+                className={`inline-flex h-8 items-center gap-1 rounded-full px-3 text-[0.75rem] transition-[color,background-color,scale] duration-150 active:scale-[0.97] ${
+                  opened ? "bg-accent-soft text-accent ring-1 ring-inset ring-accent" : n ? "bg-accent-soft text-accent" : "bg-surface text-ink-2 ring-1 ring-inset ring-line hover:ring-line-strong"
+                }`}
+              >
+                {FACET_LABELS[key]}
+                {n > 0 && <span className="num">· {n}</span>}
+                <svg aria-hidden="true" viewBox="0 0 12 12" width="12" height="12" className={`transition-transform duration-150 ${opened ? "rotate-180" : ""}`}><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            );
+          })}
+          {extraRows}
+        </div>
+        {openKey && <div className="anim-drop-in mt-3 flex flex-wrap gap-2">{chipsOf(openKey)}</div>}
+      </div>
+    );
+  }
+
+  if (onlyCompany) {
+    return (
+      <section>
+        <h3 className="mb-2 text-[0.75rem] font-medium text-ink-4">{FACET_LABELS.company}</h3>
+        <div className="flex flex-wrap gap-2">{chipsOf("company")}</div>
+      </section>
+    );
+  }
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {extraRows}
-      <FilterRow label="主题">
-        {vocab.topic.map((v) => (
-          <button type="button" key={v} className={chipClass(value.topic.includes(v))} onClick={() => setKey("topic", v)}>{v}</button>
-        ))}
-      </FilterRow>
-      <FilterRow label="学科能力">
-        {vocab.subject.map((v) => (
-          <button type="button" key={v} className={chipClass(value.subject.includes(v))} onClick={() => setKey("subject", v)}>{v}</button>
-        ))}
-      </FilterRow>
-      <FilterRow label="公司与产品">
-        {companyList.map((c) => (
-          <button type="button" key={c.name} className={chipClass(value.company.includes(c.name))} onClick={() => setKey("company", c.name)}>
-            <LogoMark name={c.name} src={logoFor(c.name, logoIndex)} />
-            {c.name}
-          </button>
-        ))}
-        {companies.more.length > 0 && (
-          <button type="button" className={chipClass(showMore)} onClick={() => setShowMore((s) => !s)}>
-            {showMore ? "收起" : "更多"}
-          </button>
-        )}
-      </FilterRow>
-      <FilterRow label="形态">
-        {vocab.form.map((v) => (
-          <button type="button" key={v} className={chipClass(value.form.includes(v))} onClick={() => setKey("form", v)}>{v}</button>
-        ))}
-      </FilterRow>
-      <FilterRow label="内容类型">
-        {vocab.content_type.map((v) => (
-          <button type="button" key={v} className={chipClass(value.content_type.includes(v))} onClick={() => setKey("content_type", v)}>{v}</button>
-        ))}
-      </FilterRow>
+      {ORDER.map((key) => (
+        <FilterRow key={key} label={FACET_LABELS[key]}>{chipsOf(key)}</FilterRow>
+      ))}
     </div>
   );
 }

@@ -8,11 +8,11 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 type Size = "md" | "lg";
-const SIZES: Record<Size, string> = { md: "h-11 px-4 text-[13.5px] lg:h-9", lg: "h-11 px-5 text-[14.5px]" };
+const SIZES: Record<Size, string> = { md: "h-11 px-4 text-[0.875rem] lg:h-9", lg: "h-11 px-5 text-[0.875rem]" };
 
 /** The pill button's classes, for links that look like buttons. */
 export function buttonClass(variant: Variant = "secondary", size: Size = "md"): string {
-  return `inline-flex items-center justify-center gap-1.5 rounded-full font-medium transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.98] ${SIZES[size]} ${VARIANTS[variant]}`;
+  return `inline-flex items-center justify-center gap-2 rounded-full font-medium transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.98] ${SIZES[size]} ${VARIANTS[variant]}`;
 }
 
 /** Native select as a pill, like the site's other controls. */
@@ -20,7 +20,7 @@ export function Select({ className = "", children, ...rest }: SelectHTMLAttribut
   return (
     <span className={`relative inline-flex ${className}`}>
       <select
-        className="h-11 w-full cursor-pointer appearance-none rounded-full border border-line-strong bg-surface py-0 pl-3.5 pr-8 text-[16px] text-ink-2 outline-none lg:h-8 lg:text-[12.5px] transition-colors hover:border-ink-4 focus:border-accent"
+        className="h-11 w-full cursor-pointer appearance-none rounded-full border border-line-strong bg-surface py-0 pl-4 pr-8 text-[1rem] text-ink-2 outline-none lg:h-8 lg:text-[0.875rem] transition-colors hover:border-ink-4 focus:border-accent"
         {...rest}
       >
         {children}

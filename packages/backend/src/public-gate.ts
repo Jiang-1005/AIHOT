@@ -1,7 +1,6 @@
 // Optional public-site password gate. Off unless EDU_HOT_GATE_ENABLED=true.
 // The password is read from EDU_HOT_GATE_PASSWORD and is never logged or returned.
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { SITE } from "@aihot/site";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const GATE_COOKIE = "edu_hot_gate";
 export const GATE_PATH = "/gate";
@@ -22,18 +21,9 @@ export function gateMisconfigured(): boolean {
   return gateEnabled() && !gatePassword();
 }
 
-/**
- * The cookie is signed with SESSION_SECRET, or with the gate password when that is not set. There is no
- * built-in fallback: without either the gate is either off or misconfigured (the process refuses to start).
- */
 function signingSecret(): string {
-  const secret = process.env.SESSION_SECRET || gatePassword();
-  if (!secret) throw new Error("public gate: no SESSION_SECRET or EDU_HOT_GATE_PASSWORD to sign the cookie");
-  return secret;
+  return process.env.SESSION_SECRET || process.env.EDU_HOT_GATE_PASSWORD || "edu-hot-gate-unconfigured";
 }
-
-/** Only for the constant-time dummy comparison below; never signs anything. */
-const DUMMY_KEY = randomBytes(32);
 
 export function gateCookieValue(): string {
   return createHmac("sha256", signingSecret()).update(TOKEN_PURPOSE).digest("hex");
@@ -55,7 +45,7 @@ function equal(a: string, b: string): boolean {
   const left = Buffer.from(a);
   const right = Buffer.from(b);
   if (left.length !== right.length) {
-    timingSafeEqual(createHmac("sha256", DUMMY_KEY).update(a).digest(), createHmac("sha256", DUMMY_KEY).update(a).digest());
+    timingSafeEqual(createHmac("sha256", signingSecret()).update(a).digest(), createHmac("sha256", signingSecret()).update(a).digest());
     return false;
   }
   return timingSafeEqual(left, right);
@@ -114,7 +104,7 @@ export function gateLoginPage(opts: { next: string; error?: boolean; origin?: st
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>访问验证 · ${escapeHtml(SITE.name)}</title>
+  <title>访问验证 · 教育AI HOT</title>
   <style>
     :root { color-scheme: light dark; }
     body { margin: 0; min-height: 100dvh; display: grid; place-items: center; font: 16px/1.5 system-ui, sans-serif; background: #faf9f6; color: #1a1a1a; }
@@ -136,7 +126,7 @@ export function gateLoginPage(opts: { next: string; error?: boolean; origin?: st
 </head>
 <body>
   <form method="post" action="${action}" autocomplete="current-password">
-    <h1>${escapeHtml(SITE.name)}</h1>
+    <h1>教育AI HOT</h1>
     <p class="lead">这是内部站点，请输入访问密码。</p>
     ${err}
     <input type="hidden" name="next" value="${escapeHtml(opts.next)}">

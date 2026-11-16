@@ -20,3 +20,17 @@ fontsource-noto-sans-sc-*.tgz
 
 scripts/.vercel-file-manifest.json
 scripts/.vercel-ssr-entry.ts
+
+# Local runtime / secrets (added 2026-11-14 snapshot)
+.vercel/
+deploy/internal-gate.env
+deploy/*.log
+deploy/*.log.*
+deploy/*.pid
+__pycache__/
+
+# Local ship log written by scripts/release-gate.mjs (accepted.txt is committed)
+RELEASES/shipped.jsonl
+
+# verify:site screenshots
+screenshots/verify-site/

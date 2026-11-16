@@ -1,5 +1,5 @@
 // One-off: compose one daily (Beijing date). Usage:
-//   docker exec -w /app edu-hot-api-1 node /app/scripts/compose-daily.ts 2026-11-10
+//   docker exec -w /app xintian-edu-hot-api-1 node /app/scripts/compose-daily.ts 2026-11-10
 import { closeDb } from "@aihot/backend/db";
 import { stopBoss } from "@aihot/backend/jobs/queue";
 import { installModules } from "@aihot/backend/modules";

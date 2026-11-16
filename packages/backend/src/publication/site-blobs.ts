@@ -44,6 +44,13 @@ function stampOf(value: Date | string): string {
   return typeof value === "string" ? value : value.toISOString();
 }
 
+/** Postgres "undefined_table": Docker can boot before the site_blobs migration is applied. */
+export function isMissingRelation(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String((error as { code: unknown }).code) : "";
+  return code === "42P01";
+}
+
 export async function writeSiteBlob(key: SiteBlobKey, payload: unknown): Promise<void> {
   const [row] = await sql<{ updated_at: Date | string }[]>`
     INSERT INTO site_blobs (key, payload, updated_at)
@@ -61,8 +68,9 @@ export async function readSiteBlob<T = unknown>(key: SiteBlobKey): Promise<T | n
   try {
     const [row] = await sql<{ payload: T }[]>`SELECT payload FROM site_blobs WHERE key = ${key}`;
     return row?.payload ?? null;
-  } catch {
-    return null;
+  } catch (error) {
+    if (isMissingRelation(error)) return null;
+    throw error;
   }
 }
 
@@ -94,8 +102,10 @@ export async function hydrateSiteBlobsFromDb(opts?: { force?: boolean; maxAgeMs?
       if (!force && existsSync(dest) && existsSync(meta) && readFileSync(meta, "utf8") === stamp) continue;
       await writeFile(dest, JSON.stringify(row.payload), "utf8");
       await writeFile(meta, stamp, "utf8");
-    } catch {
-      // Table missing, or the database is not reachable yet.
+    } catch (error) {
+      // A missing table is ignored so Docker can boot before the migration is applied.
+      if (isMissingRelation(error)) continue;
+      throw error;
     }
   }
   lastHydrateAt = Date.now();

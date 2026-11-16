@@ -11,7 +11,7 @@ const CLOSE_DISTANCE = 110;
 const CLOSE_VELOCITY = 0.6; // px per ms
 
 /** A choice listed in a sheet: large type in a full-height row, the one in use in accent. */
-export const sheetChoice = (on: boolean) => `flex h-12 items-center justify-between text-[16px] transition-colors active:bg-bg-sunk ${on ? "font-semibold text-accent" : "text-ink"}`;
+export const sheetChoice = (on: boolean) => `flex h-12 items-center justify-between text-[1rem] transition-colors active:bg-bg-sunk ${on ? "font-semibold text-accent" : "text-ink"}`;
 
 /** The tick that ends the choice in use. */
 export const ChoiceTick = () => <IconCheck size={19} strokeWidth={2.2} />;
@@ -142,7 +142,7 @@ export function Sheet({ open, onClose, title, children, label, centered = false 
           className={`sheet-panel anim-sheet-in relative mx-auto flex max-h-[88dvh] w-full max-w-[640px] flex-col rounded-t-sheet bg-surface shadow-[var(--shadow-overlay)] outline-none ${centered ? "sm:w-auto sm:min-w-[400px] sm:rounded-sheet sm:pb-2" : ""}`}
         >
           <div ref={handle} className="touch-none select-none">
-            <span aria-hidden="true" className={`mx-auto mt-[7px] block h-[5px] w-9 rounded-full bg-line-strong ${centered ? "sm:invisible" : ""}`} />
+            <span aria-hidden="true" className={`mx-auto mt-[8px] block h-[5px] w-9 rounded-full bg-line-strong ${centered ? "sm:invisible" : ""}`} />
             {title && (
               <div className="flex min-h-12 items-center gap-3 pl-5 pr-2">
                 <h2 id={titleId} className="min-w-0 flex-1 text-[1rem] font-semibold leading-snug text-ink">

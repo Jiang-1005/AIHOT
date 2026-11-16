@@ -12,7 +12,7 @@ import { IconChevronDown } from "../../components/icons";
 import { RingMark } from "@aihot/site/brand/Logo.tsx";
 import { EmptyState } from "../../components/ui/Page";
 import { beijingDate, beijingTime, beijingWeekday, monthDay } from "@aihot/contracts/time";
-import { byBeijingDay, weekdayShort } from "../../lib/format";
+import { byBeijingDay, rowDates, weekdayShort } from "../../lib/format";
 import { isHydrated } from "../../lib/hydration";
 import { markRead, setUnreadOnly, useReadSet, useUnreadOnly } from "../../lib/local-state";
 import { listPath, timelineApiParams } from "../../lib/seo";
@@ -62,20 +62,20 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
     <div className="bleed sticky top-[var(--bar-h)] z-20 bg-daybar lg:mx-0 lg:bg-bg lg:px-0">
       {/* Phones: a full-width day bar; on the timeline the whole bar folds the day. */}
       {onToggle ? (
-        <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={`${collapsed ? "展开" : "收起"}${date}`} className="flex h-11 w-full items-center gap-2 text-left lg:hidden">
+        <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={`${collapsed ? "展开" : "收起"}${date}`} className="flex h-11 w-full items-center gap-2 border-b border-line text-left lg:hidden">
           {phoneRow}
         </button>
       ) : (
-        <div className="flex h-9 items-center gap-2 lg:hidden">{phoneRow}</div>
+        <div className="flex h-10 items-center gap-2 border-b border-line lg:hidden">{phoneRow}</div>
       )}
       {/* Desktop: date text shares the page's left edge, regardless of how many digits it has. */}
-      <div className="hidden h-11 items-center gap-3 lg:flex">
+      <div className="hidden h-12 items-center gap-3 border-t border-ink lg:flex">
         {onToggle ? (
-          <button type="button" onClick={onToggle} aria-expanded={!collapsed} className="whitespace-nowrap text-left text-[18px] font-semibold leading-6 text-ink">
+          <button type="button" onClick={onToggle} aria-expanded={!collapsed} className="whitespace-nowrap text-left text-[0.875rem] font-bold leading-6 tracking-[0.16em] text-ink">
             {date}
           </button>
         ) : (
-          <time dateTime={day} className="whitespace-nowrap text-[18px] font-semibold leading-6 text-ink">{date}</time>
+          <time dateTime={day} className="whitespace-nowrap text-[0.875rem] font-bold leading-6 tracking-[0.16em] text-ink">{date}</time>
         )}
         {onToggle ? (
           <button
@@ -83,12 +83,12 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
             onClick={onToggle}
             aria-expanded={!collapsed}
             aria-label={collapsed ? `展开${date}` : `收起${date}`}
-            className="grid size-6 place-items-center justify-self-center rounded-full text-ink-4 transition-colors hover:bg-bg-sunk hover:text-ink"
+            className="-my-1 grid size-8 place-items-center justify-self-center rounded-full text-ink-4 transition-colors hover:bg-bg-sunk hover:text-ink"
           >
             <IconChevronDown size={14} className={`transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} />
           </button>
         ) : null}
-        <span className="text-[13px] text-ink-4">
+        <span className="kicker font-normal">
           {weekday}
           {count !== null && (
             <>
@@ -97,25 +97,30 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
             </>
           )}
         </span>
-        {aside && <span className="ml-auto text-[12px] text-ink-4">{aside}</span>}
+        {aside && <span className="ml-auto text-[0.75rem] text-ink-4">{aside}</span>}
       </div>
     </div>
   );
 }
 
 /**
- * One dated slot: the time, the rail (desktop) and the item. As on the original timeline, the rail is a
- * 1px line from this node's centre to the next one's, so the day reads as one continuous thread.
+ * One dated slot: the time column (desktop) and the item. Items are separated by hairlines, as columns of a
+ * printed page are, rather than threaded on a rail.
  */
 /** Clock for the rail. A calendar date alone must not become 08:00 (UTC midnight). */
 export function slotClock(at: string | null | undefined): string | null {
   if (!at) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(at.trim())) return null;
+  // A report known only by its date is stored at Beijing midnight to the second (T00:00:00+08:00):
+  // it shows no clock rather than a made-up 00:00. Real times (an X post at 00:06:16) still show.
+  const t = Date.parse(at);
+  if (Number.isFinite(t) && (t + 8 * 3600_000) % 86_400_000 === 0) return null;
   return beijingTime(at);
 }
 
-export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }: { at: string; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string }) {
-  const clock = slotClock(at);
+export function TimelineSlot({ at, publishedAt, children, fresh = false, delay = 0, dataKey }: { at: string; publishedAt?: string | null; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string }) {
+  // The rail leads with the publish date (rowDates); a list without one (policy, company updates) keeps its own time.
+  const { day, clock } = publishedAt === undefined ? { day: null, clock: slotClock(at) } : rowDates(publishedAt, at);
   return (
     <li
       data-card-key={dataKey}
@@ -124,13 +129,12 @@ export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }
     >
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
       <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-4 group-last/slot:border-b-0 lg:grid-cols-[56px_24px_minmax(0,1fr)] lg:border-b-0 lg:py-0">
-        <time dateTime={at} className="mono hidden text-ink-4 lg:block lg:pt-6 lg:text-[0.75rem] lg:leading-[1.5] lg:group-first/slot:pt-4">
+        <time dateTime={publishedAt ?? at} className="mono hidden text-ink-4 lg:block lg:pt-6 lg:text-[0.75rem] lg:leading-[1.5] lg:group-first/slot:pt-4">
+          {day && <span className="block whitespace-nowrap text-[0.75rem]">发布</span>}
+          {day && <span className="block whitespace-nowrap text-[0.75rem]">{day}</span>}
           {clock ?? ""}
         </time>
-        <span aria-hidden="true" className="relative hidden lg:block">
-          <span className="absolute -bottom-[41px] left-[10.5px] top-[29px] w-px bg-line-strong group-last/slot:hidden" />
-          <span className="absolute left-[7.5px] top-[25.5px] size-[7px] rounded-full bg-accent shadow-[0_0_0_4px_var(--bg)] transition-transform duration-300 group-hover/slot:scale-[1.15]" />
-        </span>
+        <span aria-hidden="true" className="hidden lg:block" />
         {children}
       </div>
     </li>
@@ -312,8 +316,9 @@ export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnr
   return (
     <div className="relative">
       {/* Desktop puts it on the first date row; phones, and a list the filter left empty, keep its own row. */}
-      {!hidePhoneUnread && (
-        <div className={`mb-2 flex justify-end ${days.length ? "lg:hidden" : ""}`}>{unreadToggle}</div>
+      {/* Phones reach it from the bar's filter sheet; a list the filter left empty keeps it here to turn it off. */}
+      {!hidePhoneUnread && !days.length && (
+        <div className="mb-2 flex justify-end">{unreadToggle}</div>
       )}
 
       {days.length === 0 && !loadingMore && (
@@ -343,7 +348,7 @@ export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnr
                     const fresh = freshKeys.has(c.key);
                     const delay = fresh ? Math.min(order++, 10) * 40 : 0;
                     return (
-                      <TimelineSlot key={c.key} dataKey={c.key} at={c.anchorAt} fresh={fresh} delay={delay}>
+                      <TimelineSlot key={c.key} dataKey={c.key} at={c.anchorAt} publishedAt={c.item.publishedAt} fresh={fresh} delay={delay}>
                         <FeedItem item={c.item} group={c.group} filters={filters} read={readSet.has(c.item.id) && !(unreadOnly && unreadVisible(c))} onOpen={markRead} at={c.anchorAt} />
                       </TimelineSlot>
                     );
@@ -365,21 +370,21 @@ function FeedEnd({ loading, error, hasMore, manual, empty, onMore }: { loading: 
   return (
     <div className="flex justify-center py-6">
       {loading ? (
-        <span className="inline-flex items-center gap-2 text-[12.5px] text-ink-4">
+        <span className="inline-flex items-center gap-2 text-[0.875rem] text-ink-4">
           <RingMark className="size-4 text-accent" spinning /> 正在加载
         </span>
       ) : error ? (
-        <button type="button" onClick={onMore} className="h-9 rounded-full border border-hot/30 px-4 text-[13px] text-hot hover:bg-hot-soft">
+        <button type="button" onClick={onMore} className="h-9 rounded-full border border-hot/30 px-4 text-[0.875rem] text-hot hover:bg-hot-soft">
           加载失败，点此重试
         </button>
       ) : hasMore ? (
         manual && (
-          <button type="button" onClick={onMore} className="h-9 rounded-full border border-line-strong bg-surface px-5 text-[13px] font-medium text-ink-2 transition-colors hover:border-ink-4 hover:text-ink">
+          <button type="button" onClick={onMore} className="h-9 rounded-full border border-line-strong bg-surface px-5 text-[0.875rem] font-medium text-ink-2 transition-colors hover:border-ink-4 hover:text-ink">
             加载更多
           </button>
         )
       ) : (
-        !empty && <span className="text-[12px] text-ink-4">已经到底了</span>
+        !empty && <span className="text-[0.75rem] text-ink-4">已经到底了</span>
       )}
     </div>
   );

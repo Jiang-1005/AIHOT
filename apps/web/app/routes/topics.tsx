@@ -18,7 +18,9 @@ import { setUnreadOnly, useUnreadOnly } from "../lib/local-state";
 
 export const handle: Screen = { home: navUp("/topics").tab, name: "主题" };
 export { pageHeaders as headers } from "../lib/api.server";
-export const { clientLoader, shouldRevalidate } = pageReuse<typeof loader>();
+// Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
+export const clientLoader = pageReuse<typeof loader>().clientLoader;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -65,7 +67,7 @@ export default function TopicsPage() {
   const selected = !facetsEqualEmpty(value);
   const [sheet, setSheet] = useState(false);
   const unreadOnly = useUnreadOnly();
-  const chip = (on: boolean) => `inline-flex rounded-full px-2.5 py-1 text-[12px] ${on ? "bg-ink text-white" : "bg-bg-sunk text-ink-2"}`;
+  const chip = (on: boolean) => `inline-flex rounded-full px-3 py-1 text-[0.75rem] ${on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-2"}`;
 
   const facetRows = (
     <FacetChipRows
@@ -82,18 +84,18 @@ export default function TopicsPage() {
     <div className="pb-6">
       <PhoneBar
         leading={
-          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-2.5 pr-2 text-ink">
+          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-2 text-ink">
             <Wordmark size={17} />
           </Link>
         }
         title="主题"
       />
       <header className="pb-2 pt-3 lg:pt-1">
-        <h1 data-page-title="" className="text-[24px] font-semibold leading-[1.3] text-ink">主题</h1>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-ink-3">按五组标签浏览媒体精选与往期报道。</p>
+        <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">主题</h1>
+        <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-3">按五组标签浏览媒体精选与往期报道。</p>
       </header>
 
-      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
           className={chip(slot === "featured")}
@@ -137,8 +139,8 @@ export default function TopicsPage() {
           <button type="button" className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={() => setSheet(false)} />
           <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-sheet bg-surface p-4 pb-8 shadow-[var(--shadow-overlay)]">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[16px] font-semibold text-ink">筛选</h2>
-              <button type="button" className="text-[13px] text-ink-3" onClick={() => setSheet(false)}>完成</button>
+              <h2 className="text-[1rem] font-semibold text-ink">筛选</h2>
+              <button type="button" className="text-[0.875rem] text-ink-3" onClick={() => setSheet(false)}>完成</button>
             </div>
             {facetRows}
           </div>

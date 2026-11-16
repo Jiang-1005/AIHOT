@@ -16,7 +16,6 @@ import { ENTITIES, entityNames } from "../editorial/vocabulary.ts";
 import { cached, type Cached } from "../lib/cache.ts";
 import { sha256, stableJson } from "../lib/ids.ts";
 import { serverModules } from "../modules.ts";
-import { publicCopy } from "@aihot/site/public-copy";
 import { ITEM_COLUMNS, ITEM_FROM, toFeedItemSummary, type ItemRow } from "./items.ts";
 import { evidenceCondition, listedCondition, ownFactEvidenceCondition, seatedCondition, selectedCondition, storyReportCondition } from "./scope.ts";
 
@@ -70,7 +69,8 @@ export const TOPICS: Topic[] = file.topics.map((t) => ({
 const BY_SLUG = new Map(TOPICS.map((t, position) => [t.slug, { topic: t, position }]));
 
 export function isPublicTopic(t: { slug: string; entityId: string | null; name: string }): boolean {
-  return publicCopy(t.name) === t.name.trim();
+  if (t.slug === "xintian" || t.entityId === "xintian") return false;
+  return !/xintian|心田/i.test(`${t.slug} ${t.name}`);
 }
 
 export function findTopic(slug: string): Topic | null {

@@ -38,12 +38,12 @@ export function CatalogFeedItem({
       <header className="flex min-h-5 items-center gap-2 text-[0.75rem] leading-[1.5] text-ink-4 lg:min-h-5 lg:gap-2">
         {source ? <span className="min-w-0 truncate">{source}</span> : null}
         {clock ? (
-          <time dateTime={at ?? undefined} className="mono shrink-0 text-[12px] lg:hidden">
+          <time dateTime={at ?? undefined} className="mono shrink-0 text-[0.75rem] lg:hidden">
             · {clock}
           </time>
         ) : null}
         {hasMarks ? (
-          <span className="relative z-10 ml-auto flex shrink-0 items-center gap-1.5">
+          <span className="relative z-10 ml-auto flex shrink-0 items-center gap-2">
             {unverified ? <span className="soft-tag soft-tag-warn">未查到原文</span> : null}
             {consultationDraft ? (
               <span className="soft-tag" title="征求意见稿，未施行">
@@ -61,7 +61,7 @@ export function CatalogFeedItem({
       </h3>
       {text ? <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:mt-2 lg:line-clamp-3">{text}</p> : null}
       {visibleTags.length > 0 ? (
-        <div className={`relative z-10 mt-2 flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-ink-4 ${mobileLeadTag ? "flex" : "hidden lg:flex"}`}>
+        <div className={`relative z-10 mt-2 flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem] text-ink-4 ${mobileLeadTag ? "flex" : "hidden lg:flex"}`}>
           {visibleTags.map((tag, i) => {
             const className = mobileLeadTag && i > 0 ? "max-lg:hidden" : undefined;
             return tag.href ? (

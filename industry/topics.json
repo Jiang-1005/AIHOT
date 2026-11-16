@@ -32,7 +32,7 @@
     { "slug": "ello", "name": "Ello", "group": "company", "entityId": "ello", "definition": "Ello 儿童阅读与 AI 伴读产品动态。" },
     { "slug": "openai", "name": "OpenAI / ChatGPT", "group": "company", "entityId": "openai", "definition": "OpenAI 与教育相关的产品（如 Study Mode）及政策影响。" },
     { "slug": "google", "name": "Google / Gemini", "group": "company", "entityId": "google", "aliases": ["Classroom", "Guided Learning"], "definition": "Google 的 Classroom、Guided Learning 等教育向能力与产品。" },
-    { "slug": "huakai", "name": "心田花开", "group": "company", "entityId": "huakai", "aliases": ["花啦啦"], "definition": "公开报道中出现的心田花开、花啦啦相关动态。" },
+    { "slug": "xintian", "name": "心田花开", "group": "company", "entityId": "xintian", "aliases": ["花啦啦"], "definition": "公开报道中出现的心田花开、花啦啦相关动态。" },
     { "slug": "literacy", "name": "大语文与表达", "group": "field", "tags": ["大语文", "阅读写作", "表达口语", "作文批改", "口语陪练", "情商语文"], "definition": "阅读、写作、口语表达、情商语文与大语文相关动态。" },
     { "slug": "ai-tutor", "name": "AI 老师与伴学", "group": "field", "tags": ["AI老师", "伴学", "学习机"], "definition": "AI 家教、伴学应用、学习机与课堂助手。" },
     { "slug": "sel", "name": "儿童 SEL", "group": "field", "tags": ["儿童SEL", "素质教育"], "definition": "儿童社会情感学习、素质教育与相关产品研究。" },

@@ -1,27 +1,19 @@
-/**
- * Terms this site never shows on public pages (for example an internal team or product name that slipped
- * into a model-written summary). Empty by default: list them here, longest first, when your site needs it.
- */
-export const HIDDEN_PUBLIC_TERMS: readonly string[] = [];
-
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-const HIDDEN_RE = HIDDEN_PUBLIC_TERMS.length
-  ? new RegExp(HIDDEN_PUBLIC_TERMS.map(escapeRegExp).join("|"), "g")
-  : null;
-
-/** Strip the site's hidden terms from any public-facing text. */
+/** Strip internal product-name mentions from any public-facing text. */
 export function publicCopy(text: string | null | undefined): string {
   if (!text) return "";
-  if (!HIDDEN_RE) return text.trim();
-  return text
-    .replace(HIDDEN_RE, "")
+  let s = text
+    .replace(/与心田花开(产品)?(的)?(直接)?相关[：:]?/g, "")
+    .replace(/心田花开(团队)?/g, "")
+    .replace(/心田/g, "")
     .replace(/[ \t]{2,}/g, " ")
+    .replace(/是谈「/g, "是讨论「")
+    .replace(/可与\s*「/g, "可与「")
+    .replace(/对照\s*「/g, "对照「")
+    .replace(/与\s*「/g, "与「")
     .replace(/，{2,}/g, "，")
     .replace(/^[-—、，。\s]+/, "")
     .trim();
+  return s;
 }
 
 /** Like publicCopy, but empty after scrub becomes null. */
@@ -30,7 +22,7 @@ export function publicText(text: string | null | undefined): string | null {
   return s === "" ? null : s;
 }
 
-const HIDDEN_TAGS = new Set(HIDDEN_PUBLIC_TERMS);
+const HIDDEN_TAGS = new Set(["心田花开", "心田", "xintian", "xintianhuaikai"]);
 
 export function publicTags(tags: string[] | null | undefined): string[] {
   if (!tags?.length) return [];
@@ -48,8 +40,13 @@ export function publicTags(tags: string[] | null | undefined): string[] {
 
 /** Keys that must never appear in a public JSON payload, even if a stored row still has them. */
 const INTERNAL_KEYS = new Set([
-  "focusRelevance",
-  "focusRelevanceReason",
+  "与心田花开相关",
+  "xintianRelevance",
+  "xintianRelevanceReason",
+  "xintian_relevance",
+  "relevance_xintian",
+  "why_xintian",
+  "whyXintian",
   "internalNotes",
   "internal_notes",
   "internalNote",

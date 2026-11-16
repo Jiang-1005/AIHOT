@@ -15,7 +15,9 @@ import type { Screen } from "../components/shell/screens";
 
 export const handle: Screen = { tab: "daily", name: "往期" };
 export { pageHeaders as headers } from "../lib/api.server";
-export const { clientLoader, shouldRevalidate } = pageReuse<typeof loader>();
+// Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
+export const clientLoader = pageReuse<typeof loader>().clientLoader;
+export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
 export async function loader({ request }: { request: Request }) {
   const { items: index } = await apiGet<ReportIndexResponse>("/api/site/reports/daily", { signal: request.signal });
@@ -34,7 +36,7 @@ export default function DailyArchive() {
     <ReportLayout kind="daily" index={index} current={null} today={today} back={{ to: "/daily", label: "日报" }} title="日报合订本">
       <div className="@container">
         <header className="pt-5 lg:pt-0">
-          <div className="flex items-center justify-between gap-4 text-[12px] text-ink-4">
+          <div className="flex items-center justify-between gap-4 text-[0.75rem] text-ink-4">
             <span>{`${SITE.name} · ${withSubject("日报")}`}</span>
             <span>
               共 <span className="num">{index[0]?.issueNumber ?? 0}</span> 期
@@ -60,7 +62,7 @@ export default function DailyArchive() {
                   <span className="min-w-0">
                     <span className="block text-[0.875rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{e.title ?? `${withSubject("日报")} ${e.key}`}</span>
                     {!!e.count && (
-                      <span className="mt-1 block text-[12px] text-ink-4">
+                      <span className="mt-1 block text-[0.75rem] text-ink-4">
                         <span className="num">{e.count}</span>{` ${ENTRIES_UNIT}`}
                       </span>
                     )}

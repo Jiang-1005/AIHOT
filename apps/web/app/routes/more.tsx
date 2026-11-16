@@ -47,7 +47,7 @@ const tools = (): Row[] => [
 function Group({ title, children }: { title?: string; children: ReactNode }) {
   return (
     <section>
-      {title && <h2 className="px-4 pb-2 pt-6 text-[13px] font-semibold text-ink-3">{title}</h2>}
+      {title && <h2 className="px-4 pb-2 pt-6 text-[0.875rem] font-semibold text-ink-3">{title}</h2>}
       <ul className="card divide-y divide-line-soft overflow-hidden">{children}</ul>
     </section>
   );
@@ -56,13 +56,13 @@ function Group({ title, children }: { title?: string; children: ReactNode }) {
 function RowLink({ row, dot = false }: { row: Row; dot?: boolean }) {
   return (
     <li>
-      <Link viewTransition to={row.to} className="flex min-h-[52px] items-center gap-3 px-4 text-[16px] font-medium text-ink transition-colors active:bg-bg-sunk lg:hover:bg-bg-sunk">
+      <Link viewTransition to={row.to} className="flex min-h-[52px] items-center gap-3 px-4 text-[1rem] font-medium text-ink transition-colors active:bg-bg-sunk lg:hover:bg-bg-sunk">
         <span className="text-ink-3">{row.icon}</span>
         <span className="flex flex-1 items-center gap-2">
           {row.label}
           {dot && <span className="size-[7px] rounded-full bg-hot" aria-label="有新的更新" />}
         </span>
-        {row.detail && <span className="text-[14px] font-normal text-ink-4">{row.detail}</span>}
+        {row.detail && <span className="text-[0.875rem] font-normal text-ink-4">{row.detail}</span>}
         <IconChevronRight size={16} className="text-ink-4" />
       </Link>
     </li>
@@ -84,14 +84,14 @@ export default function MorePage() {
       <div className="wide:grid wide:grid-cols-2 wide:items-start wide:gap-x-4 2xl:grid-cols-3">
         <Group>
           <RowLink row={{ to: "/starred", label: "收藏", icon: <IconBookmark size={20} />, detail: here && starred.length > 0 ? <span className="num">{starred.length}</span> : undefined }} />
-          <li className="flex min-h-[56px] items-center gap-3 px-4 text-[16px] font-medium text-ink">
+          <li className="flex min-h-[56px] items-center gap-3 px-4 text-[1rem] font-medium text-ink">
             <span className="text-ink-3">
               <IconMoon size={20} />
             </span>
             <span className="flex-1">外观</span>
             <ThemeSwitch className="w-[126px]" />
           </li>
-          <li className="flex min-h-[56px] items-center gap-3 px-4 text-[16px] font-medium text-ink">
+          <li className="flex min-h-[56px] items-center gap-3 px-4 text-[1rem] font-medium text-ink">
             <span className="w-5 text-center text-ink-3" aria-hidden="true">Aa</span>
             <span className="flex-1">字体</span>
             <Select aria-label="字体" value={font ?? "system"} onChange={(e) => setFontPreference(e.target.value === "browser" ? "browser" : null)}>
@@ -111,7 +111,7 @@ export default function MorePage() {
           <RowLink row={{ to: "/feedback", label: "意见反馈", icon: <IconSend size={20} /> }} />
         </Group>
       </div>
-      <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[12px] leading-[2] text-ink-4">
+      <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[0.75rem] leading-[2] text-ink-4">
         <Link viewTransition to="/terms" className="hover:text-ink-2">{POLICY.terms.name}</Link>
         <Link viewTransition to="/privacy" className="hover:text-ink-2">隐私说明</Link>
         <a href="/feed.xml" className="hover:text-ink-2">RSS</a>

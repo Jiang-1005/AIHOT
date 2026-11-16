@@ -145,7 +145,7 @@ export function articleIdsMatchingFacets(facets: FacetQuery): string[] | null {
 }
 
 function chipName(token: string): string | null {
-  if (!token || token === "不涉及" || token === "未查到" || token === "待定" || token === "小红书" || token === "X") return null;
+  if (!token || token === "不涉及" || token === "未查到" || token === "待定" || token === "小红书" || token === "X" || token === "心田花开" || token === "心田") return null;
   // filename / skill
   if (/^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$/.test(token) && !token.includes("›")) return null;
   const company = token.split(/\s*[›>／/]\s*/)[0]?.trim();

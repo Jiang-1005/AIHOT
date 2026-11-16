@@ -14,7 +14,7 @@ export const readTone = (read: boolean, unread: string) => (read ? "text-ink-4" 
 export function SourceLine({ item, className = "" }: { item: Pick<FeedItemSummary, "source" | "x" | "channel">; className?: string }) {
   if (item.channel === "x" && item.x) {
     return (
-      <span className={`flex min-w-0 items-center gap-1.5 ${className}`}>
+      <span className={`flex min-w-0 items-center gap-2 ${className}`}>
         <SourceAvatar name={item.x.authorName} avatarUrl={item.x.avatarUrl} avatarSrcSet={item.x.avatarSrcSet} size={16} />
         <span className="truncate text-ink-3">{item.x.authorName}</span>
         <span className="hidden shrink-0 text-ink-4 min-[400px]:inline">@{item.x.handle}</span>
@@ -32,7 +32,7 @@ export function MediaThumbs({ media, className = "" }: { media: MediaView[]; cla
   if (shown.length === 0) return null;
   return (
     <>
-    <div className={`flex gap-1.5 overflow-hidden ${className}`}>
+    <div className={`flex gap-2 overflow-hidden ${className}`}>
       {shown.map((m) => {
         const Wrapper = m.kind === "image" ? "button" : "span";
         return (
@@ -71,8 +71,8 @@ export function useStar(item: Starrable) {
   return { on, toggle, pulse };
 }
 
-/** Bookmark toggle kept in this browser (收藏): 26px, or sized by `className`. */
-export function StarButton({ item, className = "size-[26px]" }: { item: Starrable; className?: string }) {
+/** Bookmark toggle kept in this browser (收藏): 32px, the smallest target, or sized by `className`. */
+export function StarButton({ item, className = "size-8" }: { item: Starrable; className?: string }) {
   const { on, toggle, pulse } = useStar(item);
   return (
     <button

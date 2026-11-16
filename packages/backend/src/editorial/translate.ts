@@ -25,7 +25,7 @@ import { emit } from "../modules.ts";
 
 export const TRANSLATE_PROMPT_VERSION = promptVersion("translate-body", "translate-body-retry", "translate-post");
 const BATCH_CHARS = 3500;
-/** Longer bodies (as sent to the model) get their first part translated and are marked incomplete. */
+/** Longer bodies get their first part translated and are marked incomplete. */
 const MAX_CHARS = 60_000;
 /** X posts shorter than this carry their meaning in the Chinese title and summary. */
 const X_MIN_CHARS = 60;
@@ -175,12 +175,11 @@ export function unshield(translated: string, s: Shielded): string | null {
   return $.html().replace(/⟦(\d+)⟧/g, (_m, n: string) => s.tokens[Number(n)]!);
 }
 
-export async function translateArticle(articleId: string, expectedRevision?: number): Promise<TranslateResult> {
+export async function translateArticle(articleId: string): Promise<TranslateResult> {
   const [row] = await sql<{ revision: number; channel: string; language: string | null; body_html: string | null; body_text: string | null; x_post: { text?: string } | null; x_article: { text?: string; html?: string } | null; title: string; selected: boolean; body_mode: string; visibility: string }[]>`
     SELECT a.revision, p.channel, a.language, a.body_html, a.body_text, a.x_post, a.x_article, p.title, p.selected, p.body_mode, p.visibility
-    FROM publications p JOIN articles a ON a.id = p.article_id WHERE p.article_id = ${articleId}
-      AND (${expectedRevision ?? null}::int IS NULL OR a.revision = ${expectedRevision ?? null})`;
-  if (!row) return { articleId, revision: expectedRevision, status: "skipped", reason: "not published at the requested revision" };
+    FROM publications p JOIN articles a ON a.id = p.article_id WHERE p.article_id = ${articleId}`;
+  if (!row) return { articleId, status: "skipped", reason: "not published" };
   const result = (r: Omit<TranslateResult, "articleId" | "revision">): TranslateResult => ({ articleId, revision: row.revision, ...r });
   // No answer could be used: each is rejected, so the next attempt pays for fresh ones instead of reusing them.
   const unusable = async (receiptIds: number[], reason: string) => {
@@ -212,20 +211,18 @@ export async function translateArticle(articleId: string, expectedRevision?: num
   const $ = cheerio.load(source, null, false);
   const blocks = segmentsOf($);
   if (!blocks.length) return result({ status: "skipped", reason: "no translatable text" });
-  // Beyond the cap, only the leading blocks are translated; the rest keep the original text. The cap
-  // counts what the model is sent: link addresses and media stay behind their placeholders.
+  // Beyond the cap, only the leading blocks are translated; the rest keep the original text.
   let budget = MAX_CHARS;
   const chosen: Element[] = [];
-  const shielded: Shielded[] = [];
   for (const el of blocks) {
-    const block = shield($(el).html() ?? "");
-    if (block.html.length > budget) break;
-    budget -= block.html.length;
+    const html = $(el).html() ?? "";
+    if (html.length > budget) break;
+    budget -= html.length;
     chosen.push(el);
-    shielded.push(block);
   }
   // No model request was made when even the first block exceeds the text cap.
   if (!chosen.length) return result({ status: "skipped", reason: "no batch translated" });
+  const shielded = chosen.map((el) => shield($(el).html() ?? ""));
   const restore = (answers: Array<string | null>) => answers.map((t, i) => (t === null ? null : unshield(t, shielded[i]!)));
   const first = await translateAll(articleId, row.revision, shielded.map((b) => b.html), SYSTEM_BODY);
   const receiptIds = [...first.receiptIds];
@@ -373,8 +370,8 @@ export async function translateQuotes(opts: { days?: number; limit?: number; bud
  */
 export async function translatePending(opts: { limit?: number; budgetMs?: number } = {}): Promise<{ done: TranslateResult[]; quotes: number }> {
   const started = Date.now();
-  const pending = await sql<{ article_id: string; revision: number; language: string | null; text: string | null }[]>`
-    SELECT p.article_id,a.revision,a.language,
+  const pending = await sql<{ article_id: string; language: string | null; text: string | null }[]>`
+    SELECT p.article_id,a.language,
       CASE WHEN p.channel='x' THEN coalesce(nullif(a.x_article->>'text',''),a.x_post->>'text',a.body_text) ELSE a.body_text END AS text
     FROM publications p JOIN articles a ON a.id = p.article_id
     LEFT JOIN translations tr ON tr.article_id = p.article_id AND tr.lang = 'zh'
@@ -396,14 +393,15 @@ export async function translatePending(opts: { limit?: number; budgetMs?: number
     if (Date.now() - started > (opts.budgetMs ?? 4 * 60_000) || shutdownSignal.signal.aborted) break;
     let outcome: "translated" | "partial" | "skipped" | "failed";
     let reason: string | null = null;
-    // Bind the read as well as success and failure to this revision. A rejected old request must not
-    // consume a corrected body's retry budget, or overwrite a newer run's attempt.
-    const revision = r.revision;
+    // The attempt is recorded against the revision actually read: when the text was revised while the
+    // model was answering, the new revision still has no attempt and is translated on the next run.
+    let revision: number | null = null;
     try {
-      const result = await translateArticle(r.article_id, revision);
+      const result = await translateArticle(r.article_id);
       done.push(result);
       outcome = result.status;
       reason = result.reason ?? null;
+      revision = result.revision ?? null;
     } catch (error) {
       // A deploy stops between paid fragments, never aborts a sent request. Received answers stay
       // in receipts and are reused next run; do not mark an interrupted article terminal/partial.
@@ -419,11 +417,10 @@ export async function translatePending(opts: { limit?: number; budgetMs?: number
     }
     await sql`
       INSERT INTO translation_attempts (article_id, revision, attempts, outcome, reason)
-      SELECT ${r.article_id}, ${revision}, 1, ${outcome}, ${reason} FROM articles a WHERE a.id = ${r.article_id}
+      SELECT ${r.article_id}, coalesce(${revision}::int, a.revision), 1, ${outcome}, ${reason} FROM articles a WHERE a.id = ${r.article_id}
       ON CONFLICT (article_id) DO UPDATE SET
         attempts = CASE WHEN translation_attempts.revision = EXCLUDED.revision THEN translation_attempts.attempts + 1 ELSE 1 END,
-        revision = EXCLUDED.revision, outcome = EXCLUDED.outcome, reason = EXCLUDED.reason, updated_at = now()
-      WHERE translation_attempts.revision <= EXCLUDED.revision`;
+        revision = EXCLUDED.revision, outcome = EXCLUDED.outcome, reason = EXCLUDED.reason, updated_at = now()`;
   }
   const budgetMs = opts.budgetMs ?? 4 * 60_000;
   let quotes = 0;

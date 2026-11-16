@@ -1,10 +1,9 @@
 // 「社区热帖」: parent / teacher / student / KOL voices, kept out of media 精选.
-// The catalog is AIHOT_DATA_DIR/voices.json (shape: VoicesCatalog below), or the site_blobs copy on Vercel.
-// The importer that builds it from community posts is not part of this public repository.
+// The catalog is written by scripts/import-voices.py into AIHOT_DATA_DIR/voices.json.
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { config, REPO_ROOT } from "../config.ts";
-import { HIDDEN_PUBLIC_TERMS, publicCopy, publicText } from "@aihot/site/public-copy";
+import { publicCopy, publicText } from "@aihot/site/public-copy";
 import { formatDataAsOf, loadSiteSync } from "./site-blobs.ts";
 
 export interface VoiceMetrics {
@@ -103,22 +102,37 @@ export function loadLogoIndex(): { index: Record<string, string>; missing: strin
   return { index: {}, missing: [], items: [] };
 }
 
-export function loadVoicesCatalog(): VoicesCatalog {
-  try {
-    const raw = readFileSync(CATALOG, "utf8");
-    const cat = JSON.parse(raw) as VoicesCatalog;
-    cat.section = cat.section || "社区热帖";
-    return cat;
-  } catch {
-    return {
-      generatedAt: "",
-      asOf: "",
-      section: "社区热帖",
-      items: [],
-      counts: { featured: 0, archive: 0, total: 0 },
-      report: {},
-    };
+/** The voices catalog file is missing, unreadable, or not valid JSON. Routes must surface this as 503, never as a 200 empty catalog. */
+export class VoicesCatalogUnavailable extends Error {
+  constructor(message = "voices catalog unavailable", options?: ErrorOptions) {
+    super(message, options);
+    this.name = "VoicesCatalogUnavailable";
   }
+}
+
+/** Read a voices catalog file. A missing, unreadable, or invalid file throws; a valid file with zero items is a real empty catalog. */
+export function readVoicesCatalogFile(file: string): VoicesCatalog {
+  let raw: string;
+  try {
+    raw = readFileSync(file, "utf8");
+  } catch (error) {
+    throw new VoicesCatalogUnavailable(`cannot read voices catalog at ${file}`, { cause: error });
+  }
+  let cat: VoicesCatalog;
+  try {
+    cat = JSON.parse(raw) as VoicesCatalog;
+  } catch (error) {
+    throw new VoicesCatalogUnavailable(`voices catalog is not valid JSON at ${file}`, { cause: error });
+  }
+  if (!cat || !Array.isArray(cat.items)) {
+    throw new VoicesCatalogUnavailable(`voices catalog is missing an items array at ${file}`);
+  }
+  cat.section = cat.section || "社区热帖";
+  return cat;
+}
+
+export function loadVoicesCatalog(): VoicesCatalog {
+  return readVoicesCatalogFile(CATALOG);
 }
 
 export const HEAD_COMPANIES = [
@@ -134,7 +148,7 @@ export const FACET_VOCAB = {
 } as const;
 
 
-const HIDDEN_COMPANIES = new Set(HIDDEN_PUBLIC_TERMS);
+const HIDDEN_COMPANIES = new Set(["心田花开", "心田"]);
 
 function publicVoiceTags(tags: VoiceTags | undefined): VoiceTags | undefined {
   if (!tags) return undefined;

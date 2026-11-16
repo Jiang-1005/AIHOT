@@ -21,7 +21,7 @@ from pathlib import Path
 
 STAGE = "hot_stage"
 OLD = "hot_old"
-CONTAINER = os.environ.get("SOURCE_CONTAINER", "edu-hot-db-1")
+CONTAINER = os.environ.get("SOURCE_CONTAINER", "xintian-edu-hot-db-1")
 DOCKER_HOST = os.environ.get("DOCKER_HOST", "tcp://127.0.0.1:2375")
 # Do not copy these from local if they are empty — catalogs live on Neon.
 PRESERVE_IF_LOCAL_EMPTY = {"site_blobs"}

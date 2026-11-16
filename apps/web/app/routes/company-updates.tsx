@@ -8,7 +8,7 @@ import { pageReuse } from "../lib/page-reuse";
 import { pageMeta } from "../lib/seo";
 import type { Screen } from "../components/shell/screens";
 import { PhoneBar } from "../components/shell/PhoneBar";
-import { LogoMark, logoFor } from "../components/facets/FacetChips";
+import { logoFor } from "../components/facets/FacetChips";
 import { PillTabs } from "../components/ui/Tabs";
 import { CatalogDayList, CatalogFeedItem, companyCatalogTags } from "../features/feed/CatalogFeed";
 
@@ -151,17 +151,17 @@ function CompanySection({ company, logoIndex, previewMax, expandAll, today }: { 
   return (
     <section className="min-w-0">
       <div className="mb-2 flex items-center gap-2">
-        <LogoMark name={company.name} src={logo} />
-        <h2 className="text-[17px] font-semibold text-ink">{company.name}</h2>
-        {!company.empty ? <span className="text-[12px] text-ink-4">{company.items.length} 条</span> : null}
+        {logo ? <img src={logo} alt="" className="h-6 w-6 rounded object-contain" /> : null}
+        <h2 className="text-[1rem] font-semibold text-ink">{company.name}</h2>
+        {!company.empty ? <span className="text-[0.75rem] text-ink-4">{company.items.length} 条</span> : null}
       </div>
       {company.empty ? (
-        <p className="text-[14px] leading-7 text-ink-3">{EMPTY_COPY}</p>
+        <p className="text-[0.875rem] leading-7 text-ink-3">{EMPTY_COPY}</p>
       ) : (
         <>
           <CompanyDayList items={shown} today={today} />
           {hidden > 0 ? (
-            <button type="button" className="mt-2 text-[13px] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
+            <button type="button" className="mt-2 text-[0.875rem] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
               {open ? "收起" : `展开全部（还有 ${hidden} 条）`}
             </button>
           ) : null}
@@ -224,18 +224,18 @@ export default function CompanyUpdatesPage() {
     <div className="pb-8">
       <PhoneBar
         leading={
-          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-2.5 pr-2 text-ink">
+          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-2 text-ink">
             <Wordmark size={17} />
           </Link>
         }
         title="国内公司动态"
       />
       <header className="mb-6">
-        <h1 data-page-title="" className="text-[24px] font-semibold leading-[1.3] text-ink">国内公司动态</h1>
-        <p className="mt-2 text-[14px] leading-[1.7] text-ink-3">
+        <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">国内公司动态</h1>
+        <p className="mt-2 text-[0.875rem] leading-[1.7] text-ink-3">
           列出最近 90 天内已核对原文（或标明「未查到原文」）的报道。可按时间混看各公司，或按公司筛选。不走精选 60 分和 7 天/往期 30 天门槛，也不会把老条目送进首页精选。没有新动态的公司写「{EMPTY_COPY}」，不拿窗口外的旧稿凑数。
         </p>
-        <p className="mt-1 text-[12px] text-ink-4">
+        <p className="mt-1 text-[0.75rem] text-ink-4">
           {data.asOf} 北京时间 · {withNews} 家有动态
         </p>
       </header>
@@ -255,12 +255,12 @@ export default function CompanyUpdatesPage() {
 
       {view === "time" ? (
         timeline.length === 0 ? (
-          <p className="text-[14px] leading-7 text-ink-3">{EMPTY_COPY}</p>
+          <p className="text-[0.875rem] leading-7 text-ink-3">{EMPTY_COPY}</p>
         ) : (
           <>
             <CompanyDayList items={timeShown} today={data.asOf} />
             {timeHidden > 0 ? (
-              <button type="button" className="mt-3 text-[13px] text-accent hover:underline" onClick={() => setTimeOpen((v) => !v)}>
+              <button type="button" className="mt-3 text-[0.875rem] text-accent hover:underline" onClick={() => setTimeOpen((v) => !v)}>
                 {timeOpen ? "收起" : `展开全部（还有 ${timeHidden} 条）`}
               </button>
             ) : null}

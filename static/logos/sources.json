@@ -1,0 +1,185 @@
+{
+  "generatedAt": "2026-11-10 14:32",
+  "items": [
+    {
+      "name": "新东方",
+      "csv_name": "新东方",
+      "file": "xdf.png",
+      "path": "/logos/xdf.png",
+      "source_url": "https://www.xdf.cn/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "好未来",
+      "csv_name": "好未来",
+      "file": "tal.png",
+      "path": "/logos/tal.png",
+      "source_url": "https://www.tal.com/zh-cn",
+      "from": "companies.csv"
+    },
+    {
+      "name": "学而思",
+      "csv_name": "学而思（好未来旗下）",
+      "file": "xueersi.png",
+      "path": "/logos/xueersi.png",
+      "source_url": "https://www.xueersi.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "洋葱学园",
+      "csv_name": "洋葱学园",
+      "file": "yangcong.png",
+      "path": "/logos/yangcong.png",
+      "source_url": "https://www.yangcong345.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "作业帮",
+      "csv_name": "作业帮",
+      "file": "zuoyebang.png",
+      "path": "/logos/zuoyebang.png",
+      "source_url": "https://www.zuoyebang.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "猿辅导",
+      "csv_name": "猿辅导",
+      "file": "yuanfudao.svg",
+      "path": "/logos/yuanfudao.svg",
+      "source_url": "https://www.yuanfudao.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "斑马",
+      "csv_name": "斑马（猿辅导旗下）",
+      "file": "zebra.svg",
+      "path": "/logos/zebra.svg",
+      "source_url": "https://www.yuanfudao.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "讯飞",
+      "csv_name": "科大讯飞",
+      "file": "iflytek.png",
+      "path": "/logos/iflytek.png",
+      "source_url": "https://www.iflytek.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "有道",
+      "csv_name": "网易有道",
+      "file": "youdao.png",
+      "path": "/logos/youdao.png",
+      "source_url": "https://www.youdao.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "豆神",
+      "csv_name": "豆神教育",
+      "file": "doushen.png",
+      "path": "/logos/doushen.png",
+      "source_url": "https://www.doushen.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "高途",
+      "csv_name": "高途",
+      "file": "gaotu.png",
+      "path": "/logos/gaotu.png",
+      "source_url": "https://about.gaotu.cn/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "豆包",
+      "csv_name": "字节跳动 豆包",
+      "file": "doubao.png",
+      "path": "/logos/doubao.png",
+      "source_url": "https://www.doubao.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "千问",
+      "csv_name": "阿里 千问",
+      "file": "qianwen.png",
+      "path": "/logos/qianwen.png",
+      "source_url": "https://www.qianwen.com/",
+      "from": "companies.csv"
+    },
+    {
+      "name": "Duolingo",
+      "file": "duolingo.png",
+      "path": "/logos/duolingo.png",
+      "source_url": "https://d35aaqx5ub95lt.cloudfront.net/images/duolingo-touch-icon2.png",
+      "from": "official-homepage",
+      "bytes": 11153
+    },
+    {
+      "name": "Khan Academy",
+      "file": "khan.ico",
+      "path": "/logos/khan.ico",
+      "source_url": "https://www.khanacademy.org/favicon.ico",
+      "from": "official-homepage",
+      "bytes": 4286
+    },
+    {
+      "name": "Chegg",
+      "file": "chegg.ico",
+      "path": "/logos/chegg.ico",
+      "source_url": "https://www.chegg.com/favicon.ico",
+      "from": "official-homepage",
+      "bytes": 32988
+    },
+    {
+      "name": "Quizlet",
+      "file": "quizlet.ico",
+      "path": "/logos/quizlet.ico",
+      "source_url": "https://quizlet.com/favicon.ico",
+      "from": "official-homepage",
+      "bytes": 4414
+    },
+    {
+      "name": "Speak",
+      "file": "speak.png",
+      "path": "/logos/speak.png",
+      "source_url": "https://www.speak.com/cdn.prod.website-files.com/61a88c135006e8345b005efd/686a5c29b8678b5802ceb837_WebIcon.png",
+      "from": "official-homepage",
+      "bytes": 4267
+    }
+  ],
+  "missing": [
+    {
+      "name": "叫叫",
+      "reason": "companies.csv 未抓到",
+      "source": "未找到官网"
+    }
+  ],
+  "index": {
+    "新东方": "/logos/xdf.png",
+    "好未来": "/logos/tal.png",
+    "学而思": "/logos/xueersi.png",
+    "学而思（好未来旗下）": "/logos/xueersi.png",
+    "洋葱学园": "/logos/yangcong.png",
+    "作业帮": "/logos/zuoyebang.png",
+    "猿辅导": "/logos/yuanfudao.svg",
+    "斑马": "/logos/zebra.svg",
+    "斑马（猿辅导旗下）": "/logos/zebra.svg",
+    "讯飞": "/logos/iflytek.png",
+    "科大讯飞": "/logos/iflytek.png",
+    "有道": "/logos/youdao.png",
+    "网易有道": "/logos/youdao.png",
+    "豆神": "/logos/doushen.png",
+    "豆神教育": "/logos/doushen.png",
+    "高途": "/logos/gaotu.png",
+    "豆包": "/logos/doubao.png",
+    "字节跳动 豆包": "/logos/doubao.png",
+    "千问": "/logos/qianwen.png",
+    "阿里 千问": "/logos/qianwen.png",
+    "字节跳动": "/logos/doubao.png",
+    "阿里巴巴": "/logos/qianwen.png",
+    "Duolingo": "/logos/duolingo.png",
+    "Khan Academy": "/logos/khan.ico",
+    "Chegg": "/logos/chegg.ico",
+    "Quizlet": "/logos/quizlet.ico",
+    "Speak": "/logos/speak.png"
+  }
+}

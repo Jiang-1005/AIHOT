@@ -12,9 +12,9 @@
 # Auth: VERCEL_TOKEN from the environment or $ROOT/.secrets/vercel-api.env
 #   (never print the file or enable set -x). Create a token at
 #   https://vercel.com/account/tokens with access to this project.
-# VERCEL_PROJECT_ID is required; set VERCEL_TEAM_ID when the project belongs to a team.
+# Project defaults can be overridden with VERCEL_PROJECT_ID / VERCEL_TEAM_ID.
 #
-# Usage (from the repo root):
+# Usage (from /workspace/edu-hot):
 #   ./scripts/purge-vercel-cdn.sh
 set -euo pipefail
 
@@ -32,8 +32,8 @@ if [[ -z "${VERCEL_TOKEN:-}" && -f "$TOKEN_ENV" ]]; then
   set +a
 fi
 
-PROJECT_ID="${VERCEL_PROJECT_ID:-}"
-TEAM_ID="${VERCEL_TEAM_ID:-}"
+PROJECT_ID="${VERCEL_PROJECT_ID:-prj_e0bCAbyQuAtacmGlJmRo6LLquniy}"
+TEAM_ID="${VERCEL_TEAM_ID:-team_Zi76VbaJw6q9rWyQu7psA3pw}"
 TAG="${VERCEL_CACHE_TAG:-edu-hot-public}"
 
 if [[ -z "${VERCEL_TOKEN:-}" ]]; then
@@ -42,13 +42,7 @@ if [[ -z "${VERCEL_TOKEN:-}" ]]; then
   exit 0
 fi
 
-if [[ -z "$PROJECT_ID" ]]; then
-  echo "CDN cache not purged: VERCEL_PROJECT_ID is not set." >&2
-  exit 0
-fi
-TEAM_QS="${TEAM_ID:+&teamId=${TEAM_ID}}"
-
-url="https://api.vercel.com/v1/edge-cache/dangerously-delete-by-tags?projectIdOrName=${PROJECT_ID}${TEAM_QS}"
+url="https://api.vercel.com/v1/edge-cache/dangerously-delete-by-tags?projectIdOrName=${PROJECT_ID}&teamId=${TEAM_ID}"
 # Body only; do not log the Authorization header.
 tmp="$(mktemp)"
 code="$(curl -sS -o "$tmp" -w "%{http_code}" -X POST "$url" \
@@ -64,7 +58,7 @@ if [[ "$code" == "200" ]]; then
 fi
 
 echo "dangerously-delete-by-tags returned HTTP ${code}; trying invalidate-by-tags…" >&2
-url2="https://api.vercel.com/v1/edge-cache/invalidate-by-tags?projectIdOrName=${PROJECT_ID}${TEAM_QS}"
+url2="https://api.vercel.com/v1/edge-cache/invalidate-by-tags?projectIdOrName=${PROJECT_ID}&teamId=${TEAM_ID}"
 code2="$(curl -sS -o "$tmp" -w "%{http_code}" -X POST "$url2" \
   -H "Authorization: Bearer ${VERCEL_TOKEN}" \
   -H "Content-Type: application/json" \
