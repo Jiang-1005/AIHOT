@@ -55,19 +55,14 @@ def px_values(raw: str) -> list[float | str]:
     for part in re.split(r"[,\s]+", raw.strip()):
         if not part:
             continue
-        if part in ("50%", "100%"):
+        if part.endswith("%"):
             out.append(part)
             continue
-        m = re.fullmatch(r"([0-9.]+)(px|e[+-]?[0-9]+px)?", part)
-        if not m:
-            # scientific, e.g. 3.35544e+07px
-            m2 = re.fullmatch(r"([0-9.]+e[+-][0-9]+)px", part, re.I)
-            if m2:
-                out.append(float(m2.group(1)))
-                continue
+        num = part[:-2] if part.lower().endswith("px") else part
+        try:
+            out.append(float(num))
+        except ValueError:
             out.append(part)
-            continue
-        out.append(float(m.group(1)))
     return out or [raw]
 
 

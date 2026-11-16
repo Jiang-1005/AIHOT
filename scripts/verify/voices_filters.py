@@ -122,7 +122,10 @@ def run(base: str, out_dir: str) -> list[str]:
                 R((w, "/voices", "数据截至", "missing", 1), False)
             else:
                 R((w, "/voices", "数据截至", "present", 1), True)
+            # On a narrow viewport the platform chips live in the filter sheet, not the rail.
+            openfilters(pg, w)
             chips = chip_counts(pg)
+            closefilters(pg, w)
             print("chips", w, chips, flush=True)
             for g in GROUPS:
                 n = chips.get(g)
