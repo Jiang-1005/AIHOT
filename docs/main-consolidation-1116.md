@@ -50,3 +50,8 @@ Everything else unique on `jiang/main` is the `5d976b6` style-port (the 15:52 la
 Already on `poteto-hardening-1116`: `import-voices.py` is present; compose `name: xintian-edu-hot`; `API_CONTAINER` defaults to `xintian-edu-hot-api-1` in `sync-to-neon.sh`; `check.yml` is on and includes a conventions check; Postgres 18 pin.
 
 Not done (needs C J): the merge commit, any push to `main`, any production file-deploy, any deletion of `style-unify-1116`, `fix-voices-filter-1116`, `style-unify-1116-on-main`, or `adopt-upstream-1116`. After `main` matches the accepted tree, a later production file-deploy still needs the SHA in `RELEASES/accepted.txt` (体验大师 writes that file).
+
+## CI workflow file on this push
+
+`scripts/check-repo-conventions.mjs` is on the branch. The intended `.github/workflows/check.yml` change (Repo conventions step + Postgres 18 service/client, matching compose) could not be pushed: the GitHub token is an OAuth App without `workflow` scope, and GitHub refused the branch because it updated a workflow file. The published branch keeps the typography line's existing `check.yml` (Postgres 17 in CI, already `on: push: branches: [main]`, `pull_request`, `workflow_dispatch`). After someone with `workflow` scope lands the yaml diff, CI will match compose's Postgres 18 and run the conventions check.
+
