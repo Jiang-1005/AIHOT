@@ -12,6 +12,11 @@
  * Usage:
  *   node scripts/prepare-vercel-file-deploy.mjs
  *   node scripts/prepare-vercel-file-deploy.mjs --out /tmp/edu-hot-vercel-files.json
+ *   node scripts/prepare-vercel-file-deploy.mjs --target production
+ *
+ * --target production refuses unless HEAD is listed in RELEASES/accepted.txt,
+ * the tree is clean, and a root-*.css was built. Preview (the default) still
+ * stamps the SHA and CSS and does not require acceptance.
  *
  * Do not include .env or .secrets in the manifest.
  */
@@ -19,8 +24,22 @@ import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertProductionGate, gitSha, reportRelease } from "./release-gate.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+const targetFlag = process.argv.indexOf("--target");
+const deployTarget = targetFlag >= 0 && process.argv[targetFlag + 1] ? process.argv[targetFlag + 1] : "preview";
+if (deployTarget === "production") {
+  const gate = assertProductionGate();
+  console.log(`production gate ok: ${gate.sha}`);
+  console.log(`css: ${gate.css.file} sha256=${gate.css.sha256} size=${gate.css.size}`);
+} else {
+  const report = reportRelease({ target: deployTarget });
+  console.log(`preview: sha=${report.sha} accepted=${report.accepted} dirty=${Boolean(report.dirty)}`);
+  if (report.css.error) console.log(`css: ${report.css.error}`);
+  else console.log(`css: ${report.css.file} sha256=${report.css.sha256} size=${report.css.size}`);
+}
 
 const SKIP_DIRS = new Set([
   ".git", ".data", ".secrets", "node_modules", "__pycache__", ".cursor",
@@ -102,6 +121,8 @@ mkdirSync(path.dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify({
   createdAt: new Date().toISOString(),
   root: ROOT,
+  target: deployTarget,
+  sha: gitSha(),
   count: entries.length,
   totalBytes: entries.reduce((n, f) => n + f.size, 0),
   files: entries,
@@ -111,4 +132,7 @@ const total = entries.reduce((n, f) => n + f.size, 0);
 console.log(`manifest: ${outPath}`);
 console.log(`files: ${entries.length}`);
 console.log(`totalBytes: ${total}`);
+console.log(`sha: ${gitSha()}`);
+console.log(`target: ${deployTarget}`);
 console.log("next: upload each file with user-Vercel upload_file (xVercelDigest=sha, contentLength=size, requestBody=base64), then create_deployment with files:[{file,sha,size}], skipAutoDetectionConfirmation=1. Do not deploy until DATABASE_URL is set.");
+console.log("after a successful deploy: node scripts/release-gate.mjs --shipped --target <preview|production> --deployment dpl_… --url https://…");

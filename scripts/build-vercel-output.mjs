@@ -11,7 +11,8 @@
  *               function root, where site/, industry/, assets/, static/ are copied.
  *   ssr.func  — React Router SSR, fully bundled.
  */
-import { spawnSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import {
   cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync,
@@ -23,6 +24,14 @@ import { brotliCompressSync, constants as zlibConstants } from "node:zlib";
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, ".vercel/output");
+
+function gitSha() {
+  return execSync("git rev-parse HEAD", { cwd: ROOT, encoding: "utf8" }).trim();
+}
+
+const RELEASE = (process.env.AIHOT_RELEASE || gitSha()).trim();
+process.env.AIHOT_RELEASE = RELEASE;
+const RELEASE_DEFINE = `--define:process.env.AIHOT_RELEASE=${JSON.stringify(RELEASE)}`;
 
 function run(cmd, args, opts = {}) {
   const r = spawnSync(cmd, args, { cwd: ROOT, stdio: "inherit", ...opts });
@@ -98,9 +107,14 @@ ensureEsbuild();
 
 const client = path.join(ROOT, "apps/web/build/client");
 const server = path.join(ROOT, "apps/web/build/server/index.js");
-if (!existsSync(client) || !existsSync(server)) {
-  console.log("building @aihot/web…");
-  run("npm", ["run", "build", "-w", "@aihot/web"]);
+const releaseStamp = path.join(ROOT, "apps/web/build/AIHOT_RELEASE");
+const webHasRelease = existsSync(client) && existsSync(server) && existsSync(releaseStamp)
+  && readFileSync(releaseStamp, "utf8").trim() === RELEASE;
+if (!webHasRelease) {
+  console.log(`building @aihot/web (AIHOT_RELEASE=${RELEASE})…`);
+  run("npm", ["run", "build", "-w", "@aihot/web"], { env: { ...process.env, AIHOT_RELEASE: RELEASE } });
+  mkdirSync(path.dirname(releaseStamp), { recursive: true });
+  writeFileSync(releaseStamp, `${RELEASE}\n`);
 }
 
 // Static client assets
@@ -136,6 +150,7 @@ bundle(path.join(ROOT, "api/index.ts"), apiFile, {
   minify: true,
   extra: [
     "--banner:js=import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+    RELEASE_DEFINE,
   ],
 });
 
@@ -247,6 +262,7 @@ bundle(ssrEntry, path.join(ssrRoot, "index.js"), {
     "--loader:.svg=file",
     "--loader:.png=file",
     "--banner:js=import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+    RELEASE_DEFINE,
   ],
 });
 writeFileSync(path.join(ssrRoot, "package.json"), JSON.stringify({ type: "module" }) + "\n");
@@ -286,6 +302,21 @@ const config = {
   ],
 };
 writeFileSync(path.join(OUT, "config.json"), JSON.stringify(config, null, 2) + "\n");
+
+const cssNames = existsSync(assetsDir)
+  ? readdirSync(assetsDir).filter((n) => /^root-.*\.css$/.test(n) && !n.endsWith(".br"))
+  : [];
+const css = cssNames[0]
+  ? {
+      file: `assets/${cssNames[0]}`,
+      sha256: createHash("sha256").update(readFileSync(path.join(assetsDir, cssNames[0]))).digest("hex"),
+      size: statSync(path.join(assetsDir, cssNames[0])).size,
+    }
+  : null;
+const releaseInfo = { sha: RELEASE, builtAt: new Date().toISOString(), css };
+writeFileSync(path.join(OUT, "release.json"), JSON.stringify(releaseInfo, null, 2) + "\n");
+console.log(`release: ${RELEASE}`);
+if (css) console.log(`css: ${css.file} sha256=${css.sha256} size=${css.size}`);
 
 function walk(dir, acc = []) {
   for (const name of readdirSync(dir)) {

@@ -102,22 +102,37 @@ export function loadLogoIndex(): { index: Record<string, string>; missing: strin
   return { index: {}, missing: [], items: [] };
 }
 
-export function loadVoicesCatalog(): VoicesCatalog {
-  try {
-    const raw = readFileSync(CATALOG, "utf8");
-    const cat = JSON.parse(raw) as VoicesCatalog;
-    cat.section = cat.section || "社区热帖";
-    return cat;
-  } catch {
-    return {
-      generatedAt: "",
-      asOf: "",
-      section: "社区热帖",
-      items: [],
-      counts: { featured: 0, archive: 0, total: 0 },
-      report: {},
-    };
+/** The voices catalog file is missing, unreadable, or not valid JSON. Routes must surface this as 503, never as a 200 empty catalog. */
+export class VoicesCatalogUnavailable extends Error {
+  constructor(message = "voices catalog unavailable", options?: ErrorOptions) {
+    super(message, options);
+    this.name = "VoicesCatalogUnavailable";
   }
+}
+
+/** Read a voices catalog file. A missing, unreadable, or invalid file throws; a valid file with zero items is a real empty catalog. */
+export function readVoicesCatalogFile(file: string): VoicesCatalog {
+  let raw: string;
+  try {
+    raw = readFileSync(file, "utf8");
+  } catch (error) {
+    throw new VoicesCatalogUnavailable(`cannot read voices catalog at ${file}`, { cause: error });
+  }
+  let cat: VoicesCatalog;
+  try {
+    cat = JSON.parse(raw) as VoicesCatalog;
+  } catch (error) {
+    throw new VoicesCatalogUnavailable(`voices catalog is not valid JSON at ${file}`, { cause: error });
+  }
+  if (!cat || !Array.isArray(cat.items)) {
+    throw new VoicesCatalogUnavailable(`voices catalog is missing an items array at ${file}`);
+  }
+  cat.section = cat.section || "社区热帖";
+  return cat;
+}
+
+export function loadVoicesCatalog(): VoicesCatalog {
+  return readVoicesCatalogFile(CATALOG);
 }
 
 export const HEAD_COMPANIES = [

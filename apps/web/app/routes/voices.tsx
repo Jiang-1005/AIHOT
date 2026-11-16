@@ -415,8 +415,7 @@ export default function VoicesPage() {
   const ready = voicesCatalogReady(items.length, knownTotal);
 
   useEffect(() => {
-    // A later loader payload may be a 12-item preview or a cold empty catalog (generatedAt "").
-    // Never shrink a catalog we already hold, and don't mark a complete catalog as partial again.
+    // The loader always ships a 12-item preview; don't replace a full catalog already fetched on the client.
     setItems((prev) => mergeVoiceItems(prev, data.items));
   }, [data.catalog?.generatedAt, data.items]);
 
@@ -429,16 +428,16 @@ export default function VoicesPage() {
     const ac = new AbortController();
     let started = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const want = Math.max(need, 1);
     const load = (attempt: number) => {
-      // A cold API instance can answer with an empty catalog (cached for a minute), so retry past the cache
-      // and never swap the good SSR slice for a smaller list.
-      const url = attempt ? `/api/site/voices?retry=${attempt}` : "/api/site/voices";
-      fetch(url, { headers: { accept: "application/json" }, signal: ac.signal })
-        .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
-        .then((full: VoicesResponse) => {
-          if (!Array.isArray(full.items) || full.items.length < want) throw new Error("short catalog");
-          setItems((prev) => mergeVoiceItems(prev, full.items));
+      // Retry a 503 (catalog not yet readable). A 200 body is the catalog, including a genuine empty list.
+      fetch("/api/site/voices", { cache: "no-store", headers: { accept: "application/json" }, signal: ac.signal })
+        .then((res) => {
+          if (!res.ok) throw new Error(String(res.status));
+          return res.json() as Promise<VoicesResponse>;
+        })
+        .then((full) => {
+          if (!Array.isArray(full.items)) throw new Error("bad catalog");
+          setItems(full.items);
           setPartial(false);
         })
         .catch((error: { name?: string } | undefined) => {

@@ -35,7 +35,12 @@ class RequestLogs extends LogController {
 }
 
 export async function buildApp(): Promise<FastifyInstance> {
-  await hydrateSiteBlobsFromDb();
+  try {
+    await hydrateSiteBlobsFromDb();
+  } catch (error) {
+    // Keep the process up so /api/health can still answer; routes that need a catalog will 503.
+    console.error("hydrateSiteBlobsFromDb failed at boot", error);
+  }
   const logs = new RequestLogs();
   const app = Fastify({
     // Access logs never record query strings (tokens).

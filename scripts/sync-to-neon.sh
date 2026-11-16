@@ -55,7 +55,8 @@ fi
 if [[ "${SKIP_DAILY_REFRESH:-}" != "1" ]]; then
   TODAY="$(TZ=Asia/Shanghai date +%F)"
   echo "Refreshing today's daily ($TODAY, 北京时间)…"
-  if docker exec -w /app xintian-edu-hot-api-1 node /app/scripts/compose-daily.ts "$TODAY"; then
+  API_CONTAINER="${API_CONTAINER:-xintian-edu-hot-api-1}"
+  if docker exec -w /app "$API_CONTAINER" node /app/scripts/compose-daily.ts "$TODAY"; then
     echo "today's daily refreshed."
   else
     echo "warning: today's daily refresh failed or was skipped; continuing sync." >&2

@@ -54,6 +54,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <html lang={SITE.locale} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
+        {documentRelease && <meta name="release" content={documentRelease} />}
         {documentRelease && <meta name="aihot-release" content={documentRelease} />}
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="color-scheme" content="light dark" />

@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 25
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_PASSWORD: ci
           POSTGRES_DB: aihot_ci
@@ -46,23 +46,25 @@ jobs:
 
       - name: Install
         run: npm ci --no-audit --no-fund
+      - name: Repo conventions
+        run: node scripts/check-repo-conventions.mjs
       - name: Online migration safety
         # New migrations against the PR base: deployed ones unchanged, no whole-table rewrite or blocking index in a release.
         env:
           MIGRATION_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
         run: node scripts/check-migrations.ts --base "$MIGRATION_BASE"
       - name: PostgreSQL backup tools
-        # 恢复测试需要与 PostgreSQL 17 服务匹配的客户端，不能依赖 runner 的默认版本。
+        # 恢复测试需要与 PostgreSQL 18 服务匹配的客户端，不能依赖 runner 的默认版本。
         run: |
           sudo install -d /usr/share/postgresql-common/pgdg
           sudo curl --fail --silent --show-error -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
           . /etc/os-release
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends postgresql-client-17
-          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
-          /usr/lib/postgresql/17/bin/pg_dump --version
-          /usr/lib/postgresql/17/bin/pg_restore --version
+          sudo apt-get install -y --no-install-recommends postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/18/bin/pg_dump --version
+          /usr/lib/postgresql/18/bin/pg_restore --version
       - name: Typecheck
         run: npm run typecheck
       - name: Build web

@@ -1,0 +1,5 @@
+# Accepted production SHAs. Written by 体验大师 (UX), never by the author of the change.
+# One SHA per line. Optional fields after the SHA are ignored by the gate:
+#   <sha>  [css-sha256]  [note]
+# A SHA should be the full 40-character commit id. Lines starting with # are comments.
+# Preview file-deploys do not need to be listed here. Production file-deploys do.

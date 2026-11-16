@@ -28,3 +28,9 @@ deploy/*.log
 deploy/*.log.*
 deploy/*.pid
 __pycache__/
+
+# Local ship log written by scripts/release-gate.mjs (accepted.txt is committed)
+RELEASES/shipped.jsonl
+
+# verify:site screenshots
+screenshots/verify-site/
