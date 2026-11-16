@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useLoaderData, useSearchParams } from "react-router";
+import { Link, useLoaderData, useSearchParams, type ShouldRevalidateFunction } from "react-router";
 import { SITE } from "@aihot/site";
 import { Wordmark } from "@aihot/site/brand/Logo.tsx";
 import type { Route } from "./+types/voices";
@@ -20,12 +20,20 @@ import {
   type FacetState,
   type FacetVocab,
 } from "../components/facets/FacetChips";
+import {
+  knownCatalogTotal,
+  mergeVoiceItems,
+  voicesCatalogReady,
+  voicesMatchCount,
+  voicesSearchOnlyRevalidate,
+} from "../features/voices/catalog-state";
 
 export const handle: Screen = { tab: "voices", name: "社区热帖" };
 export { pageHeaders as headers } from "../lib/api.server";
 // Two expressions, not one shared binding, so the router can ship the client loader as its own tiny chunk.
 export const clientLoader = pageReuse<typeof loader>().clientLoader;
-export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
+export const shouldRevalidate: ShouldRevalidateFunction = ({ currentUrl, nextUrl, defaultShouldRevalidate }) =>
+  voicesSearchOnlyRevalidate(currentUrl.pathname, nextUrl.pathname, currentUrl.search, nextUrl.search, defaultShouldRevalidate);
 
 interface VoiceTags {
   topic: string;
@@ -403,17 +411,25 @@ export default function VoicesPage() {
   const logoIndex = data.logos?.index ?? {};
   const today = useMemo(() => beijingToday(), []);
 
-  useEffect(() => {
-    setItems(data.items);
-    setPartial(Boolean(data.itemsPartial));
-  }, [data.catalog?.generatedAt]);
+  const knownTotal = knownCatalogTotal(data.catalogTotal, data.railCounts?.total, data.items.length, items.length);
+  const ready = voicesCatalogReady(items.length, knownTotal);
 
   useEffect(() => {
-    if (!data.itemsPartial) return;
+    // A later loader payload may be a 12-item preview or a cold empty catalog (generatedAt "").
+    // Never shrink a catalog we already hold, and don't mark a complete catalog as partial again.
+    setItems((prev) => mergeVoiceItems(prev, data.items));
+  }, [data.catalog?.generatedAt, data.items]);
+
+  useEffect(() => {
+    const need = knownCatalogTotal(data.catalogTotal, data.railCounts?.total, items.length);
+    if (need > 0 && items.length >= need) {
+      setPartial(false);
+      return;
+    }
     const ac = new AbortController();
     let started = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const need = data.filteredCount ?? data.items.length;
+    const want = Math.max(need, 1);
     const load = (attempt: number) => {
       // A cold API instance can answer with an empty catalog (cached for a minute), so retry past the cache
       // and never swap the good SSR slice for a smaller list.
@@ -421,8 +437,8 @@ export default function VoicesPage() {
       fetch(url, { headers: { accept: "application/json" }, signal: ac.signal })
         .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
         .then((full: VoicesResponse) => {
-          if (!Array.isArray(full.items) || full.items.length < need) throw new Error("short catalog");
-          setItems(full.items);
+          if (!Array.isArray(full.items) || full.items.length < want) throw new Error("short catalog");
+          setItems((prev) => mergeVoiceItems(prev, full.items));
           setPartial(false);
         })
         .catch((error: { name?: string } | undefined) => {
@@ -442,7 +458,7 @@ export default function VoicesPage() {
       clearTimeout(timer);
       prefetchNow.current = null;
     };
-  }, [data.itemsPartial, data.catalog?.generatedAt]);
+  }, [data.catalog?.generatedAt, data.catalogTotal, data.railCounts?.total, items.length]);
 
   const filtered = useMemo(
     () => filterVoices(items, sort, platform, source, facets, verify),
@@ -509,7 +525,14 @@ export default function VoicesPage() {
   const shown = filtered.slice(0, shownCount);
   const skeletonCount = Math.max(0, Math.min(shownCount - filtered.length, 4));
   const scoped = !facetsEqualEmpty(facets) || source !== "all" || verify !== "all" || platform !== "all";
-  const matchCount = partial ? (data.filteredCount ?? filtered.length) : filtered.length;
+  const matchCount = voicesMatchCount({
+    ready,
+    filteredLength: filtered.length,
+    scoped,
+    platform,
+    railPlatformCounts: counts.platform,
+    railTotal: counts.total,
+  });
   const fetchedAt = useMemo(() => {
     if (data.dataAsOf) return data.dataAsOf;
     for (const item of items) {
@@ -638,7 +661,7 @@ export default function VoicesPage() {
             />
           </div>
 
-          {filtered.length === 0 && !partial ? (
+          {filtered.length === 0 && ready ? (
             <div className="card">
               <EmptyState
                 title="没有符合筛选的帖子"
