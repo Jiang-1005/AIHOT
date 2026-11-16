@@ -40,8 +40,10 @@ export function PhoneBar({ back, title, large = false, sub, leading, center, act
       >
         <div className={`-mx-3 grid h-[var(--bar-h)] items-center ${wideCenter ? "grid-cols-[minmax(0,1fr)_auto]" : center && leading ? "grid-cols-[auto_minmax(0,1fr)_auto] gap-1" : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"}`}>
           {!wideCenter && <div className="flex min-w-0 shrink-0 items-center">{back ? <BackButton {...back} /> : leading}</div>}
-          {/* A title not shown yet takes no width, so the back label is not cut short before it appears. */}
-          <div className={`flex min-w-0 justify-center ${wideCenter ? "" : "max-w-[calc(100vw-184px)]"}`} style={!center && !titleShown ? { maxWidth: 0 } : undefined}>
+          {/* A title not shown yet takes no width, so the back label is not cut short before it appears.
+              The feed switch sits in a 1fr cell between the brand and the 44px actions; clip it so a
+              wide switch cannot paint over 筛选. */}
+          <div className={`flex min-w-0 justify-center ${center && leading ? "overflow-hidden" : wideCenter ? "" : "max-w-[calc(100vw-184px)]"}`} style={!center && !titleShown ? { maxWidth: 0 } : undefined}>
             {center ?? (
               title && (
                 <span

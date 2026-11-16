@@ -84,6 +84,8 @@
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   /* Alias kept so existing var(--ease-out-quart) calls follow the enter curve. */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  /* Tailwind's transition-* utilities otherwise keep the third curve, cubic-bezier(0.4, 0, 0.2, 1). */
+  --default-transition-timing-function: var(--ease-enter);
 
   /* Breakpoints: phones ≤ 640, the mobile shell up to 699, desktop pages above (an unfolded Android
      foldable upright is about 711px wide, an iPad mini 744, an iPhone Duo held sideways 951). Up to
@@ -187,7 +189,7 @@
   --well: var(--bg);
   --surface: #1a2226;
   --surface-2: var(--surface);
-  --raised: #202a2f;
+  --raised: var(--surface);
   --sidebar: var(--surface);
   --daybar: var(--bg);
   --ink: #e7eceb;
@@ -322,7 +324,7 @@
   .skeleton {
     background: var(--bg-muted);
     border-radius: var(--radius-control);
-    animation: skeleton-pulse 1.6s ease-in-out infinite;
+    animation: skeleton-pulse 1.6s var(--ease-enter) infinite;
   }
   /* Hide horizontal scrollbars on chip and tab rows that scroll on small screens. */
   .scrollbar-none {
@@ -378,7 +380,7 @@
    the hot lead's heat panel, notes on about and feedback). Radius is set where it is used. */
 @utility well {
   background-color: var(--well);
-  box-shadow: inset 0 0 0 1px var(--line-soft);
+  border: 1px solid var(--line-soft);
 }
 /* Press feedback (modern-web-guidance natural-interactions): a card whose link is pressed sinks a little and
    takes the accent edge at once, before the next page has loaded; hover keeps its lift. */
@@ -557,7 +559,7 @@
   padding: 0.9em 1.1em;
   border-radius: var(--radius-panel);
   background: var(--well);
-  box-shadow: inset 0 0 0 1px var(--line-soft);
+  border: 1px solid var(--line-soft);
   color: var(--ink-2);
   font-size: 0.875rem;
   line-height: 1.7;

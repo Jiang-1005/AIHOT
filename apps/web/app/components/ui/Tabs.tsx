@@ -35,7 +35,7 @@ function Thumb({ id }: { id: string }) {
       thumbs.set(id, placeOf(el));
     };
   }, [id, entrance]);
-  return <span ref={ref} className="absolute inset-0 rounded-full bg-surface ring-1 ring-line dark:bg-raised" />;
+  return <span ref={ref} className="absolute inset-0 rounded-full bg-surface ring-1 ring-line" />;
 }
 
 export interface TabItem {
@@ -79,7 +79,7 @@ export function PillTabs({
   const links = items.some((t) => t.to);
   const Track = links ? "nav" : "div";
   return (
-    <div className={`scrollbar-none max-w-full overflow-x-auto ${fill ? "w-full" : ""} ${className}`}>
+    <div className={`scrollbar-none min-w-0 max-w-full overflow-x-auto ${fill ? "w-full" : ""} ${className}`}>
       <Track
         data-pill-track=""
         aria-label={label}

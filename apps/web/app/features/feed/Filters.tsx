@@ -7,7 +7,7 @@ import { SITE } from "@aihot/site";
 import { IconClose, IconFilter, IconSearch } from "../../components/icons";
 import { PillTabs } from "../../components/ui/Tabs";
 import { Sheet } from "../../components/ui/Sheet";
-import { Wordmark } from "@aihot/site/brand/Logo.tsx";
+import { RingMark, Wordmark } from "@aihot/site/brand/Logo.tsx";
 import { BarButton, PhoneBar } from "../../components/shell/PhoneBar";
 import { openSearch } from "../search/SearchOverlay";
 import { EMPTY_FACETS, FacetChipRows, SelectedFacetBars, facetsEqualEmpty, facetsFromRecord, type FacetState, type FacetsMeta } from "../../components/facets/FacetChips";
@@ -104,13 +104,16 @@ export function FeedBar({ base, category, channel, meta }: { base: "/" | "/archi
     <>
       <PhoneBar
         leading={
-          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-1 text-ink">
-            <Wordmark size={16} />
+          <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-2 text-ink max-[359px]:pl-3 max-[359px]:pr-1">
+            {/* Below 360px the full wordmark leaves the 精选/往期/全部 switch short of 筛选; the ring keeps a 44px target. */}
+            <Wordmark size={16} className="max-[359px]:hidden" />
+            <RingMark className="hidden size-7 max-[359px]:block" />
           </Link>
         }
         center={
           <PillTabs
             size="sm"
+            fill
             layoutId="feed-scope"
             label="看精选、往期或全部"
             active={active}
