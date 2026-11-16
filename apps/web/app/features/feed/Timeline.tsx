@@ -44,10 +44,10 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
   const short = weekdayShort(day);
   const phoneRow = (
     <>
-      <span className="text-[14px] font-bold text-ink">{day === today ? "今天" : date}</span>
-      {day === today && <span className="text-[12.5px] text-ink-4">{date}</span>}
-      <span className="text-[12.5px] text-ink-4">{short}</span>
-      <span className="ml-auto flex items-center gap-1 text-[12.5px] text-ink-4">
+      <span className="text-[0.75rem] font-bold tracking-[0.16em] text-ink">{day === today ? "今天" : date}</span>
+      {day === today && <span className="kicker font-normal">{date}</span>}
+      <span className="kicker font-normal">{short}</span>
+      <span className="ml-auto flex items-center gap-1 text-[0.875rem] text-ink-4">
         {asideOnPhone && aside}
         {count !== null && (
           <span>
@@ -123,8 +123,8 @@ export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }
       style={fresh ? { animationDelay: `${delay}ms` } : undefined}
     >
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
-      <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-3.5 group-last/slot:border-b-0 lg:grid-cols-[64px_22px_minmax(0,1fr)] lg:border-b-0 lg:py-0 lg:pb-3 lg:group-last/slot:pb-0">
-        <time dateTime={at} className="mono hidden text-ink-3 lg:block lg:pt-[17px] lg:text-[12.5px] lg:font-semibold lg:leading-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-4 group-last/slot:border-b-0 lg:grid-cols-[56px_24px_minmax(0,1fr)] lg:border-b-0 lg:py-0">
+        <time dateTime={at} className="mono hidden text-ink-4 lg:block lg:pt-6 lg:text-[0.75rem] lg:leading-[1.5] lg:group-first/slot:pt-4">
           {clock ?? ""}
         </time>
         <span aria-hidden="true" className="relative hidden lg:block">

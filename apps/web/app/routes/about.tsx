@@ -39,9 +39,9 @@ function figure(n: number): { value: string; unit: string } {
 function Figure({ n, unit }: { n: number; unit: string }) {
   const f = figure(n);
   return (
-    <div className="flex items-baseline gap-1.5">
-      <span className="num text-[30px] font-black leading-none tracking-[-0.03em] text-ink xl:text-[36px]">{f.value}</span>
-      <span className="text-[13px] text-ink-3">
+    <div className="flex items-baseline gap-2">
+      <span className="num text-[1.75rem] font-bold leading-none tracking-[-0.03em] text-ink">{f.value}</span>
+      <span className="text-[0.875rem] text-ink-3">
         {f.unit}
         {unit}
       </span>
@@ -143,7 +143,7 @@ function Maker({ maker, contact }: { maker: NonNullable<typeof ABOUT.maker>; con
     <section aria-labelledby="maker" className="mt-20 grid gap-10 xl:mt-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
       <div>
         <Kicker>做这个站的人</Kicker>
-        <h2 id="maker" className="mt-4 flex items-center gap-3.5 text-[26px] font-black leading-[1.3] tracking-[-0.02em] text-ink xl:gap-4 xl:text-[34px]">
+        <h2 id="maker" className="mt-4 flex items-center gap-4 text-[1.75rem] font-semibold leading-[1.3] text-ink">
           {contact?.makerAvatar && <MakerFace src={contact.makerAvatar} />}
           <span>
             嗨，我是 <span className="whitespace-nowrap text-accent">{maker.name}</span>
@@ -212,7 +212,7 @@ export default function AboutPage() {
       <header className="grid items-end gap-8 pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:pt-0">
         <div>
           <Kicker>{ABOUT.kicker}</Kicker>
-          <h1 data-page-title="" className="mt-5 text-[34px] font-black leading-[1.18] tracking-[-0.03em] text-ink [text-wrap:balance] sm:text-[46px] xl:text-[56px] 2xl:text-[64px]">
+          <h1 data-page-title="" className="mt-5 text-[1.75rem] font-semibold leading-[1.3] text-ink [text-wrap:balance]">
             {ABOUT.headline[0]}
             <br />
             <span className="text-accent">{ABOUT.headline[1]}</span>
@@ -256,9 +256,9 @@ export default function AboutPage() {
               onBlur={() => setFocus(null)}
               className={`border-line py-6 outline-none transition-colors ${STAGE_CELL[i]} ${focus === i ? "bg-accent-softer" : ""}`}
             >
-              <div className="flex items-baseline gap-2.5">
-                <span className="num text-[12px] font-bold tracking-[0.12em] text-accent">{s.no}</span>
-                <h3 className="text-[17px] font-bold text-ink">{s.title}</h3>
+              <div className="flex items-baseline gap-3">
+                <span className="num text-[0.75rem] font-bold tracking-[0.12em] text-accent">{s.no}</span>
+                <h3 className="text-[1rem] font-semibold text-ink">{s.title}</h3>
               </div>
               {s.figure && <div className="mt-4">{s.figure}</div>}
               <p className="mt-3 text-[14px] leading-[1.8] text-ink-3">{s.text}</p>

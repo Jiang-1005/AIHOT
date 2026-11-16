@@ -65,7 +65,7 @@ export function Sheet({ open, onClose, title, children, label, centered = false 
       const moved = drag.y - drag.y0;
       const fast = drag.v > CLOSE_VELOCITY && performance.now() - drag.t < 100;
       drag = null;
-      el.style.transition = "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)";
+      el.style.transition = "transform 300ms cubic-bezier(0.25, 1, 0.5, 1)";
       if (!cancelled && (moved > CLOSE_DISTANCE || (fast && moved > 12))) close.current();
       else el.style.transform = "";
     };
@@ -129,7 +129,7 @@ export function Sheet({ open, onClose, title, children, label, centered = false 
 
   if (typeof document === "undefined") return null;
   return createPortal(
-    <Presence show={open} enter="anim-fade-in" exit="anim-fade-out" duration={220}>
+    <Presence show={open} enter="anim-fade-in" exit="anim-fade-out" duration={200}>
       <div className={`fixed inset-0 z-[70] flex flex-col justify-end ${centered ? "sm:items-center sm:justify-center sm:p-6" : ""}`}>
         <button type="button" aria-label="关闭" tabIndex={-1} onClick={onClose} className="absolute inset-0 cursor-default bg-[rgba(8,14,15,0.42)]" />
         <div
@@ -139,13 +139,13 @@ export function Sheet({ open, onClose, title, children, label, centered = false 
           aria-labelledby={title ? titleId : undefined}
           aria-label={title ? undefined : label}
           tabIndex={-1}
-          className={`sheet-panel anim-sheet-in relative mx-auto flex max-h-[88dvh] w-full max-w-[640px] flex-col rounded-t-sheet bg-surface shadow-[0_-12px_40px_rgba(0,0,0,0.16)] outline-none ${centered ? "sm:w-auto sm:min-w-[400px] sm:rounded-sheet sm:pb-2" : ""}`}
+          className={`sheet-panel anim-sheet-in relative mx-auto flex max-h-[88dvh] w-full max-w-[640px] flex-col rounded-t-sheet bg-surface shadow-[var(--shadow-overlay)] outline-none ${centered ? "sm:w-auto sm:min-w-[400px] sm:rounded-sheet sm:pb-2" : ""}`}
         >
           <div ref={handle} className="touch-none select-none">
             <span aria-hidden="true" className={`mx-auto mt-[7px] block h-[5px] w-9 rounded-full bg-line-strong ${centered ? "sm:invisible" : ""}`} />
             {title && (
               <div className="flex min-h-12 items-center gap-3 pl-5 pr-2">
-                <h2 id={titleId} className="min-w-0 flex-1 text-[17px] font-bold leading-snug text-ink">
+                <h2 id={titleId} className="min-w-0 flex-1 text-[1rem] font-semibold leading-snug text-ink">
                   {title}
                 </h2>
                 <button type="button" aria-label="关闭" onClick={onClose} className="grid size-11 shrink-0 place-items-center rounded-full text-ink-3">

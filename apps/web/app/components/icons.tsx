@@ -67,3 +67,10 @@ export const IconTrendDown = (p: P) => (<Svg {...p}><path d="M3 7l6 6 4-4 8 8" /
 export const IconMinus = (p: P) => (<Svg {...p}><path d="M5 12h14" /></Svg>);
 export const IconCheck = (p: P) => (<Svg {...p}><path d="M5 12.5l4.5 4.5L19 7.5" /></Svg>);
 export const IconCopy = (p: P) => (<Svg {...p}><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" /></Svg>);
+
+export const IconBuilding = (p: P) => (<Svg {...p}><path d="M4 20V7.5A1.5 1.5 0 015.5 6h13A1.5 1.5 0 0120 7.5V20" /><path d="M2.5 20h19" /><path d="M10 20v-5h4v5" /><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M16 14h.01" /></Svg>);
+export const IconLayers = (p: P) => (<Svg {...p}><path d="M12 4l8 4-8 4-8-4z" /><path d="M4 13l8 4 8-4" /><path d="M4 17l8 4 8-4" /></Svg>);
+export const IconLandmark = (p: P) => (<Svg {...p}><path d="M3 21h18" /><path d="M5 21V11M9 21V11M15 21V11M19 21V11" /><path d="M3.5 11h17" /><path d="M12 3l8.5 8H3.5z" /></Svg>);
+export const IconNewspaper = (p: P) => (<Svg {...p}><rect x="3.5" y="5" width="13" height="14" rx="1.5" /><path d="M7 9h6M7 12h6M7 15h4" /><path d="M16.5 8H19a1.5 1.5 0 011.5 1.5V17A2 2 0 0118.5 19H16.5" /></Svg>);
+export const IconSend = (p: P) => (<Svg {...p}><path d="M4 11.5L20.5 4 13.5 20.5 11 13z" /><path d="M20.5 4L11 13" /></Svg>);
+

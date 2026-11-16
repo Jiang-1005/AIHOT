@@ -51,9 +51,9 @@ export function CopyPage({ doc, rendered, eyebrow, footer }: { doc: CopyDocument
       }
     >
       <article className="pb-14 pt-3 lg:pt-2">
-        {eyebrow && <div className="mb-2.5 text-[12px] font-semibold text-accent">{eyebrow}</div>}
-        <h1 data-page-title="" className="text-[26px] font-bold leading-[1.35] text-ink lg:text-[32px] xl:text-[36px] xl:leading-[1.3]">{doc.title}</h1>
-        {doc.intro && <p className="mt-4 text-[15px] leading-[1.8] text-ink-3 xl:text-[16px]">{doc.intro}</p>}
+        {eyebrow && <div className="mb-3 text-[0.75rem] font-semibold text-accent">{eyebrow}</div>}
+        <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">{doc.title}</h1>
+        {doc.intro && <p className="mt-4 text-[0.875rem] leading-[1.8] text-ink-3 xl:text-[1rem]">{doc.intro}</p>}
         {facts.length > 0 && (
           <dl className="mt-5 grid grid-cols-1 border-y border-line text-[12.5px] sm:grid-cols-2 side:hidden">
             {facts.map((k) => (

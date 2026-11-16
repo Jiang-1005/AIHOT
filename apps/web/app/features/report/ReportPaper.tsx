@@ -56,8 +56,8 @@ function Masthead({ report, index, quiet }: { report: ReportDetail; index: Repor
             nameplate's dots, and on wider paper the issue calendar beside them. */}
         <div className="flex shrink-0 items-stretch well rounded-panel">
           <div className="flex w-[112px] flex-col items-center justify-center px-2 py-3 text-center @[880px]:w-[150px] @[880px]:py-4">
-            <span className="text-[11px] tracking-[0.2em] text-ink-4">第 {report.issueNumber} 期</span>
-            <Halftone seed={`${report.kind}-${report.key}-date`} className="num mt-2 whitespace-nowrap text-[44px] font-black leading-[0.95] tracking-[-0.04em] text-ink @[880px]:text-[64px]">
+            <span className="text-[0.75rem] tracking-[0.2em] text-ink-4">第 {report.issueNumber} 期</span>
+            <Halftone seed={`${report.kind}-${report.key}-date`} className="num mt-2 whitespace-nowrap text-[1.75rem] font-bold leading-[0.95] tracking-[-0.04em] text-ink @[880px]:text-[1.75rem]">
               {mark.figure}
             </Halftone>
             <span className="mt-2 text-[11.5px] text-ink-2">{mark.top}</span>
@@ -157,7 +157,7 @@ function Story({ c, slot, dated, className = "" }: { c: ReportCitation; slot: st
       </div>
       {c.available ? (
         <>
-          <h3 className="mt-3 text-[19px] font-bold leading-[1.5] tracking-[-0.01em] text-ink [text-wrap:pretty] @[880px]:text-[20px]">
+          <h3 className="mt-3 text-[1.25rem] font-semibold leading-[1.45] text-ink [text-wrap:pretty] @[880px]:text-[1.25rem]">
             {c.itemId ? (
               <IntentLink viewTransition to={`/items/${c.itemId}`} className="transition-colors hover:text-accent">
                 {c.title}
@@ -308,7 +308,7 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
       <div id={leadStory ? (anchorOf(leadStory) ?? undefined) : undefined} className="flex min-w-0 scroll-mt-[calc(var(--bar-h)+1.5rem)] flex-col py-7 @[880px]:border-r @[880px]:border-line @[880px]:py-10 @[880px]:pr-10">
         <Kicker>{byEvent ? "头条" : "本期导读"}</Kicker>
         {cover && wide && <LeadPicture cover={cover} onError={() => setBroken(cover.url)} priority className="order-2 mt-5 @[560px]:order-1" />}
-        <h2 className="order-1 mt-4 text-[32px] font-black leading-[1.28] tracking-[-0.03em] text-ink [text-wrap:balance] @[520px]:text-[40px] @[560px]:order-2 @[1040px]:text-[48px] @[1040px]:leading-[1.22]">
+        <h2 className="order-1 mt-4 text-[1.75rem] font-semibold leading-[1.28] tracking-[-0.03em] text-ink [text-wrap:balance] @[520px]:text-[1.75rem] @[560px]:order-2 @[1040px]:text-[1.75rem] @[1040px]:leading-[1.22]">
           {leadStory?.itemId ? (
             <IntentLink viewTransition to={`/items/${leadStory.itemId}`} className="transition-colors hover:text-accent">
               {title}
@@ -343,9 +343,9 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
                 const to = anchor && inPage.has(h.itemId) ? `#${anchor}` : h.itemId ? `/items/${h.itemId}` : h.sourceUrl;
                 if (!h.available) {
                   return (
-                    <li key={keyOf(h)} className="flex gap-3.5 border-b border-line py-4">
-                      <span className="num w-6 shrink-0 text-[26px] font-black leading-[0.95] tracking-[-0.03em] text-ink-4">{i + 1}</span>
-                      <span className="min-w-0 text-[13.5px] leading-[1.55] text-ink-4">
+                    <li key={keyOf(h)} className="flex gap-4 border-b border-line py-4">
+                      <span className="num w-6 shrink-0 text-[1.75rem] font-bold leading-[0.95] tracking-[-0.03em] text-ink-4">{i + 1}</span>
+                      <span className="min-w-0 text-[0.875rem] leading-[1.55] text-ink-4">
                         <span className="line-through">{h.title}</span>
                         <span className="mt-1 block text-[12px]">{WITHDRAWN_NOTE}</span>
                       </span>
@@ -354,11 +354,11 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
                 }
                 return (
                   <li key={keyOf(h)}>
-                    <Link to={to} viewTransition={to.startsWith("/")} className="group flex gap-3.5 border-b border-line py-4">
-                      <span className="num w-6 shrink-0 text-[26px] font-black leading-[0.95] tracking-[-0.03em] text-accent">{i + 1}</span>
+                    <Link to={to} viewTransition={to.startsWith("/")} className="group flex gap-4 border-b border-line py-4">
+                      <span className="num w-6 shrink-0 text-[1.75rem] font-bold leading-[0.95] tracking-[-0.03em] text-accent">{i + 1}</span>
                       <span className="min-w-0">
-                        <span className="block text-[15px] font-bold leading-[1.55] text-ink transition-colors group-hover:text-accent">{h.title}</span>
-                        <span className="mt-1.5 block truncate text-[12px] text-ink-4">{h.sourceName}</span>
+                        <span className="block text-[0.875rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{h.title}</span>
+                        <span className="mt-2 block truncate text-[0.75rem] text-ink-4">{h.sourceName}</span>
                       </span>
                     </Link>
                   </li>
@@ -395,7 +395,7 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
 function QuietFront({ lead }: { lead: NonNullable<ReportDetail["lead"]> }) {
   return (
     <section aria-label="头版" className="pt-10 @[880px]:pt-16">
-      <h2 className="text-[32px] font-black leading-[1.28] tracking-[-0.03em] text-ink [text-wrap:balance] @[520px]:text-[40px] @[1040px]:text-[48px] @[1040px]:leading-[1.22]">
+      <h2 className="text-[1.75rem] font-semibold leading-[1.28] tracking-[-0.03em] text-ink [text-wrap:balance] @[520px]:text-[1.75rem] @[1040px]:text-[1.75rem] @[1040px]:leading-[1.22]">
         {lead.title}
       </h2>
       {lead.leadParagraph && <p className="mt-6 max-w-[46em] text-[16.5px] leading-[1.9] text-ink-2 @[880px]:mt-7 @[880px]:text-[17.5px]">{lead.leadParagraph}</p>}
@@ -408,8 +408,8 @@ export function SectionPage({ id, no, label, children }: { id: string; no?: numb
   return (
     <section id={id} aria-labelledby={`${id}-t`} className="scroll-mt-[calc(var(--bar-h)+1.5rem)] pt-12 @[880px]:pt-16">
       <header className="flex items-baseline gap-3 border-b border-line-strong pb-3 @[880px]:gap-4">
-        {no !== undefined && <span className="num text-[26px] font-black leading-none tracking-[-0.03em] text-accent @[880px]:text-[30px]">{pad(no)}</span>}
-        <h2 id={`${id}-t`} className="min-w-0 text-[24px] font-black leading-[1.25] tracking-[-0.02em] text-ink @[880px]:text-[28px]">
+        {no !== undefined && <span className="num text-[1.75rem] font-bold leading-none tracking-[-0.03em] text-accent @[880px]:text-[1.75rem]">{pad(no)}</span>}
+        <h2 id={`${id}-t`} className="min-w-0 text-[1.75rem] font-semibold leading-[1.25] tracking-[-0.02em] text-ink @[880px]:text-[1.75rem]">
           {label}
         </h2>
       </header>
@@ -425,7 +425,7 @@ const COLUMNS = "@[760px]:columns-2 @[760px]:gap-x-12 @[760px]:[column-rule:1px_
 function Neighbours({ report, index }: { report: ReportDetail; index: ReportNavigationEntry[] }) {
   const titleOf = (key: string) => index.find((e) => e.key === key)?.title ?? `${withSubject(REPORT_NAMES[report.kind])} · ${key}`;
   const cell = "group flex min-w-0 flex-col py-6";
-  const title = "mt-2.5 line-clamp-2 text-[16px] font-bold leading-[1.5] text-ink transition-colors group-hover:text-accent @[880px]:text-[18px]";
+  const title = "mt-3 line-clamp-2 text-[1rem] font-semibold leading-[1.45] text-ink transition-colors group-hover:text-accent @[880px]:text-[1.25rem]";
   return (
     <nav aria-label={report.kind === "daily" ? "前后日报" : "前后各期"} className="mt-16 grid grid-cols-2 border-y border-line-strong">
       {report.prev ? (

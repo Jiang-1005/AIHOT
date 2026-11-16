@@ -609,14 +609,14 @@ export default function VoicesPage() {
       {sheet && (
         <div className="fixed inset-0 z-50">
           <button type="button" className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={() => setSheet(false)} />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface p-4 pb-8 shadow-xl md:inset-auto md:bottom-auto md:right-6 md:top-24 md:w-[420px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[16px] font-semibold text-ink">筛选</h2>
-              <div className="flex items-center gap-3">
+          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-sheet bg-surface pb-8 shadow-[var(--shadow-overlay)]">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line-soft bg-surface px-4 py-3">
+              <h2 className="text-[1rem] font-semibold text-ink">筛选</h2>
+              <div className="flex items-center gap-2">
                 {selected ? (
-                  <button type="button" className="text-[13px] text-ink-3" onClick={clearAll}>清空</button>
+                  <button type="button" className="h-8 px-2 text-[0.875rem] text-ink-3" onClick={clearAll}>清空</button>
                 ) : null}
-                <button type="button" className="text-[13px] text-ink-3" onClick={() => setSheet(false)}>完成</button>
+                <button type="button" className="h-8 px-2 text-[0.875rem] font-medium text-accent" onClick={() => setSheet(false)}>完成</button>
               </div>
             </div>
             <div className="mb-3">

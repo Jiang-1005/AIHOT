@@ -70,8 +70,8 @@ function Panel({ id, title, sub, right, children, className = "" }: { id?: strin
     <section id={id} className={`card scroll-mt-[calc(var(--bar-h)+64px)] p-5 lg:p-6 ${className}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[17px] font-[650] leading-[1.5] text-ink">{title}</h2>
-          {sub && <p className="mt-0.5 text-[12.5px] text-ink-4">{sub}</p>}
+          <h2 className="text-[1rem] font-semibold leading-[1.5] text-ink">{title}</h2>
+          {sub && <p className="mt-1 text-[0.875rem] text-ink-4">{sub}</p>}
         </div>
         {right && <div className="shrink-0 text-[11.5px] text-ink-4">{right}</div>}
       </div>
@@ -85,8 +85,8 @@ function RailCard({ title, right, children, className = "" }: { title: ReactNode
   return (
     <section className={`card p-5 lg:p-[22px] ${className}`}>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[14px] font-[650] text-ink">{title}</h2>
-        {right && <span className="num text-[11.5px] text-ink-4">{right}</span>}
+        <h2 className="text-[0.875rem] font-semibold text-ink">{title}</h2>
+        {right && <span className="num text-[0.75rem] text-ink-4">{right}</span>}
       </div>
       <div className="mt-2">{children}</div>
     </section>
@@ -112,7 +112,7 @@ function TimelineRow({ r }: { r: StoryReportView }) {
           <span className="min-w-0 truncate">{r.source.name}</span>
           {r.selected && <SelectedBadge />}
         </div>
-        <IntentLink viewTransition to={`/items/${r.id}`} className="mt-1 block text-[16px] font-[650] leading-[1.6] text-ink transition-colors hover:text-accent lg:text-[15.5px]">
+        <IntentLink viewTransition to={`/items/${r.id}`} className="mt-1 block text-[1rem] font-semibold leading-[1.6] text-ink transition-colors hover:text-accent lg:text-[0.875rem]">
           {r.title}
         </IntentLink>
         {r.summary && (
@@ -203,9 +203,9 @@ export default function StoryPage() {
           热点事件
           <Badge tone={status.tone}>{status.label}</Badge>
         </div>
-        <h1 data-page-title="" className="mt-2.5 text-[27px] font-bold leading-[1.5] tracking-[-0.01em] text-ink lg:mt-3 lg:text-[36px] lg:font-[730]">{story.title}</h1>
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] text-ink-3">
-          <span className="inline-flex items-center gap-1.5">
+        <h1 data-page-title="" className="mt-3 text-[1.75rem] font-semibold leading-[1.3] text-ink">{story.title}</h1>
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[0.875rem] text-ink-3">
+          <span className="inline-flex items-center gap-2">
             <IconDoc size={15} className="text-ink-4" />
             <b className="num font-semibold text-ink">{story.reportCount}</b> 篇报道
           </span>

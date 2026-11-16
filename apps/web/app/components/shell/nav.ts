@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { NAV, subjectAfter, withSubject } from "@aihot/site";
 import { webModules } from "../../site-modules";
 import {
-  IconBolt, IconBookmark, IconDoc, IconFlame, IconGrid, IconHeart, IconHistory, IconList, IconMessage, IconPlug, IconUser,
+  IconBolt, IconBookmark, IconBuilding, IconCalendar, IconFlame, IconGrid, IconHeart, IconLandmark, IconLayers, IconMessage, IconNewspaper, IconPlug, IconSend, IconSparkles, IconUser,
 } from "../icons";
 
 export interface NavItem {
@@ -24,13 +24,13 @@ const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     title: "内容",
     items: [
       { to: "/", label: "精选", icon: IconBolt, end: true },
-      { to: "/archive", label: "往期", icon: IconHistory },
+      { to: "/archive", label: "往期", icon: IconCalendar },
       { to: "/voices", label: "社区热帖", icon: IconMessage },
-      { to: "/companies", label: "国内公司动态", icon: IconList },
-      { to: "/policies", label: "国内政策", icon: IconDoc },
-      { to: "/all", label: subjectAfter("全部", "动态"), icon: IconList },
+      { to: "/companies", label: "国内公司动态", icon: IconBuilding },
+      { to: "/policies", label: "国内政策", icon: IconLandmark },
+      { to: "/all", label: subjectAfter("全部", "动态"), icon: IconLayers },
       { to: "/hot", label: "热点榜", icon: IconFlame },
-      { to: "/daily", label: withSubject("日报"), icon: IconDoc, covers: ["/weekly", "/monthly"] },
+      { to: "/daily", label: withSubject("日报"), icon: IconNewspaper, covers: ["/weekly", "/monthly"] },
       { to: "/topics", label: "主题", icon: IconGrid },
       { to: "/starred", label: "收藏", icon: IconBookmark },
     ],
@@ -40,8 +40,8 @@ const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { to: "/agent", label: "Agent 接入", icon: IconPlug },
       { to: "/about", label: "关于", icon: IconHeart },
-      { to: "/changelog", label: "更新日志", icon: IconHistory, changelog: true },
-      { to: "/feedback", label: "反馈", icon: IconMessage },
+      { to: "/changelog", label: "更新日志", icon: IconSparkles, changelog: true },
+      { to: "/feedback", label: "反馈", icon: IconSend },
     ],
   },
 ];
@@ -125,7 +125,7 @@ export interface Tab {
 const ENGINE_TABS: Tab[] = [
   { key: "featured", to: "/", label: "精选", icon: IconBolt },
   { key: "hot", to: "/hot", label: "热点", icon: IconFlame },
-  { key: "daily", to: "/daily", label: "日报", icon: IconDoc, covers: ["/weekly", "/monthly"] },
+  { key: "daily", to: "/daily", label: "日报", icon: IconNewspaper, covers: ["/weekly", "/monthly"] },
   { key: "me", to: "/more", label: "我的", icon: IconUser, changelog: true },
 ];
 
@@ -142,7 +142,7 @@ export function rail(): Tab[] {
   const all = tabs();
   if (!inNav("/all")) return all;
   const at = all.findIndex((t) => t.key === "featured") + 1;
-  return [...all.slice(0, at), { key: "all", to: "/all", label: "全部", icon: IconList }, ...all.slice(at)];
+  return [...all.slice(0, at), { key: "all", to: "/all", label: "全部", icon: IconLayers }, ...all.slice(at)];
 }
 
 /** A rail entry is lit on its pages; 我的 also on the pages that sit under it on phones. */

@@ -4,7 +4,7 @@ import { IconArrowRight, IconMinus, IconTrendDown, IconTrendUp } from "../../com
 import { Faces } from "../hot/Faces";
 
 // As on the original list: the top three in the ranking colours at the heaviest weight.
-const RANK_COLOR = ["text-[15px] font-black text-rank-1", "text-[15px] font-black text-rank-2", "text-[15px] font-black text-rank-3"];
+const RANK_COLOR = ["text-[0.875rem] font-bold text-rank-1", "text-[0.875rem] font-bold text-rank-2", "text-[0.875rem] font-bold text-rank-3"];
 
 function hrefOf(e: HotStripEntry): string {
   return e.storyPublicId ? `/story/${e.storyPublicId}` : e.itemId ? `/items/${e.itemId}` : "/hot";
@@ -33,15 +33,12 @@ export function HotTopics({ entries }: { entries: HotStripEntry[] }) {
       className="card relative mb-4 overflow-hidden bg-[radial-gradient(120%_90%_at_100%_0%,var(--hot-soft),transparent_55%)] px-3.5 pb-1 pt-2.5 lg:mb-6 lg:px-5 lg:pb-2 lg:pt-3.5"
     >
       <div className="flex items-center justify-between lg:mb-1">
-        <h2 id="hot-topics" className="flex items-center gap-2 text-[14px] font-semibold text-ink">
-          <span className="relative flex size-2" aria-hidden="true">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-hot opacity-40" />
-            <span className="relative inline-flex size-2 rounded-full bg-hot" />
-          </span>
+        <h2 id="hot-topics" className="flex items-center gap-2 text-[0.875rem] font-semibold text-ink">
+          <span className="inline-flex size-2 rounded-full bg-hot" aria-hidden="true" />
           当前热点
         </h2>
-        <Link to="/hot" className="group -my-2 -mr-1.5 inline-flex h-10 items-center gap-1 px-1.5 text-[12.5px] text-ink-3 transition-colors hover:text-accent lg:my-0 lg:mr-0 lg:h-auto lg:px-0">
-          完整榜单 <IconArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+        <Link to="/hot" className="group -my-2 -mr-2 inline-flex h-10 items-center gap-1 px-2 text-[0.875rem] text-ink-3 transition-colors hover:text-accent lg:my-0 lg:mr-0 lg:h-auto lg:px-0">
+          完整榜单 <IconArrowRight size={13} />
         </Link>
       </div>
       <ol>

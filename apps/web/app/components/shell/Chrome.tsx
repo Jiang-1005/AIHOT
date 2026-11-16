@@ -21,9 +21,9 @@ export function NavigationProgress({ active }: { active: boolean }) {
       <div
         className="h-full origin-left bg-accent"
         style={{
-          transform: `scaleX(${visible ? 0.85 : active ? 0 : 1})`,
-          opacity: visible ? 1 : 0,
-          transition: visible ? "transform 2.4s cubic-bezier(0.1, 0.7, 0.2, 1), opacity 120ms" : "transform 200ms, opacity 300ms 120ms",
+          transform: `scaleX(${visible ? 0.85 : active ? 0.12 : 1})`,
+          opacity: visible || active ? 1 : 0,
+          transition: visible ? "transform 300ms cubic-bezier(0.25, 1, 0.5, 1), opacity 150ms cubic-bezier(0.25, 1, 0.5, 1)" : "transform 200ms cubic-bezier(0.4, 0, 1, 1), opacity 150ms cubic-bezier(0.4, 0, 1, 1)",
         }}
       />
     </div>
@@ -44,8 +44,8 @@ export function BackToTop() {
       type="button"
       aria-label="回到顶部"
       onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior() })}
-      className={`fixed bottom-[max(24px,env(safe-area-inset-bottom))] right-[max(24px,env(safe-area-inset-right))] z-30 hidden size-11 items-center justify-center rounded-full border border-line bg-surface text-ink-2 shadow-[var(--shadow-soft)] transition-all duration-200 hover:text-ink lg:flex ${
-        shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
+      className={`fixed bottom-[max(24px,env(safe-area-inset-bottom))] right-[max(24px,env(safe-area-inset-right))] z-30 hidden size-11 items-center justify-center rounded-full border border-line bg-surface text-ink-2 shadow-[var(--shadow-soft)] transition-[transform,opacity,color] duration-200 hover:text-ink lg:flex ${
+        shown ? "translate-y-0 opacity-100 ease-[var(--ease-enter)]" : "pointer-events-none translate-y-2 opacity-0 ease-[var(--ease-exit)]"
       }`}
     >
       <IconArrowUp size={18} />
