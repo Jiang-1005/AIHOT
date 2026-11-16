@@ -150,7 +150,7 @@ export default function StarredPage() {
             const status = current?.status;
             const unavailable = status === "unavailable";
             return (
-              <li key={s.id} data-card-key={s.id} className={`relative border-b border-line-soft py-4 lg:card lg:px-[20px] lg:py-[16px] ${unavailable ? "opacity-70" : "lg:card-hover lg:card-press"}`}>
+              <li key={s.id} data-card-key={s.id} className={`relative border-b border-line-soft py-4 lg:border-t lg:border-b-0 lg:border-line lg:py-6 lg:[&:has(a:hover)_h2]:text-accent ${unavailable ? "opacity-70" : ""}`}>
                 <div className="flex items-center gap-2 text-[0.875rem] text-ink-4">
                   <span className="min-w-0 truncate text-ink-3">{current?.sourceName ?? s.sourceName}</span>
                   {s.publishedAt && <span className="num shrink-0">· {fullDateTime(s.publishedAt)}</span>}
@@ -161,7 +161,7 @@ export default function StarredPage() {
                     <IconClose size={14} />
                   </button>
                 </div>
-                <h2 className="mt-2 text-[1rem] font-[650] leading-[1.55] text-ink">
+                <h2 className="mt-1.5 line-clamp-2 text-[1rem] font-semibold leading-[1.45] text-ink transition-colors duration-150 lg:mt-2.5 lg:line-clamp-none lg:text-[1.25rem]">
                   {unavailable ? (
                     s.title
                   ) : (

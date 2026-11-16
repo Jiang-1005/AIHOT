@@ -137,7 +137,7 @@ export default function TopicsPage() {
       {sheet && (
         <div className="fixed inset-0 z-50 md:hidden">
           <button type="button" className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={() => setSheet(false)} />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface p-4 pb-8 shadow-xl">
+          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-sheet bg-surface p-4 pb-8 shadow-[var(--shadow-overlay)]">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-[1rem] font-semibold text-ink">筛选</h2>
               <button type="button" className="text-[0.875rem] text-ink-3" onClick={() => setSheet(false)}>完成</button>

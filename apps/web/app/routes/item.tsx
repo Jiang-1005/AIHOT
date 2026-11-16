@@ -106,7 +106,7 @@ function ReadingProgress() {
       window.removeEventListener("resize", schedule);
     };
   }, []);
-  return <div ref={ref} aria-hidden="true" className="fixed inset-x-0 top-0 z-50 h-[2px] origin-left scale-x-0 bg-accent transition-transform duration-150 ease-out" />;
+  return <div ref={ref} aria-hidden="true" className="fixed inset-x-0 top-0 z-50 h-[2px] origin-left scale-x-0 bg-accent transition-transform duration-150 ease-[var(--ease-enter)]" />;
 }
 
 /** An outline link: a plain click scrolls in place (above); modifier clicks keep the browser's behaviour. */
@@ -261,11 +261,11 @@ function ItemPreview({ preview }: { preview: FeedItemSummary }) {
             </span>
           )}
         </div>
-        {!isPost && <h1 data-page-title="" className="text-[1.75rem] font-bold leading-[1.38] tracking-[-0.01em] text-ink">{preview.title}</h1>}
+        {!isPost && <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">{preview.title}</h1>}
         {preview.summary && (
           <section className={isPost ? "mt-4" : "mt-7"}>
             <div className="mb-2 text-[0.75rem] font-semibold text-accent">{isPost && preview.summary.replace(/\s+/g, " ").trim() === preview.title ? "原文" : "AI 导读"}</div>
-            <p className="text-[1.25rem] leading-[1.7] text-ink"><MentionText runs={addressRuns(preview.summary)} /></p>
+            <p className="text-[1rem] leading-[1.8] text-ink"><MentionText runs={addressRuns(preview.summary)} /></p>
           </section>
         )}
         {preview.reason && (
@@ -532,7 +532,7 @@ function ItemView({ item, followups }: Loaded) {
       >
         {/* Between lg and 2xl the left rail is hidden: 返回 stays at the top while reading, as on the original site.
             Below side the right rail is hidden too, and its actions and the outline join 返回. */}
-        <div className="sticky top-0 z-20 -mx-2 hidden items-center justify-between gap-3 bg-bg/95 px-2 py-2 backdrop-blur lg:flex 2xl:hidden">
+        <div className="sticky top-0 z-20 -mx-2 hidden items-center justify-between gap-3 bg-bg/90 px-2 py-2 backdrop-blur lg:flex 2xl:hidden">
           {backButton}
           <div className="flex items-center gap-1 side:hidden">
             {showOutline && (
@@ -566,13 +566,13 @@ function ItemView({ item, followups }: Loaded) {
               </span>
             )}
           </div>
-          {!isPost && <h1 data-page-title="" className="text-[1.75rem] font-bold leading-[1.38] tracking-[-0.01em] text-ink lg:text-[1.75rem] lg:leading-[1.34] xl:text-[1.75rem] xl:leading-[1.3]">{item.title}</h1>}
+          {!isPost && <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">{item.title}</h1>}
           {!isPost && item.originalTitle && <p className="mt-3 text-[0.875rem] leading-relaxed text-ink-4">{item.originalTitle}</p>}
 
           {item.summary && (!isPost || item.summary.replace(/\s+/g, " ").trim() !== item.title) && (
             <section className={isPost ? "mt-4" : "mt-7 xl:mt-8"}>
               <div className="mb-2 text-[0.75rem] font-semibold text-accent">{summaryOnly ? "摘要" : "AI 导读"}</div>
-              <p className="text-[1.25rem] leading-[1.7] text-ink xl:text-[1.25rem] xl:leading-[1.7]"><MentionText runs={summaryRuns} /></p>
+              <p className="text-[1rem] leading-[1.8] text-ink"><MentionText runs={summaryRuns} /></p>
             </section>
           )}
 

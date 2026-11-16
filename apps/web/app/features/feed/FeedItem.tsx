@@ -45,7 +45,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
 
   return (
     <article className="relative min-w-0 lg:border-t lg:border-line lg:py-6 lg:group-first/slot:border-t-0 lg:group-first/slot:pt-4 lg:[&:has(a:hover)_h3]:text-accent" data-item-id={item.id}>
-      <header className="flex min-h-[22px] items-center gap-2 text-[0.875rem] leading-[18px] text-ink-4 lg:min-h-[18px] lg:gap-2">
+      <header className="flex min-h-5 items-center gap-2 text-[0.75rem] leading-[1.5] text-ink-4 lg:min-h-5 lg:gap-2">
         <SourceLine item={item} className="text-ink-4" />
         {lead && (
           <time dateTime={item.publishedAt ?? at} className="mono shrink-0 text-[0.75rem] lg:hidden">
@@ -72,19 +72,19 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
       {dates?.collected && <p className="mono text-[0.75rem] leading-[16px] text-ink-4 lg:mt-1">{dates.collected}</p>}
 
       {isX ? (
-        item.summary ? <p className={`mt-2 whitespace-pre-line text-[0.875rem] leading-[1.75] line-clamp-5 lg:mt-2 lg:line-clamp-4 ${readTone(read, "text-ink")}`}>
+        item.summary ? <p className={`mt-2 whitespace-pre-line text-[0.875rem] leading-[1.7] line-clamp-5 lg:mt-2 lg:line-clamp-4 ${readTone(read, "text-ink")}`}>
           <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
             {shortAddresses(item.summary)}
           </IntentLink>
         </p> : <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} aria-label={`查看 ${item.x!.authorName} 的帖子`} className="absolute inset-0" />
       ) : (
         <>
-          <h3 className={`mt-1.5 line-clamp-2 text-[1.0625rem] font-semibold leading-[1.4] transition-colors lg:mt-2.5 lg:line-clamp-none lg:text-[1.25rem] lg:leading-[1.45] ${readTone(read, "text-ink")}`}>
+          <h3 className={`mt-1.5 line-clamp-2 text-[1rem] font-semibold leading-[1.45] transition-colors duration-150 lg:mt-2.5 lg:line-clamp-none lg:text-[1.25rem] ${readTone(read, "text-ink")}`}>
             <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
               {item.title}
             </IntentLink>
           </h3>
-          {item.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.6] text-ink-3 lg:mt-2 lg:line-clamp-3 lg:text-[0.875rem] lg:leading-[1.75]">{shortAddresses(item.summary)}</p>}
+          {item.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:mt-2 lg:line-clamp-3">{shortAddresses(item.summary)}</p>}
         </>
       )}
 
@@ -122,7 +122,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
 
       {item.reason && (
         <div className="mt-1 lg:mt-3 lg:border-t lg:border-line-soft lg:pt-3">
-          <p className="line-clamp-1 text-[0.875rem] leading-[1.6] text-note lg:line-clamp-none lg:leading-[1.75]">{`${ITEM_COPY.reasonLabel}：`}{publicCopy(item.reason)}</p>
+          <p className="line-clamp-1 text-[0.875rem] leading-[1.7] text-note lg:line-clamp-none">{`${ITEM_COPY.reasonLabel}：`}{publicCopy(item.reason)}</p>
         </div>
       )}
 

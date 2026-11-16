@@ -13,7 +13,7 @@ import { setFontPreference, useFontPreference, useStarred } from "../lib/local-s
 import { Select } from "../components/ui/Controls";
 import { ThemeSwitch } from "../components/shell/ThemeSwitch";
 import { Filings } from "../components/shell/Filings";
-import { IconBookmark, IconChevronRight, IconGrid, IconHeart, IconDoc, IconList, IconMessage, IconMoon, IconPlug, IconSparkles } from "../components/icons";
+import { IconBookmark, IconBuilding, IconChevronRight, IconGrid, IconHeart, IconLandmark, IconMessage, IconMoon, IconPlug, IconSend, IconSparkles } from "../components/icons";
 
 export const handle: Screen = { tab: "me", name: "我的" };
 
@@ -38,8 +38,8 @@ const agentWays = () => [...webModules().flatMap((m) => m.agentWays ?? []), "MCP
 const tools = (): Row[] => [
   ...webModules().flatMap((m) => m.tools ?? []),
   { to: "/voices", label: "社区热帖", icon: <IconMessage size={20} /> },
-  { to: "/companies", label: "国内公司动态", icon: <IconList size={20} /> },
-  { to: "/policies", label: "国内政策", icon: <IconDoc size={20} /> },
+  { to: "/companies", label: "国内公司动态", icon: <IconBuilding size={20} /> },
+  { to: "/policies", label: "国内政策", icon: <IconLandmark size={20} /> },
   ...(inNav("/topics") ? [{ to: "/topics", label: "主题", icon: <IconGrid size={20} /> }] : []),
   { to: "/agent", label: "Agent 接入", icon: <IconPlug size={20} />, detail: agentWays().slice(0, 3).join(" · ") },
 ];
@@ -80,7 +80,7 @@ export default function MorePage() {
   return (
     <div className="mx-auto max-w-[var(--page-max-reading)] pb-8">
       <PhoneBar title="我的" large />
-      <h1 className="hidden pb-4 pt-1 text-[1.25rem] font-bold text-ink lg:block">我的</h1>
+      <h1 className="hidden pb-4 pt-1 text-[1.75rem] font-semibold leading-[1.3] text-ink lg:block">我的</h1>
       <div className="wide:grid wide:grid-cols-2 wide:items-start wide:gap-x-4 2xl:grid-cols-3">
         <Group>
           <RowLink row={{ to: "/starred", label: "收藏", icon: <IconBookmark size={20} />, detail: here && starred.length > 0 ? <span className="num">{starred.length}</span> : undefined }} />
@@ -108,7 +108,7 @@ export default function MorePage() {
         <Group title="关于">
           <RowLink row={{ to: "/about", label: `关于 ${SITE.name}`, icon: <IconHeart size={20} /> }} />
           <RowLink row={{ to: "/changelog", label: "更新日志", icon: <IconSparkles size={20} /> }} dot={changelogDot} />
-          <RowLink row={{ to: "/feedback", label: "意见反馈", icon: <IconMessage size={20} /> }} />
+          <RowLink row={{ to: "/feedback", label: "意见反馈", icon: <IconSend size={20} /> }} />
         </Group>
       </div>
       <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[0.75rem] leading-[2] text-ink-4">

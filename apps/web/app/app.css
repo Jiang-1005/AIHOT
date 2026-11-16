@@ -67,16 +67,22 @@
   --color-rank-3: var(--rank-3);
   --color-rank-rest: var(--rank-rest);
 
-  /* Radius scale: mark 5 (inline code, kbd, tiny tags and swatches), control 8 (inputs, small
-     blocks), tile 10 (list rows, hover areas), card 12, panel 14 (wells, pictures), sheet 16 (dialogs,
-     sheets, hero shells); pills are rounded-full. Arbitrary radii are not used. */
-  --radius-mark: 5px;
+  /* Radius scale (style-unify-1116): 4 / 8 / 16 / 999 only.
+     mark 4 (tags, platform marks, kbd), control/tile/card/panel 8 (cards, buttons, inputs, sidebar items),
+     sheet 16 (dialogs, drawers, empty states); pills are rounded-full (999px). */
+  --radius-mark: 4px;
   --radius-control: 8px;
-  --radius-tile: 6px;
-  --radius-card: 6px;
+  --radius-tile: 8px;
+  --radius-card: 8px;
   --radius-panel: 8px;
   --radius-sheet: 16px;
 
+  --duration-fast: 150ms;
+  --duration-med: 200ms;
+  --duration-slow: 300ms;
+  --ease-enter: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* Alias kept so existing var(--ease-out-quart) calls follow the enter curve. */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 
   /* Breakpoints: phones ≤ 640, the mobile shell up to 699, desktop pages above (an unfolded Android
@@ -123,10 +129,11 @@
   --daybar: var(--bg);
   --ink: #202a30;
   --ink-2: #303c42;
-  --ink-3: #59656b;
+  /* ink-3 merged into ink-4 (101,113,118); line-strong merged into line (223,228,225). */
+  --ink-3: #657176;
   --ink-4: #657176;
   --line: #dfe4e1;
-  --line-strong: #d1d9d5;
+  --line-strong: #dfe4e1;
   --line-soft: #e9ede9;
   /* One accent (ink green). Orange is reserved for 未查到原文 / 未核实. */
   --accent: #176b75;
@@ -149,12 +156,13 @@
   --rank-2: var(--accent);
   --rank-3: var(--accent);
   --rank-rest: var(--ink-4);
-  /* Editorial: cards are ruled, not lifted. */
+  /* Lists and cards have no shadow; one overlay shadow for search, drawers and menus. */
   --shadow-card: none;
   --shadow-card-hover: none;
-  --shadow-soft: 0 4px 12px rgba(28, 39, 51, 0.06);
-  --shadow-thumb: 0 1px 2px rgba(28, 39, 51, 0.1), 0 1px 1px rgba(28, 39, 51, 0.04);
-  --shadow-pop: 0 12px 32px rgba(28, 39, 51, 0.12);
+  --shadow-overlay: 0 12px 32px rgba(28, 39, 51, 0.12);
+  --shadow-soft: var(--shadow-overlay);
+  --shadow-thumb: none;
+  --shadow-pop: var(--shadow-overlay);
   --prose-ink: #26323a;
   --code-bg: #f6f7f4;
   --code-keyword: #006d77;
@@ -184,10 +192,10 @@
   --daybar: var(--bg);
   --ink: #e7eceb;
   --ink-2: #d2dada;
-  --ink-3: #a5b0b3;
+  --ink-3: #89979d;
   --ink-4: #89979d;
   --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.08);
   --line-soft: rgba(255, 255, 255, 0.06);
   --accent: #12ccd8;
   --accent-ink: #2ce2e8;
@@ -211,9 +219,10 @@
   --rank-rest: var(--ink-4);
   --shadow-card: none;
   --shadow-card-hover: none;
-  --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.35);
-  --shadow-thumb: 0 1px 2px rgba(0, 0, 0, 0.45);
-  --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-soft: var(--shadow-overlay);
+  --shadow-thumb: none;
+  --shadow-pop: var(--shadow-overlay);
   --prose-ink: #d7dfdf;
   --code-bg: #10151c;
   --code-keyword: #78dce8;
@@ -248,7 +257,7 @@
     color: var(--ink);
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    line-height: 1.5;
+    line-height: 1.7;
     font-variant-numeric: tabular-nums;
   }
   h1, h2, h3 {
@@ -299,12 +308,12 @@
     gap: 0.25rem;
     height: 2rem;
     padding: 0 0.75rem;
-    border-radius: 9999px;
+    border-radius: 999px;
     font-size: 0.75rem;
     color: var(--ink-4);
     background: var(--bg-sunk);
     border: 1px solid var(--line-soft);
-    transition: color 120ms, background-color 120ms, border-color 120ms;
+    transition: color var(--duration-fast) var(--ease-enter), background-color var(--duration-fast) var(--ease-enter), border-color var(--duration-fast) var(--ease-enter);
   }
   a.chip:hover {
     color: var(--accent);
@@ -345,7 +354,7 @@
   .disclosure::details-content {
     block-size: 0;
     overflow: clip;
-    transition: block-size 220ms var(--ease-out-quart), content-visibility 220ms allow-discrete;
+    transition: block-size var(--duration-med) var(--ease-enter), content-visibility var(--duration-med) allow-discrete;
   }
   .disclosure[open]::details-content {
     block-size: auto;
@@ -374,17 +383,17 @@
 /* Press feedback (modern-web-guidance natural-interactions): a card whose link is pressed sinks a little and
    takes the accent edge at once, before the next page has loaded; hover keeps its lift. */
 @utility card-press {
-  transition: box-shadow 200ms var(--ease-out-quart), border-color 120ms, scale 120ms var(--ease-out-quart);
+  transition: border-color var(--duration-fast) var(--ease-enter), background-color var(--duration-fast) var(--ease-enter);
   &:has(a:active) {
-    scale: 0.995;
     border-color: var(--accent);
-    box-shadow: none;
+    background-color: var(--accent-soft);
   }
 }
 @utility card-hover {
-  transition: box-shadow 200ms var(--ease-out-quart), border-color 200ms, transform 200ms var(--ease-out-quart);
+  transition: border-color var(--duration-fast) var(--ease-enter), background-color var(--duration-fast) var(--ease-enter);
   &:hover {
-    border-color: var(--line-strong);
+    border-color: var(--line);
+    background-color: var(--accent-soft);
   }
 }
 
@@ -394,84 +403,75 @@
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
 }
 
-@keyframes spin-slow {
-  to { transform: rotate(360deg); }
-}
-
 .animate-fade-up {
-  animation: fade-up 280ms var(--ease-out-quart) both;
+  animation: fade-up var(--duration-med) var(--ease-enter) both;
 }
 
-/* Enter/leave keyframes for components/ui/Presence.tsx; --anim-ms overrides a default length. */
+/* Enter/leave keyframes for Presence.tsx. Enter uses --duration-med + enter easing;
+   leave is one step shorter (--duration-fast) with the exit easing. --anim-ms still overrides. */
 @keyframes aihot-collapse-in { from { grid-template-rows: 0fr; opacity: 0; } to { grid-template-rows: 1fr; opacity: 1; } }
 @keyframes aihot-collapse-out { from { grid-template-rows: 1fr; opacity: 1; } to { grid-template-rows: 0fr; opacity: 0; } }
 @keyframes aihot-fade-in { from { opacity: 0; } }
 @keyframes aihot-fade-out { to { opacity: 0; } }
-@keyframes aihot-drop-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
-@keyframes aihot-drop-out { to { opacity: 0; transform: translateY(-4px) scale(0.98); } }
-@keyframes aihot-notice-in { from { opacity: 0; transform: translateY(-6px); } }
-@keyframes aihot-zoom-in { from { transform: scale(0.96); } }
-@keyframes aihot-zoom-out { to { transform: scale(0.98); } }
+@keyframes aihot-drop-in { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes aihot-drop-out { to { opacity: 0; transform: translateY(-4px); } }
+@keyframes aihot-notice-in { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes aihot-zoom-in { from { opacity: 0; } }
+@keyframes aihot-zoom-out { to { opacity: 0; } }
 @keyframes aihot-sheet-in { from { transform: translateY(100%); } }
 @keyframes aihot-sheet-out { to { transform: translateY(100%); } }
-@keyframes aihot-swap-in { from { opacity: 0; transform: scale(0.7); } }
-@keyframes aihot-bump { from { transform: scale(0.7); } 55% { transform: scale(1.08); } to { transform: scale(1); } }
-@keyframes aihot-pop-in { from { opacity: 0; transform: scale(0.6); } 60% { opacity: 1; transform: scale(1.05); } to { transform: scale(1); } }
-@keyframes aihot-reveal { from { clip-path: inset(-12px 100% -12px -12px); } to { clip-path: inset(-12px -12px -12px -12px); } }
-.anim-collapse-in { animation: aihot-collapse-in var(--anim-ms, 240ms) var(--ease-out-quart) both; }
-.anim-collapse-out { animation: aihot-collapse-out var(--anim-ms, 240ms) var(--ease-out-quart) both; }
-.anim-fade-in { animation: aihot-fade-in var(--anim-ms, 160ms) ease-out both; }
-.anim-fade-out { animation: aihot-fade-out var(--anim-ms, 160ms) ease-in both; }
-.anim-drop-in { animation: aihot-drop-in 140ms var(--ease-out-quart) both; }
-.anim-drop-out { animation: aihot-drop-out 140ms ease-in both; }
-.anim-notice-in { animation: aihot-notice-in 200ms var(--ease-out-quart) both; }
-.anim-zoom-in { animation: aihot-zoom-in 180ms var(--ease-out-quart) both; }
-.anim-fade-out > .lightbox-img { animation: aihot-zoom-out 160ms ease-in both; }
-.anim-sheet-in { animation: aihot-sheet-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.anim-fade-out > .sheet-panel { animation: aihot-sheet-out 220ms cubic-bezier(0.4, 0, 1, 1) both; }
-.anim-swap-in { animation: aihot-swap-in 120ms var(--ease-out-quart) both; }
-.anim-bump { animation: aihot-bump 320ms var(--ease-out-quart) both; }
-.anim-pop-in { animation: aihot-pop-in 460ms var(--ease-out-quart) both; }
-.anim-reveal { animation: aihot-reveal 900ms var(--ease-out-quart) both; }
+@keyframes aihot-swap-in { from { opacity: 0; } }
+.anim-collapse-in { animation: aihot-collapse-in var(--anim-ms, var(--duration-med)) var(--ease-enter) both; }
+.anim-collapse-out { animation: aihot-collapse-out var(--anim-ms, var(--duration-fast)) var(--ease-exit) both; }
+.anim-fade-in { animation: aihot-fade-in var(--anim-ms, var(--duration-med)) var(--ease-enter) both; }
+.anim-fade-out { animation: aihot-fade-out var(--anim-ms, var(--duration-fast)) var(--ease-exit) both; }
+.anim-drop-in { animation: aihot-drop-in var(--duration-med) var(--ease-enter) both; }
+.anim-drop-out { animation: aihot-drop-out var(--duration-fast) var(--ease-exit) both; }
+.anim-notice-in { animation: aihot-notice-in var(--duration-med) var(--ease-enter) both; }
+.anim-zoom-in { animation: aihot-zoom-in var(--duration-med) var(--ease-enter) both; }
+.anim-fade-out > .lightbox-img { animation: aihot-zoom-out var(--duration-fast) var(--ease-exit) both; }
+.anim-sheet-in { animation: aihot-sheet-in var(--duration-slow) var(--ease-enter) both; }
+.anim-fade-out > .sheet-panel { animation: aihot-sheet-out var(--duration-med) var(--ease-exit) both; }
+.anim-swap-in { animation: aihot-swap-in var(--duration-fast) var(--ease-enter) both; }
+/* Former bounce/wipe names kept as aliases: fade only, no overshoot or clip-path. */
+.anim-bump { animation: aihot-fade-in var(--duration-med) var(--ease-enter) both; }
+.anim-pop-in { animation: aihot-fade-in var(--duration-med) var(--ease-enter) both; }
+.anim-reveal { animation: aihot-fade-in var(--duration-med) var(--ease-enter) both; }
 
 /* The theme switch cross-fades the whole document. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 200ms;
-  animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  animation-duration: var(--duration-med);
+  animation-timing-function: var(--ease-enter);
 }
 
-/* Page changes (components/shell/transitions.ts sets data-vt): on phones a page opened from a link slides
-   in from the right over the one it came from, which drifts left; back reverses it. Otherwise instant. */
+/* Page changes (transitions.ts sets data-vt): on phones a new page slides in from the right;
+   the old page fades (no parallax peek). Back reverses it. Exit is one step shorter. */
 :root[data-vt]::view-transition-old(root),
 :root[data-vt]::view-transition-new(root) {
   animation: none;
 }
 @media (max-width: 699px) {
   :root[data-vt="push"]::view-transition-old(root) {
-    animation: aihot-page-out-left 400ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: aihot-fade-out var(--duration-med) var(--ease-exit) both;
   }
   :root[data-vt="push"]::view-transition-new(root) {
-    animation: aihot-page-in-right 400ms cubic-bezier(0.32, 0.72, 0, 1) both;
-    box-shadow: -10px 0 28px rgba(0, 0, 0, 0.12);
+    animation: aihot-page-in-right var(--duration-slow) var(--ease-enter) both;
   }
   :root[data-vt="back"]::view-transition-old(root) {
     z-index: 1;
-    animation: aihot-page-out-right 360ms cubic-bezier(0.32, 0.72, 0, 1) both;
-    box-shadow: -10px 0 28px rgba(0, 0, 0, 0.12);
+    animation: aihot-page-out-right var(--duration-med) var(--ease-exit) both;
   }
   :root[data-vt="back"]::view-transition-new(root) {
-    animation: aihot-page-in-left 360ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: aihot-fade-in var(--duration-slow) var(--ease-enter) both;
   }
 }
 @keyframes aihot-page-in-right { from { transform: translateX(100%); } }
-@keyframes aihot-page-out-left { to { transform: translateX(-28%); } }
 @keyframes aihot-page-out-right { to { transform: translateX(100%); } }
-@keyframes aihot-page-in-left { from { transform: translateX(-28%); } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -514,7 +514,7 @@
 .prose h2, .prose h3, .prose h4, .prose h5 {
   color: var(--ink);
   text-wrap: balance;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.4;
   letter-spacing: 0;
   scroll-margin-top: 88px;
@@ -528,10 +528,10 @@
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
   text-underline-offset: 3px;
-  transition: text-decoration-color 120ms;
+  transition: text-decoration-color var(--duration-fast) var(--ease-enter);
 }
 .prose a:hover { text-decoration-color: var(--accent); }
-.prose strong, .prose b { color: var(--ink); font-weight: 650; }
+.prose strong, .prose b { color: var(--ink); font-weight: 600; }
 .prose ul, .prose ol { padding-left: 1.4em; }
 .prose ul { list-style: disc; }
 .prose ol { list-style: decimal; }
@@ -587,8 +587,8 @@
 /* Code blocks in article bodies get a head with the language and a copy button (features/item/ArticleBody). */
 .prose .code-block { margin-top: 1.2em; border: 1px solid var(--line); border-radius: var(--radius-tile); overflow: hidden; background: var(--code-bg); }
 .prose .code-block pre { margin: 0; border: 0; border-radius: 0; }
-.prose .code-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--line-soft); font-size: 0.75rem; line-height: 1.4; color: var(--ink-4); letter-spacing: 0; }
-.prose .code-block-copy { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-mark); background: var(--surface); color: var(--ink-3); font-size: 0.75rem; transition: color 120ms, border-color 120ms; }
+.prose .code-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 16px; border-bottom: 1px solid var(--line-soft); font-size: 0.75rem; line-height: 1.4; color: var(--ink-4); letter-spacing: 0; }
+.prose .code-block-copy { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-mark); background: var(--surface); color: var(--ink-3); font-size: 0.75rem; transition: color var(--duration-fast) var(--ease-enter), border-color var(--duration-fast) var(--ease-enter); }
 .prose .code-block-copy:hover { color: var(--ink); border-color: var(--line-strong); }
 .prose .code-block-copy[data-status="copied"] { color: var(--ok-ink); }
 .prose .hljs-comment, .prose .hljs-quote { color: var(--ink-4); font-style: italic; }
@@ -726,7 +726,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 18px 0;
+  padding: 16px 0;
   border-top: 1px solid var(--line);
   content-visibility: auto;
   contain-intrinsic-size: auto 200px;
@@ -750,9 +750,12 @@
   margin: 0;
   text-wrap: balance;
   font-size: 1rem;
-  font-weight: 650;
-  line-height: 1.5;
+  font-weight: 600;
+  line-height: 1.45;
   color: var(--ink);
+}
+@media (min-width: 700px) {
+  .voice-card-title { font-size: 1.25rem; }
 }
 .voice-card-summary {
   margin: 0;
@@ -814,18 +817,18 @@
   padding: 0 12px;
   font-size: 0.75rem;
   line-height: 1;
-  background: var(--bg);
+  background: var(--surface);
   color: var(--ink-2);
-  box-shadow: inset 0 0 0 1px var(--line-soft);
-  transition: color 120ms, background-color 120ms, scale 120ms;
+  border: 1px solid var(--line);
+  transition: color var(--duration-fast) var(--ease-enter), background-color var(--duration-fast) var(--ease-enter), border-color var(--duration-fast) var(--ease-enter);
 }
-.voice-chip:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
-.voice-chip:active { scale: 0.97; }
+.voice-chip:hover { color: var(--ink); border-color: var(--line); }
+.voice-chip:active { background: var(--accent-soft); }
 .voice-chip:disabled { opacity: 0.4; cursor: default; }
 .voice-chip.is-on {
   background: var(--accent);
   color: var(--accent-contrast);
-  box-shadow: none;
+  border-color: var(--accent);
 }
 .voice-skel { min-height: 160px; }
 .voice-skel-line {
@@ -848,7 +851,7 @@
 .voice-reader::backdrop {
   background: rgba(8, 14, 15, 0.42);
 }
-.voice-reader[open] { animation: aihot-zoom-in 180ms var(--ease-out-quart) both; }
+.voice-reader[open] { animation: aihot-zoom-in var(--duration-med) var(--ease-enter) both; }
 .voice-reader-panel {
   display: flex;
   flex-direction: column;
@@ -860,7 +863,7 @@
 }
 .voice-reader-body {
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px;
 }
 @media (max-width: 699px) {
   .voice-reader {

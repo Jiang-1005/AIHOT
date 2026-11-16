@@ -137,7 +137,7 @@ function Lead({ e }: { e: HotEntryView }) {
         </div>
         {e.cover ? (
           <div className="order-first overflow-hidden well rounded-panel xl:order-none">
-            <Picture src={e.cover.url} srcSet={e.cover.srcSet} sizes="(min-width: 1280px) calc(28vw - 96px), (min-width: 1024px) calc(58vw - 180px), (min-width: 640px) 568px, calc(100vw - 74px)" width={e.cover.width ?? undefined} height={e.cover.height ?? undefined} alt="" loading="eager" fetchPriority="high" decoding="async" className="aspect-[16/9] size-full object-cover transition-transform duration-500 group-hover:scale-[1.02] xl:aspect-[16/10]" />
+            <Picture src={e.cover.url} srcSet={e.cover.srcSet} sizes="(min-width: 1280px) calc(28vw - 96px), (min-width: 1024px) calc(58vw - 180px), (min-width: 640px) 568px, calc(100vw - 74px)" width={e.cover.width ?? undefined} height={e.cover.height ?? undefined} alt="" loading="eager" fetchPriority="high" decoding="async" className="aspect-[16/9] size-full object-cover xl:aspect-[16/10]" />
           </div>
         ) : (
           panel && <HeatPanel e={e} />
@@ -180,7 +180,7 @@ function Runner({ e }: { e: HotEntryView }) {
         <Badges e={e} />
         <Delta trend={e.trend} pct={e.trendPct} className="ml-auto" />
       </div>
-      <h2 className="mt-3 line-clamp-2 text-[1rem] font-[650] leading-[1.5] text-ink">
+      <h2 className="mt-3 line-clamp-2 text-[1rem] font-semibold leading-[1.5] text-ink">
         <StoryLink e={e} className="group-hover:text-accent" />
       </h2>
       {e.summary && <p className="mt-2 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:line-clamp-1">{shortAddresses(e.summary)}</p>}
@@ -209,7 +209,7 @@ function Row({ e }: { e: HotEntryView }) {
         {pad(e.rank)}
       </span>
       <div className="min-w-0">
-        <h3 className="text-[0.875rem] font-[650] leading-[1.55] text-ink">
+        <h3 className="text-[0.875rem] font-semibold leading-[1.55] text-ink">
           <StoryLink e={e} className="group-hover:text-accent" />
           {e.badges.length > 0 && (
             <span className="ml-2 inline-flex translate-y-[-2px] gap-1 align-middle">
@@ -280,12 +280,11 @@ export default function HotPage() {
         <div>
           <div className="flex items-center gap-2 text-[0.75rem] font-semibold tracking-[0.08em] text-hot">
             <span className="relative flex size-2" aria-hidden="true">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-hot opacity-30" />
               <span className="relative inline-flex size-2 rounded-full bg-hot" />
             </span>
             实时热度
           </div>
-          <h1 className="mt-2 text-[1.75rem] font-bold leading-[1.3] tracking-[-0.01em] text-ink lg:text-[1.75rem]">{withSubject("热点榜")}</h1>
+          <h1 className="mt-2 text-[1.75rem] font-semibold leading-[1.3] text-ink">{withSubject("热点榜")}</h1>
           <p className="mt-2 text-[0.875rem] text-ink-3">过去 {hot.windowHours}{` 小时，${withSubject("圈")}讨论最多的 `}{hot.entries.length || 10} 件事</p>
         </div>
         {hot.computedAt && (

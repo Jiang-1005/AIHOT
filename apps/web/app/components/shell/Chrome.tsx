@@ -24,7 +24,7 @@ export function NavigationProgress({ active }: { active: boolean }) {
         style={{
           transform: `scaleX(${visible ? 0.85 : active ? 0.12 : 1})`,
           opacity: visible || active ? 1 : 0,
-          transition: visible ? "transform 2.4s cubic-bezier(0.1, 0.7, 0.2, 1), opacity 120ms" : "transform 200ms, opacity 300ms 120ms",
+          transition: visible ? "transform 300ms cubic-bezier(0.25, 1, 0.5, 1), opacity 150ms cubic-bezier(0.25, 1, 0.5, 1)" : "transform 200ms cubic-bezier(0.4, 0, 1, 1), opacity 150ms cubic-bezier(0.4, 0, 1, 1)",
         }}
       />
     </div>

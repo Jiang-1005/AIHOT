@@ -188,14 +188,14 @@ function CompanyChips({ companies, active, allCount }: { companies: CompanyUpdat
               to={companyHref(chip.name)}
               preventScrollReset
               aria-current={on ? "page" : undefined}
-              className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 py-2 text-[0.875rem] font-medium ring-1 transition-colors ${
+              className={`inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 text-[0.75rem] font-medium transition-colors duration-150 ${
                 on
-                  ? "bg-surface text-ink ring-line shadow-[var(--shadow-thumb)] dark:bg-raised"
-                  : "bg-well text-ink-3 ring-line-soft hover:text-ink"
+                  ? "bg-accent text-accent-contrast"
+                  : "border border-line bg-surface text-ink-2 hover:text-ink"
               }`}
             >
               {chip.label}
-              {chip.count ? <span className={`num text-[0.86em] font-normal ${on ? "text-ink-3" : "text-ink-4"}`}>{chip.count}</span> : null}
+              {chip.count ? <span className={`num font-normal ${on ? "text-accent-contrast/80" : "text-ink-4"}`}>{chip.count}</span> : null}
             </Link>
           );
         })}

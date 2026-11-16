@@ -40,7 +40,7 @@ export default function PosterSheet({ id, title, open, onClose }: { id: string; 
             <img
               src={src}
               alt={`${title} · 分享海报`}
-              className={`size-full object-contain transition-[opacity,transform] duration-[250ms] ${loaded ? "scale-100 opacity-100" : "scale-[0.985] opacity-0"}`}
+              className={`size-full object-contain transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
               onLoad={() => setLoaded(true)}
               onError={() => setFailed(true)}
             />

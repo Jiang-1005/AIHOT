@@ -36,7 +36,7 @@ export function PhoneBar({ back, title, large = false, sub, leading, center, act
     <>
       <header
         data-phone-bar=""
-        className={`bleed sticky top-0 z-40 bg-bg/85 backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-200 lg:hidden ${scrolled ? "shadow-[0_1px_0_var(--line-soft)]" : ""}`}
+        className={`bleed sticky top-0 z-40 bg-bg/90 backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-200 lg:hidden ${scrolled ? "shadow-[0_1px_0_var(--line-soft)]" : ""}`}
       >
         <div className={`-mx-3 grid h-[var(--bar-h)] items-center ${wideCenter ? "grid-cols-[minmax(0,1fr)_auto]" : center && leading ? "grid-cols-[auto_minmax(0,1fr)_auto] gap-1" : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"}`}>
           {!wideCenter && <div className="flex min-w-0 shrink-0 items-center">{back ? <BackButton {...back} /> : leading}</div>}
@@ -58,7 +58,7 @@ export function PhoneBar({ back, title, large = false, sub, leading, center, act
       </header>
       {large && title && (
         <div className="pb-3 pt-1 lg:hidden">
-          <h1 data-page-title="" className="text-[1.75rem] font-bold leading-[1.25] tracking-[-0.01em] text-ink">
+          <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">
             {title}
           </h1>
           {sub && <div className="mt-1 text-[0.875rem] leading-relaxed text-ink-4">{sub}</div>}

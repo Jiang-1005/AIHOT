@@ -70,7 +70,7 @@ export function LogoMark({ name, src }: { name: string; src?: string }) {
   const [broken, setBroken] = useState(false);
   const ch = name.trim().charAt(0) || "?";
   const fallback = (
-    <span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center rounded-[3px] bg-bg-muted text-[0.75rem] font-semibold text-ink-3">
+    <span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center rounded-mark bg-bg-muted text-[0.75rem] font-semibold text-ink-3">
       {ch}
     </span>
   );
@@ -81,7 +81,7 @@ export function LogoMark({ name, src }: { name: string; src?: string }) {
       alt=""
       width={16}
       height={16}
-      className="size-4 shrink-0 rounded-[3px] object-contain"
+      className="size-4 shrink-0 rounded-mark object-contain"
       onError={() => setBroken(true)}
     />
   );

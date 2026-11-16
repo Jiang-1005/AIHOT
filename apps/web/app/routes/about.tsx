@@ -214,7 +214,7 @@ export default function AboutPage() {
       <header className="grid items-end gap-8 pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:pt-0">
         <div>
           <Kicker>{ABOUT.kicker}</Kicker>
-          <h1 data-page-title="" className="mt-5 text-[1.75rem] font-black leading-[1.18] tracking-[-0.03em] text-ink [text-wrap:balance] sm:text-[1.75rem] xl:text-[1.75rem] 2xl:text-[1.75rem]">
+          <h1 data-page-title="" className="mt-5 text-[1.75rem] font-semibold leading-[1.3] text-ink [text-wrap:balance]">
             {ABOUT.headline[0]}
             <br />
             <span className="text-accent">{ABOUT.headline[1]}</span>

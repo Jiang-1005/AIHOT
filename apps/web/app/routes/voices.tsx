@@ -10,6 +10,7 @@ import { beijingToday, formatWhen } from "../lib/voice-time";
 import type { Screen } from "../components/shell/screens";
 import { PhoneBar } from "../components/shell/PhoneBar";
 import { EmptyState } from "../components/ui/Page";
+import { PillTabs } from "../components/ui/Tabs";
 import {
   EMPTY_FACETS,
   FacetChipRows,
@@ -623,13 +624,18 @@ export default function VoicesPage() {
                 onClearAll={clearAll}
               />
             ) : null}
-            <div className="ml-auto inline-flex rounded-full bg-surface p-1 ring-1 ring-inset ring-line" role="group" aria-label="视图">
-              {(["cards", "compact"] as const).map((v) => (
-                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className={`h-8 rounded-full px-3 text-[0.75rem] transition-colors active:scale-[0.97] ${view === v ? "bg-accent text-accent-contrast" : "text-ink-3 hover:text-ink"}`}>
-                  {v === "cards" ? "卡片" : "紧凑列表"}
-                </button>
-              ))}
-            </div>
+            <PillTabs
+              className="ml-auto"
+              size="sm"
+              layoutId="voices-view"
+              label="视图"
+              active={view}
+              onSelect={(key) => setView(key as "cards" | "compact")}
+              items={[
+                { key: "cards", label: "卡片" },
+                { key: "compact", label: "紧凑列表" },
+              ]}
+            />
           </div>
 
           {filtered.length === 0 && !partial ? (
@@ -667,7 +673,7 @@ export default function VoicesPage() {
       {sheet && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button type="button" className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={() => setSheet(false)} />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface pb-8 shadow-xl">
+          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-sheet bg-surface pb-8 shadow-[var(--shadow-overlay)]">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line-soft bg-surface px-4 py-3">
               <h2 className="text-[1rem] font-semibold text-ink">筛选</h2>
               <div className="flex items-center gap-2">
