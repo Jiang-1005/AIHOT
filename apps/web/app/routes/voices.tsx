@@ -459,6 +459,17 @@ export default function VoicesPage() {
     };
   }, [data.catalog?.generatedAt, data.catalogTotal, data.railCounts?.total, items.length]);
 
+  useEffect(() => {
+    if (!sheet) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setSheet(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [sheet]);
+
   const filtered = useMemo(
     () => filterVoices(items, sort, platform, source, facets, verify),
     [items, sort, platform, source, facets, verify],
