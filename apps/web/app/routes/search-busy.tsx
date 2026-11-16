@@ -37,7 +37,7 @@ export default function SearchBusy() {
     <PhoneBar back={{ to: base, label: base === "/all" ? "全部" : "精选" }} />
     <div className="mx-auto max-w-sm py-24 text-center" aria-live="polite">
       <RingMark className="mx-auto mb-5 size-10 text-accent" spinning />
-      <h1 className="text-[1.25rem] font-bold text-ink">搜索有点忙</h1>
+      <h1 className="text-[1.25rem] font-semibold leading-[1.3] text-ink">搜索有点忙</h1>
       <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-3">现在搜索的人比较多，请 {RETRY_AFTER_SECONDS} 秒以后重试。列表浏览不受影响。</p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         {hasSearch &&

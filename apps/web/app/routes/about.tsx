@@ -42,7 +42,7 @@ function Figure({ n, unit }: { n: number; unit: string }) {
   const f = figure(n);
   return (
     <div className="flex items-baseline gap-2">
-      <span className="num text-[1.75rem] font-black leading-none tracking-[-0.03em] text-ink xl:text-[1.75rem]">{f.value}</span>
+      <span className="num text-[1.75rem] font-bold leading-none tracking-[-0.03em] text-ink">{f.value}</span>
       <span className="text-[0.875rem] text-ink-3">
         {f.unit}
         {unit}
@@ -145,7 +145,7 @@ function Maker({ maker, contact }: { maker: NonNullable<typeof ABOUT.maker>; con
     <section aria-labelledby="maker" className="mt-20 grid gap-10 xl:mt-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
       <div>
         <Kicker>做这个站的人</Kicker>
-        <h2 id="maker" className="mt-4 flex items-center gap-4 text-[1.75rem] font-black leading-[1.3] tracking-[-0.02em] text-ink xl:gap-4 xl:text-[1.75rem]">
+        <h2 id="maker" className="mt-4 flex items-center gap-4 text-[1.75rem] font-semibold leading-[1.3] text-ink">
           {contact?.makerAvatar && <MakerFace src={contact.makerAvatar} />}
           <span>
             嗨，我是 <span className="whitespace-nowrap text-accent">{maker.name}</span>
@@ -260,7 +260,7 @@ export default function AboutPage() {
             >
               <div className="flex items-baseline gap-3">
                 <span className="num text-[0.75rem] font-bold tracking-[0.12em] text-accent">{s.no}</span>
-                <h3 className="text-[1rem] font-bold text-ink">{s.title}</h3>
+                <h3 className="text-[1rem] font-semibold text-ink">{s.title}</h3>
               </div>
               {s.figure && <div className="mt-4">{s.figure}</div>}
               <p className="mt-3 text-[0.875rem] leading-[1.8] text-ink-3">{s.text}</p>

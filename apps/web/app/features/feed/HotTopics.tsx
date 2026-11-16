@@ -4,7 +4,7 @@ import { IconArrowRight, IconMinus, IconTrendDown, IconTrendUp } from "../../com
 import { Faces } from "../hot/Faces";
 
 // As on the original list: the top three in the ranking colours at the heaviest weight.
-const RANK_COLOR = ["text-[0.875rem] font-black text-rank-1", "text-[0.875rem] font-black text-rank-2", "text-[0.875rem] font-black text-rank-3"];
+const RANK_COLOR = ["text-[0.875rem] font-bold text-rank-1", "text-[0.875rem] font-bold text-rank-2", "text-[0.875rem] font-bold text-rank-3"];
 
 function hrefOf(e: HotStripEntry): string {
   return e.storyPublicId ? `/story/${e.storyPublicId}` : e.itemId ? `/items/${e.itemId}` : "/hot";

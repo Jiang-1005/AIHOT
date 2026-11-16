@@ -130,7 +130,7 @@ function Lead({ e }: { e: HotEntryView }) {
       </div>
       <div className={`mt-4 grid gap-5 ${e.cover || panel ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,0.72fr)] xl:gap-7" : ""}`}>
         <div className="min-w-0">
-          <h2 className="text-[1.25rem] font-bold leading-[1.4] tracking-[-0.01em] text-ink sm:text-[1.25rem] lg:text-[1.75rem] lg:leading-[1.38]">
+          <h2 className="text-[1.25rem] font-semibold leading-[1.45] text-ink lg:text-[1.75rem] lg:leading-[1.3]">
             <StoryLink e={e} className="group-hover:text-accent" />
           </h2>
           {e.summary && <p className="mt-3 line-clamp-3 text-[0.875rem] leading-[1.75] text-ink-3">{shortAddresses(e.summary)}</p>}

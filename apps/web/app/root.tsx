@@ -151,7 +151,7 @@ export function ErrorBoundary() {
       <div className="max-w-sm text-center">
         <RingMark className="mx-auto mb-5 size-10 text-accent" />
         <div className="mono text-[0.75rem] text-ink-4">{status}</div>
-        <h1 className="mt-2 text-[1.25rem] font-bold text-ink">{notFound ? "找不到这个页面" : "暂时无法加载"}</h1>
+        <h1 className="mt-2 text-[1.25rem] font-semibold leading-[1.3] text-ink">{notFound ? "找不到这个页面" : "暂时无法加载"}</h1>
         <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-3">
           {notFound ? "链接可能有误，或者这条内容已经下架。" : "页面暂时无法显示，请重新加载后再试。"}
         </p>

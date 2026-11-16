@@ -301,7 +301,7 @@ function ItemGone() {
     <div className="mx-auto max-w-sm pb-8">
       <PhoneBar back={{ to: "/", label: "精选" }} />
       <div className="py-24 text-center">
-        <div className="text-[1.25rem] font-bold text-ink">{gone ? "找不到这篇内容" : "暂时无法加载"}</div>
+        <div className="text-[1.25rem] font-semibold leading-[1.3] text-ink">{gone ? "找不到这篇内容" : "暂时无法加载"}</div>
         <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-3">{gone ? "链接可能有误，或者这篇内容已经下架。" : "服务暂时繁忙，请稍后再试。"}</p>
         {!gone && (
           <button type="button" onClick={() => void revalidator.revalidate()} className="mt-6 h-11 rounded-full border border-line-strong bg-surface px-5 text-[0.875rem] font-medium text-ink-2 active:bg-bg-sunk">

@@ -93,7 +93,7 @@ function Day({ date, releases, id }: { date: string; releases: Release[]; id?: s
             </div>
             <article className={`min-w-0 sm:border-l sm:pl-8 ${r.urgent ? "sm:border-hot/40" : "sm:border-line"}`}>
               {r.urgent && <span className="mb-2 inline-flex rounded-full bg-hot px-3 py-1 text-[0.75rem] font-semibold text-white">重要</span>}
-              <h3 className={`text-[0.875rem] font-bold leading-snug ${r.urgent ? "text-hot" : "text-ink"}`}>{r.title}</h3>
+              <h3 className={`text-[0.875rem] font-semibold leading-snug ${r.urgent ? "text-hot" : "text-ink"}`}>{r.title}</h3>
               <ReleaseBody lines={r.body} />
             </article>
           </li>

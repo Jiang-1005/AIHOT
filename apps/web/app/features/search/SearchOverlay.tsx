@@ -209,7 +209,7 @@ export function SearchOverlay() {
                 {more!.hot.map((h, i) => (
                   <li key={h.to}>
                     <Link viewTransition to={h.to} className="grid h-12 grid-cols-[18px_minmax(0,1fr)] items-center gap-x-3 active:opacity-60">
-                      <span className={`num text-center text-[0.875rem] font-black ${RANK_COLOR[i] ?? "text-rank-rest"}`}>{h.rank}</span>
+                      <span className={`num text-center text-[0.875rem] font-bold ${RANK_COLOR[i] ?? "text-rank-rest"}`}>{h.rank}</span>
                       <span className="truncate text-[0.875rem] text-ink">{h.title}</span>
                     </Link>
                   </li>

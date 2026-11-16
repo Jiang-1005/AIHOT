@@ -1,5 +1,5 @@
 import type { ReactNode, SelectHTMLAttributes } from "react";
-import { IconCheck, IconChevronDown } from "../icons";
+import { IconChevronDown } from "../icons";
 
 type Variant = "primary" | "secondary";
 const VARIANTS: Record<Variant, string> = {
@@ -35,21 +35,15 @@ export function Select({ className = "", children, ...rest }: SelectHTMLAttribut
  * as "pick any" rather than the one-of-many `PillTabs` switch.
  */
 export function ToggleChip({ on, onToggle, children, size = "md" }: { on: boolean; onToggle: () => void; children: ReactNode; size?: "md" | "sm" }) {
-  const compact = size === "sm";
   return (
     <button
       type="button"
       aria-pressed={on}
       onClick={onToggle}
-      className={`inline-flex shrink-0 select-none items-center whitespace-nowrap rounded-full border font-medium transition-colors duration-150 active:scale-[0.98] ${
-        compact
-          ? "h-auto gap-1 py-1 pl-2 pr-3 text-[0.75rem]"
-          : "h-11 gap-2 pl-2 pr-4 text-[0.875rem] lg:h-8"
-      } ${on ? "border-accent/35 bg-accent-soft text-accent" : "border-line-strong bg-surface text-ink-2 hover:border-ink-4 hover:text-ink"}`}
+      className={`inline-flex h-8 shrink-0 select-none items-center whitespace-nowrap rounded-full px-3 text-[0.75rem] font-medium transition-colors duration-150 ${
+        on ? "bg-accent text-accent-contrast" : "border border-line bg-surface text-ink-2 hover:text-ink"
+      }`}
     >
-      <span aria-hidden="true" className={`inline-flex items-center justify-center rounded-full border transition-colors duration-150 ${compact ? "size-3.5" : "size-4"} ${on ? "border-accent bg-accent text-accent-contrast" : "border-line-strong"}`}>
-        {on && <IconCheck size={compact ? 9 : 11} strokeWidth={3} />}
-      </span>
       {children}
     </button>
   );
