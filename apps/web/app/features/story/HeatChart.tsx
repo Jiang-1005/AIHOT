@@ -4,6 +4,7 @@ import { monthDayTime } from "../../lib/format";
 import { useEntrance } from "../../lib/hydration";
 import { PillTabs } from "../../components/ui/Tabs";
 import { areaPath, curvePath, type Pt } from "../hot/curve";
+import { formatHeat } from "../hot/presentation";
 
 const HOUR = 3600 * 1000;
 const BEIJING = 8 * HOUR;
@@ -140,10 +141,10 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-start sm:justify-between">
         <dl className="grid grid-cols-3 gap-x-5 sm:flex sm:gap-x-10">
           <Stat label="可比范围当前">
-            <span className="mono text-[1.25rem] font-semibold leading-none tracking-[-0.02em] text-ink">{Math.round(last.p!.heat)}</span>
+            <span className="mono text-[1.25rem] font-semibold leading-none tracking-[-0.02em] text-ink">{formatHeat(last.p!.heat)}</span>
           </Stat>
           <Stat label="可比范围峰值">
-            <span className="mono text-[1.25rem] font-semibold leading-none tracking-[-0.02em] text-ink">{Math.round(peak.p!.heat)}</span>
+            <span className="mono text-[1.25rem] font-semibold leading-none tracking-[-0.02em] text-ink">{formatHeat(peak.p!.heat)}</span>
             <span className="num text-[0.75rem] text-ink-4">{monthDayTime(new Date(peak.t).toISOString())}</span>
           </Stat>
           <Stat label="近 24 小时变化">
@@ -177,7 +178,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
         <div
           className="relative size-full touch-pan-y select-none rounded-mark outline-offset-4"
           role="img"
-          aria-label={`热度走势：当前 ${Math.round(last.p!.heat)}，峰值 ${Math.round(peak.p!.heat)}`}
+          aria-label={`热度走势：当前 ${formatHeat(last.p!.heat)}，峰值 ${formatHeat(peak.p!.heat)}`}
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === "ArrowRight") setActive((a) => Math.min(seen.length - 1, a === null ? seen.length - 1 : a + 1));
@@ -223,7 +224,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
             >
               <div className="num text-ink-4">{monthDayTime(new Date(cur.t).toISOString())}</div>
               <div className="text-ink-2">
-                热度 <b className="num font-semibold text-ink">{cur.p!.heat.toFixed(1)}</b>
+                热度 <b className="num font-semibold text-ink">{formatHeat(cur.p!.heat)}</b>
                 <span className="mx-1 text-ink-4">·</span>
                 <span className="num">{cur.p!.participants}</span> 位参与者
               </div>

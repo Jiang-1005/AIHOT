@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import type { HotStripEntry } from "@aihot/contracts/site";
 import { IconArrowRight, IconMinus, IconTrendDown, IconTrendUp } from "../../components/icons";
 import { Faces } from "../hot/Faces";
+import { formatHeat } from "../hot/presentation";
 
 // As on the original list: the top three in the ranking colours at the heaviest weight.
 const RANK_COLOR = ["text-[0.875rem] font-bold text-rank-1", "text-[0.875rem] font-bold text-rank-2", "text-[0.875rem] font-bold text-rank-3"];
@@ -56,7 +57,7 @@ export function HotTopics({ entries }: { entries: HotStripEntry[] }) {
               </span>
               <span className="flex items-center justify-end gap-3 sm:contents">
                 <span className="whitespace-nowrap text-right text-[0.875rem] text-ink-4" title="热度指数">
-                  <span className="num text-[0.875rem] font-semibold text-ink-2">{Math.round(e.heat)}</span> 热度
+                  <span className="num text-[0.875rem] font-semibold text-ink-2">{formatHeat(e.heat)}</span> 热度
                 </span>
                 <span className="flex w-5 justify-center">
                   <TrendMark trend={e.trend} />

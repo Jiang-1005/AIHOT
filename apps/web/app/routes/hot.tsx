@@ -21,7 +21,7 @@ import { Picture } from "../components/ui/Picture";
 import { navUp } from "../components/shell/nav";
 import { scrollBehavior } from "../lib/motion";
 import type { Screen } from "../components/shell/screens";
-import { computedAtBeijing, emptyKind, isStale, sourceLineParts, updatedAtLabel, type Fallback, type FallbackItem } from "../features/hot/presentation";
+import { computedAtBeijing, emptyKind, formatHeat, isStale, sourceLineParts, updatedAtLabel, type Fallback, type FallbackItem } from "../features/hot/presentation";
 import { applyDemoState, demoState, previewEnabled } from "../features/hot/preview";
 
 export const handle: Screen = { tab: navUp("/hot").tab, name: "热点" };
@@ -95,10 +95,6 @@ const BADGES: Record<HotEntryView["badges"][number], { label: string; tone: "hot
 const RANK_COLOR = ["text-rank-1", "text-rank-2", "text-rank-3"];
 const rankColor = (rank: number) => RANK_COLOR[rank - 1] ?? "text-rank-rest";
 const pad = (rank: number) => String(rank).padStart(2, "0");
-function formatHeat(heat: number): string {
-  const n = Math.round(heat * 10) / 10;
-  return Number.isInteger(n) ? String(n) : n.toFixed(1);
-}
 
 /** Names may wrap; the count never splits (「1 个来源」 stays on one line). */
 function SourceLine({ e }: { e: HotEntryView }) {

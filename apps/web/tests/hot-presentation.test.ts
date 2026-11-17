@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { computedAtBeijing, emptyKind, isStale, sourceLine, STALE_AFTER_MS, updatedAtLabel } from "../app/features/hot/presentation.ts";
+import { computedAtBeijing, emptyKind, formatHeat, isStale, sourceLine, STALE_AFTER_MS, updatedAtLabel } from "../app/features/hot/presentation.ts";
 
 test("isStale: older than one 13-hour round", () => {
   const now = Date.parse("2026-11-17T12:00:00+08:00");
@@ -29,4 +29,12 @@ test("header time carries the Beijing timezone label", () => {
   // 2026-11-17 13:10 CST
   assert.equal(updatedAtLabel("2026-11-17T05:10:00.000Z"), "11月17日 13:10 更新（北京时间）");
   assert.equal(computedAtBeijing("2026-11-14T12:40:18.847Z"), "11月14日 20:40（北京时间）");
+});
+
+test("formatHeat keeps small heat readable: 0.4 is not 「0」, integers stay bare", () => {
+  assert.equal(formatHeat(0.4), "0.4");
+  assert.equal(formatHeat(0.04), "0"); // 0 only when it really is ~0
+  assert.equal(formatHeat(0.06), "0.1");
+  assert.equal(formatHeat(2), "2");
+  assert.equal(formatHeat(12.345), "12.3");
 });

@@ -6,6 +6,13 @@ function monthDayTime(iso: string, now = Date.now()): string {
   return `${monthDay(beijingDate(iso), beijingDate(now))} ${beijingTime(iso)}`;
 }
 
+/** Heat as readers see it everywhere (/hot, home strip, story chart): one decimal, integers bare. Heat is
+ * a small number on the 10× scale (often below 1), so plain rounding would show 0.4 as 「0」. */
+export function formatHeat(heat: number): string {
+  const n = Math.round(heat * 10) / 10;
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
 /** One import round: list older than this drops「实时热度」and shows an expiration notice. */
 export const STALE_AFTER_MS = 13 * 60 * 60 * 1000;
 
