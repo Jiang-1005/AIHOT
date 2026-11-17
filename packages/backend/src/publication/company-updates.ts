@@ -4,7 +4,7 @@
 // 公开输出仍去掉「与心田花开相关」等内部字段，以及 xintian 这类代码/元数据泄漏；公司名「心田花开」「花啦啦」可以出现。
 // 同一事件若有 items-backfill*.csv 补录，保留补录那条原媒体链接；否则原媒体优先于转载。X / 小红书等社区帖不进本栏目，只在 /voices。
 import { sql } from "../db.ts";
-import { beijingDate, beijingTime } from "@aihot/contracts/time";
+import { beijingDate, beijingMidnight, beijingTime } from "@aihot/contracts/time";
 import { publicSourceName } from "./rules.ts";
 import { loadContentTagMap, loadLogoIndex } from "./facets.ts";
 
@@ -208,8 +208,8 @@ export function titleSimilarity(a: string, b: string): number {
 }
 
 function dayOffset(a: string, b: string): number {
-  const left = Date.parse(`${a}T00:00:00+08:00`);
-  const right = Date.parse(`${b}T00:00:00+08:00`);
+  const left = beijingMidnight(a).getTime();
+  const right = beijingMidnight(b).getTime();
   if (!Number.isFinite(left) || !Number.isFinite(right)) return 99;
   return Math.abs(left - right) / 86_400_000;
 }
@@ -264,7 +264,7 @@ export function originalMediaScore(item: { source: string; unverified: boolean; 
   if (/同花顺|东方财富|财富号/.test(src)) score -= 20;
   if (/新华|人民日报|中新网|中国教育报|中国政府网|教育部|科技日报|光明网/.test(src)) score += 12;
   if (/多知|芥末堆|澎湃|人民政协|中国证券报|中证网/.test(src)) score += 8;
-  const day = Date.parse(`${item.date}T00:00:00+08:00`);
+  const day = beijingMidnight(item.date).getTime();
   if (Number.isFinite(day)) score -= Math.round((day - Date.parse("2020-01-01T00:00:00+08:00")) / 86_400_000) * 0.01;
   return score;
 }
@@ -411,7 +411,9 @@ export async function loadCompanyUpdatesPage(now = new Date()) {
       )
   `;
 
-  const buckets = new Map<string, CompanyUpdateItem[]>();
+  // fromBackfill only steers dedupe below and is stripped before items leave this function.
+  type BucketItem = CompanyUpdateItem & { fromBackfill?: boolean };
+  const buckets = new Map<string, BucketItem[]>();
   const itemCompanies = new Map<string, Set<string>>();
   for (const company of COMPANY_ROSTER) buckets.set(company.id, []);
 
@@ -439,7 +441,7 @@ export async function loadCompanyUpdatesPage(now = new Date()) {
     const title = scrubPublic(row.title);
     const source = scrubPublic(publicSourceName(row.source_name));
     if (!title) continue;
-    const item: CompanyUpdateItem & { fromBackfill?: boolean } = {
+    const item: BucketItem = {
       id: row.id,
       title,
       url: row.url,

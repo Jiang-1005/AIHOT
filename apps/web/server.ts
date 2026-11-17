@@ -16,7 +16,7 @@ import { logError } from "./app/lib/errors.server.ts";
 import {
   ROBOTS_TAG, applyGateDecision, decideGate, gateMisconfigured, getCookieHeader,
   parseForm, requestIsSecure,
-} from "../../packages/backend/src/public-gate.ts";
+} from "@aihot/contracts/public-gate";
 import { Readable } from "node:stream";
 
 if (gateMisconfigured()) {

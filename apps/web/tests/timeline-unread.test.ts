@@ -166,7 +166,10 @@ for (const phone of [false, true]) test(`a kept group is not greyed and its ${ph
   }, name);
   try {
     await page.goto(`${origin}/?tag=group`);
+    // Phones keep 只看未读 in the filter sheet; 完成 closes it.
+    if (phone) await page.getByRole("button", { name: /^筛选/ }).click();
     await page.getByRole("button", { name: "只看未读" }).click();
+    if (phone) await page.getByRole("button", { name: "完成", exact: true }).click();
     const title = page.getByRole("heading", { name: "代表文章" });
     await expect(title).toBeVisible();
     assert.equal(await greyed("代表文章"), false, "the kept group's card is not greyed");

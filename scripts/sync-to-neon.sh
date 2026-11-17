@@ -29,6 +29,8 @@ if [[ -n "${-:-}" && "${-}" == *x* ]]; then
 fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Host deps first: migrate.ts and sync-site-blobs.ts import @aihot/backend from node_modules.
+"$ROOT/scripts/ensure-host-deps.sh"
 NEON_ENV="${NEON_ENV:-$ROOT/.secrets/neon.env}"
 if [[ ! -f "$NEON_ENV" ]]; then
   echo "Missing $NEON_ENV" >&2

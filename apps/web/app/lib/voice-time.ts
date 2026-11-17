@@ -1,4 +1,5 @@
 // When a community post went up, as the 社区热帖 list and reader show it (Beijing time).
+import { beijingDate, beijingTime } from "@aihot/contracts/time";
 
 /** A timestamp kept with its date only (小红书 and other posts collected without a time): T00:00:00. */
 const DATE_ONLY = /T00:00:00(?:\.0+)?(?:Z|[+-]\d{2}:?\d{2})?$/;
@@ -9,9 +10,8 @@ function beijingParts(iso: string): { y: number; m: number; d: number; hm: strin
   if (local && /\+08:?00$/.test(iso)) return { y: +local[1], m: +local[2], d: +local[3], hm: `${local[4]}:${local[5]}` };
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return null;
-  const b = new Date(t + 8 * 3600_000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return { y: b.getUTCFullYear(), m: b.getUTCMonth() + 1, d: b.getUTCDate(), hm: `${pad(b.getUTCHours())}:${pad(b.getUTCMinutes())}` };
+  const [y, m, d] = beijingDate(t).split("-").map(Number) as [number, number, number];
+  return { y, m, d, hm: beijingTime(t) };
 }
 
 /**
@@ -40,6 +40,6 @@ function shiftDay(day: string, by: number): string {
 }
 
 export function beijingToday(): string {
-  return new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10);
+  return beijingDate(Date.now());
 }
 

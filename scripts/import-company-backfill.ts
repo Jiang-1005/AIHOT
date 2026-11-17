@@ -18,7 +18,7 @@ import { closeDb, sql } from "@aihot/backend/db";
 import { stopBoss } from "@aihot/backend/jobs/queue";
 import { upsertMaterial } from "@aihot/backend/content/materials";
 import { config } from "@aihot/backend/config";
-import { beijingDate, beijingTime } from "@aihot/contracts/time";
+import { beijingDate, beijingMidnight, beijingTime } from "@aihot/contracts/time";
 import { mapCompanyLabel, COMPANY_ROSTER, sameCompanyEvent, preferCompanyEventItem, isCommunityVoiceItem } from "@aihot/backend/publication/company-updates";
 import { rowLooksLikePolicy } from "@aihot/backend/publication/policy-updates";
 import { SERVER_MODULES } from "@aihot/site/modules/server";
@@ -388,7 +388,7 @@ for (const { row: r, policy } of byUrl.values()) {
   }
   try {
     await ensureSource(src.id, src.name, src.existing);
-    const publishedAt = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00+08:00`) : null;
+    const publishedAt = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? beijingMidnight(day) : null;
     const tags = [
       ...companies.flatMap((c) => [c.name, `entity:${c.id}`]),
       ...(policy ? ["政策/监管"] : []),

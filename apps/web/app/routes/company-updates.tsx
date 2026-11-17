@@ -151,7 +151,7 @@ function CompanySection({ company, logoIndex, previewMax, expandAll, today }: { 
   return (
     <section className="min-w-0">
       <div className="mb-2 flex items-center gap-2">
-        {logo ? <img src={logo} alt="" className="h-6 w-6 rounded object-contain" /> : null}
+        {logo ? <img src={logo} alt="" className="h-6 w-6 rounded-mark object-contain" /> : null}
         <h2 className="text-[1rem] font-semibold text-ink">{company.name}</h2>
         {!company.empty ? <span className="text-[0.75rem] text-ink-4">{company.items.length} 条</span> : null}
       </div>

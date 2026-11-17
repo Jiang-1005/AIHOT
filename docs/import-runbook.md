@@ -58,6 +58,7 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 - FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
 - FAIL 在 inputs：报告里写缺哪个文件、名字该是什么，不替别的 bot 改名或补抓。
 - FAIL 在 db：停，不同步，叫 Grok Bot。
+- FAIL 在 deps（宿主机 node_modules 不在，盒子重启后会出现）：在 /workspace/edu-hot 跑 `npm ci` 再查。sync-to-neon.sh 和 score-and-compose.sh 开头会自动补装，npm ci 失败就退出非 0，这轮停下叫 Grok Bot。
 - FAIL 在 fresh：某一项超过失败阈值没更新。热点榜：看 score-and-compose.sh 输出有没有 hot 字段、sync-to-neon.sh 有没有跑完，补跑这两条再查；热帖：查 import-voices.py 这轮跑没跑；日报、周报：再跑一次 score-and-compose.sh。还 FAIL 就在群里叫 Grok Bot。
 - WARN 在 hot（热点榜 0 条）：只是提示，照常报，写上 candidates 数。
 
@@ -70,9 +71,29 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 | 日报 | 本机 reports（kind=daily）max(generated_at) | 13 小时 | 25 小时 |
 | 周报 | 本机 reports（kind=weekly）max(generated_at) | 8 天 | 9 天 |
 | 热点榜 | 线上 /api/site/hot 的 computedAt | 13 小时 | 25 小时 |
+| 本机库备份 | /home/box/edu-hot-local/backups 里最新 local-*.dump 的修改时间 | 13 小时 | 25 小时 |
 
 热点榜 0 条不算失败，只出一行提示（附本机最近一次 candidates）。`--only fresh` 只跑这一组；`--as-of` 回放时热帖和热点榜跳过。
 - WARN 只是提示，照常报，不算 FAIL。
+
+## 对外输出谁负责
+总负责：🤖 Grok Bot。导入、打分出刊、同步、健康检查由 📥 教育AIHOT 导入员每天 9:30 / 20:30 跑；脚本和热点榜重算由 Grok Bot 维护。
+出问题：导入员在「🔥 教育AIHOT」群里 @🤖 Grok Bot。上榜门槛、信源、新设计上线由 C J 定。
+
+| 输出 | 数据从哪来 | 新鲜度阈值（告警 / FAIL） | 出问题叫谁 |
+|---|---|---|---|
+| 热帖 | 📡 AI 教育内容雷达（grok-posts.json、x-posts-feishu-new-*.csv）+ collect-cn-community.py | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot；信源由 C J 定 |
+| 日报 | 🔭 AI 教培行业观察的公司、政策、媒体条目（items*.csv）+ 热帖，score-and-compose.sh 出刊 | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot |
+| 周报 | 同日报，score-and-compose.sh 按周出刊 | 8 天 / 9 天 | 群里 @🤖 Grok Bot |
+| 热点榜 | 已归事件的稿件，score-and-compose.sh 第 4 步重算 | 13 小时 / 25 小时；0 条只提示 | 群里 @🤖 Grok Bot；上榜门槛由 C J 定 |
+
+阈值以 check-pipeline-health.py 顶部的 FRESHNESS 表为准。
+
+## 本机库备份
+- 🤖 Grok Bot 的定时任务「AIHOT 本机库导入前备份」每天约 9:15、20:15（北京时间）跑 `/home/box/edu-hot-local/backup-local-db.sh`，在 `/home/box/edu-hot-local/backups/` 留最近 14 份 `local-*.dump`。
+- 成功不发消息；失败就在「🔥 教育AIHOT」群里叫停当轮导入。
+- 怎么确认它还在工作：健康检查的「本机库备份」一行，最新 local-*.dump 超过 13 小时告警，超过 25 小时 HEALTH FAIL。
+- 本机库丢了：空库时跑 `/home/box/edu-hot-local/restore-from-neon.sh`，它只读 Neon；也可以从最新的 local-*.dump 恢复，方法见 /home/box/edu-hot-local/README.md。
 
 ## 红线
 - 不打印任何密钥、口令、连接串；不 pkill qodercli（只杀自己的 PID）。

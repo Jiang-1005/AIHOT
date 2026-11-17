@@ -20,7 +20,8 @@ import type { ReportKind, SiteItemDetail } from '@aihot/contracts/site';
 const T = tag();
 const source = `report-outlets-${T}`;
 const app = await buildApp();
-const generatedAt = new Date('2026-09-30T00:00:00Z');
+// Inside the 30-day archive window, where the citations stay selected.
+const generatedAt = new Date((Math.floor(Date.now() / 86_400_000) - 3) * 86_400_000);
 let sequence = 0;
 before(async () => {
   await sql`INSERT INTO sources (id, name, kind, tier, participation_mode, next_fetch_at)

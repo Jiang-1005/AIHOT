@@ -34,7 +34,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aihot}
       POSTGRES_DB: aihot
     volumes:
-      - db:/var/lib/postgresql/data
+      # postgres 18+ keeps data under /var/lib/postgresql/<major>/docker and refuses the old /data mount.
+      - db:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aihot -d aihot"]
       interval: 5s

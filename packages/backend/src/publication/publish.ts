@@ -324,7 +324,8 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
   const datelineDay = featuredDatelineDay({ url: article.url, publicationTime: article.publication_time, publishedAt: article.published_at });
   // p.selected covers both homepage 精选 (≤ 7 days) and the 往期 view (7–30 days).
   // The homepage and /archive timelines filter by slot; items older than archiveMaxAgeDays stay out.
-  const inArchiveSet = featuredSlot(datelineDay) !== "无";
+  // Aged on this publication's own clock (options.now; the wall clock when no caller sets it).
+  const inArchiveSet = featuredSlot(datelineDay, now) !== "无";
   const selected = selectionCandidate && article.grouping_status === "complete"
     && (f.selected === true || article.selection_adds_value !== false)
     && inArchiveSet;

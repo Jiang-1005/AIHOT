@@ -23,8 +23,12 @@ import { QUEUES } from '@aihot/backend/jobs/queue';
 const T=tag();
 const source=`date-correction-${T}`;
 const isolated=`date-correction-isolated-${T}`;
-const old='2020-02-15T00:00:00.000Z';
-const corrected='2020-10-29T00:00:00.000Z';
+// Midnight UTC `days` ago. History here is still inside the 30-day archive window (archiveMaxAgeDays),
+// where a selected report stays selected: older material leaves the selection altogether.
+const daysAgo=(days:number)=>new Date((Math.floor(Date.now()/86400_000)-days)*86400_000).toISOString();
+const old=daysAgo(26);
+const corrected=daysAgo(20);
+const independentSort=daysAgo(18);
 before(async()=>{
   await getBoss();
   await sql`INSERT INTO sources(id,name,kind,tier,participation_mode,site_fulltext) VALUES(${source},'Verified date','rss','T1','editorial',true)`;
@@ -37,7 +41,7 @@ after(async()=>{installModules([]);await stopBoss();await closeDb();});
 async function fixture(independent=false){
   const {articleId:id}=await upsertMaterial({sourceId:source,url:`https://example.test/${tag()}`,title:'保留原文',bodyText:'A verified body',bodyStatus:'ok',via:'import',publishedAt:new Date(old),discoveredAt:new Date(old)});
   await sql`UPDATE articles SET backfill=false,backfill_reason=NULL,processing_state='analyzed',grouping_status='complete',grouped_at=now(),
-    timeline_at=${new Date(independent?'2020-11-01T00:00:00.000Z':old)} WHERE id=${id}`;
+    timeline_at=${new Date(independent?independentSort:old)} WHERE id=${id}`;
   await sql`INSERT INTO analyses(article_id,input_revision,origin,relevance,title_zh,summary_zh,selected) VALUES(${id},1,'rule','pass','保留标题','保留既有判断',true)`;
   await sql`INSERT INTO editorial_overrides(article_id,fields,version,reason) VALUES(${id},'{"title":"人工标题","selected":true}'::jsonb,3,'Keep editorial judgement')`;
   await sql`INSERT INTO grouping_overrides(article_id,reason,actor) VALUES(${id},'Keep manual grouping','test')`;
@@ -76,10 +80,10 @@ test('verified old dates correct publication and its existing date-based sort wi
 
 test('an independently recorded discovery sort remains unchanged',async()=>{
   const id=await fixture(true);const plan=(await previewPublicationDateCorrection(id,corrected))!;
-  assert.equal(plan.after.timelineAt,'2020-11-01T00:00:00.000Z');
+  assert.equal(plan.after.timelineAt,independentSort);
   await correctPublicationDate(id,{version:plan.version,hash:plan.hash,publishedAt:corrected,requestId:`date-${id}`,reason:'Verified original date'},'test');
   const [a]=await sql`SELECT timeline_at FROM articles WHERE id=${id}`;
-  assert.equal(a!.timeline_at.toISOString(),'2020-11-01T00:00:00.000Z');
+  assert.equal(a!.timeline_at.toISOString(),independentSort);
 });
 
 test('the request is idempotent and a reused request identity cannot approve a different date',async()=>{
@@ -87,7 +91,7 @@ test('the request is idempotent and a reused request identity cannot approve a d
   const input={version:plan.version,hash:plan.hash,publishedAt:corrected,requestId:`date-${id}`,reason:'Verified original date'};
   const first=await correctPublicationDate(id,input,'test');
   assert.deepEqual(await correctPublicationDate(id,input,'test'),first);
-  await assert.rejects(correctPublicationDate(id,{...input,publishedAt:'2020-11-02T00:00:00.000Z'},'test'),/request|请求|日期/);
+  await assert.rejects(correctPublicationDate(id,{...input,publishedAt:daysAgo(17)},'test'),/request|请求|日期/);
   assert.equal((await sql`SELECT 1 FROM audit_log WHERE subject=${`content:${id}`} AND action='content.correct-publication-date'`).length,1);
 });
 
@@ -118,7 +122,7 @@ test('a changed publication decision refuses the whole correction',async()=>{
 async function misdatedFixture(){
   const id=await fixture();
   await sql`DELETE FROM grouping_overrides WHERE article_id=${id}`;
-  await sql`UPDATE articles SET published_at=now(),published_at_claim=now(),discovered_at=now(),timeline_at=now() WHERE id=${id}`;
+  await sql`UPDATE articles SET published_at=now(),published_at_claim=now(),publication_time=to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),discovered_at=now(),timeline_at=now() WHERE id=${id}`;
   await publishArticle(id);
   await sql`DELETE FROM settings WHERE key=${`date-hook:${id}`}`;
   return id;
@@ -244,7 +248,7 @@ test('retracting a proven repost date removes live evidence while retaining mate
 
 test('retraction preserves imported history',async()=>{
   const history=await fixture();
-  await sql`UPDATE articles SET backfill=true,backfill_reason='first-import',discovered_at=published_at+interval '30 days' WHERE id=${history}`;
+  await sql`UPDATE articles SET backfill=true,backfill_reason='first-import',discovered_at=published_at+interval '20 days' WHERE id=${history}`;
   await assert.rejects(previewPublicationDateCorrection(history,null),/历史/);
 });
 
