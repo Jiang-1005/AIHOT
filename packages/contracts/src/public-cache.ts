@@ -1,10 +1,15 @@
 // Public CDN cache policy for SSR pages and GET /api/site/*.
-// Browser Cache-Control stays short; Vercel CDN gets s-maxage=600 + SWR 1 day.
+// Browser Cache-Control stays short; Vercel CDN gets s-maxage=600 + SWR 5 minutes.
+// SWR used to be a day: when the post-sync tag purge did not run (no VERCEL_TOKEN), an edge could keep
+// serving the pre-sync body (e.g. an empty hot board, an old 「数据截至」) for up to 24 hours. With 300 s
+// the worst case without a purge is s-maxage + SWR = 15 minutes after the sync.
 // Tagged so daily sync can drop the entries. Never cache admin, mutations, or
 // requests/responses that carry private cookies.
 
 export const PUBLIC_CACHE_TAG = "edu-hot-public";
-export const PUBLIC_CDN_CACHE_CONTROL = "public, s-maxage=600, stale-while-revalidate=86400";
+export const PUBLIC_CDN_S_MAXAGE = 600;
+export const PUBLIC_CDN_SWR = 300;
+export const PUBLIC_CDN_CACHE_CONTROL = `public, s-maxage=${PUBLIC_CDN_S_MAXAGE}, stale-while-revalidate=${PUBLIC_CDN_SWR}`;
 
 /** Cookies that personalize or gate a response — those requests must not enter the public CDN. */
 export const PRIVATE_CACHE_COOKIES = ["aihot_admin", "aihot_oauth_state", "edu_hot_gate"] as const;
@@ -44,4 +49,4 @@ export const PUBLIC_CDN_HEADERS: Record<string, string> = {
 export const PUBLIC_CDN_HEADER_NAMES = Object.keys(PUBLIC_CDN_HEADERS);
 
 /** Cache-Control used when the origin only sent `public` (or nothing) and the CDN should still cache. */
-export const PUBLIC_PAGE_CACHE_CONTROL = `public, max-age=60, s-maxage=600, stale-while-revalidate=86400`;
+export const PUBLIC_PAGE_CACHE_CONTROL = `public, max-age=60, s-maxage=${PUBLIC_CDN_S_MAXAGE}, stale-while-revalidate=${PUBLIC_CDN_SWR}`;
