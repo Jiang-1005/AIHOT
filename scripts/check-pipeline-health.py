@@ -9,7 +9,7 @@
   issue    最新日报不早于昨天（有新稿却没出刊 = 失败）
   worker   worker 心跳（关着是已知状态，只提示）
   live     线上最新日报 = 本机最新日报，线上「数据截至」不落后本机同步时间
-  fresh    热帖、日报、周报、热点榜各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条只提示，附 candidates 数
+  fresh    热帖、日报、周报、热点榜、本机库备份各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条只提示，附 candidates 数
   checkout 运维目录 /workspace/edu-hot 没缺主线 jiang/main 上的运维脚本，本分支的运维脚本也已进主线
 
 全部只读：docker exec psql SELECT、读文件、curl 公网只读接口、git 本地对象。不写库、不 push、不打印任何密钥。
@@ -38,7 +38,9 @@ FRESHNESS = [
     ("daily",  "日报",   "本机 reports（kind=daily）max(generated_at)",  13,     25),
     ("weekly", "周报",   "本机 reports（kind=weekly）max(generated_at)", 8 * 24, 9 * 24),
     ("hot",    "热点榜", "线上 /api/site/hot 的 computedAt",             13,     25),
+    ("backup", "本机库备份", "/home/box/edu-hot-local/backups 里最新 local-*.dump 的修改时间", 13, 25),
 ]
+BACKUP_DIR = "/home/box/edu-hot-local/backups"
 OPS_SCRIPTS = ["scripts/sync-to-neon.sh", "scripts/export-to-neon.sh", "scripts/resolve-neon-urls.py",
                "scripts/reset-sequences.sql", "scripts/env-exports.py", "scripts/import-voices.py",
                "scripts/import-brief-items.ts", "scripts/score-and-compose.sh", "scripts/score-and-compose.ts",
@@ -214,6 +216,10 @@ def fresh_at(key, as_of, replay):
         if replay: return "SKIP", None
         hot = get_json("/api/site/hot")
         return dt.datetime.fromisoformat(hot["computedAt"].replace("Z", "+00:00")).astimezone(TZ), len(hot.get("entries") or [])
+    if key == "backup":
+        times = [dt.datetime.fromtimestamp(os.path.getmtime(f), TZ) for f in glob.glob(f"{BACKUP_DIR}/local-*.dump")]
+        times = [t for t in times if t <= as_of]
+        return (max(times) if times else None), None
     raise KeyError(key)
 
 def check_freshness(as_of, replay):
