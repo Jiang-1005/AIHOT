@@ -7,6 +7,7 @@ import { useSyncExternalStore } from "react";
 
 /** In the order the 外观 menu lists them; the first is the default. */
 export const SITE_STYLES = [
+  { id: "classic", label: "原版" },
   { id: "paper", label: "暖纸" },
   { id: "press", label: "编辑部" },
   { id: "clean", label: "明净／夜读" },
@@ -15,7 +16,7 @@ export const SITE_STYLES = [
 
 export type SiteStyleId = (typeof SITE_STYLES)[number]["id"];
 
-export const DEFAULT_STYLE: SiteStyleId = "paper";
+export const DEFAULT_STYLE: SiteStyleId = "classic";
 /** localStorage key. Not aihot-theme: that one holds light/dark. */
 export const STYLE_KEY = "aihot-style";
 /** ?style=<id> opens a look for a shared link and keeps it. */

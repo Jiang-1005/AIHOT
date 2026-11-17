@@ -160,7 +160,7 @@ export default function FeedbackAdmin({ loaderData }: Route.ComponentProps) {
             {bans.map((b) => (
               <li key={b.source_hash} className="flex flex-wrap items-center justify-between gap-2">
                 <span>
-                  {b.source_hash.startsWith("email:") ? "邮箱" : "来源"} · <span className="break-all font-mono text-[0.8125rem] text-ink-3">{b.source_hash}</span> · {b.reason} · {b.created_by} · {bj(b.created_at, true)}
+                  {b.source_hash.startsWith("email:") ? "邮箱" : "来源"} · <span className="break-all font-mono text-[0.75rem] text-ink-3">{b.source_hash}</span> · {b.reason} · {b.created_by} · {bj(b.created_at, true)}
                   {b.expires_at && <span> · {bj(b.expires_at, true)} 自动解除</span>}
                 </span>
                 <Button size="sm" tone="ghost" onClick={() => run("DELETE", `/api/admin/feedback-bans/${encodeURIComponent(b.source_hash)}`, undefined, { label: `unban-${b.source_hash}`, success: "已解除封禁" })}>

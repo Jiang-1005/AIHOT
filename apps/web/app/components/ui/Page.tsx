@@ -13,7 +13,7 @@ export function ReadingLayout({ children, aside }: { children: ReactNode; aside?
   return (
     <div className="mx-auto grid max-w-[var(--page-max-reading)] gap-8 pb-14 pt-5 lg:pt-0 side:grid-cols-[minmax(0,1fr)_300px] side:gap-10 2xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0">{children}</div>
-      {aside && <aside className="min-w-0 space-y-4 side:sticky side:top-[calc(var(--bar-h)+1.5rem)] side:self-start">{aside}</aside>}
+      {aside && <aside className="min-w-0 space-y-4 side:sticky side:top-6 side:self-start">{aside}</aside>}
     </div>
   );
 }
@@ -31,7 +31,7 @@ export function ArticleLayout({ children, left, right }: { children: ReactNode; 
   return (
     <div className="mx-auto grid max-w-[var(--page-max-reading)] grid-cols-[minmax(0,1fr)] side:grid-cols-[minmax(0,1fr)_240px] side:gap-x-12 2xl:grid-cols-[minmax(200px,1fr)_minmax(0,760px)_minmax(200px,1fr)] 2xl:gap-x-12">
       <aside className="hidden 2xl:block">
-        <div ref={leftRail} className={`scrollbar-thin sticky top-[calc(var(--bar-h)+1.5rem)] flex max-h-[calc(100vh-var(--bar-h)-3rem)] max-w-[260px] flex-col space-y-8 overflow-y-auto ${leftOverscroll}`}>{left}</div>
+        <div ref={leftRail} className={`scrollbar-thin sticky top-6 flex max-h-[calc(100vh-3rem)] max-w-[260px] flex-col space-y-8 overflow-y-auto ${leftOverscroll}`}>{left}</div>
       </aside>
       <div className="min-w-0">
         <div className="mx-auto max-w-[760px]">{children}</div>
@@ -70,7 +70,7 @@ export function RailSection({ title, shrink = false, children }: { title?: React
   const column = shrink ? "flex min-h-0 flex-col" : "";
   return (
     <section className={`border-t border-line pt-4 ${column}`}>
-      {title && <h2 className="text-[0.8125rem] font-semibold text-ink-3">{title}</h2>}
+      {title && <h2 className="text-[0.75rem] font-semibold text-ink-3">{title}</h2>}
       <div className={`${title ? "mt-3" : ""} ${column}`}>{children}</div>
     </section>
   );
@@ -89,7 +89,7 @@ export function AsideCard({ title, children, className = "" }: { title: ReactNod
 /** "完整榜单 →" style link used in card headers. */
 export function MoreLink({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link viewTransition to={to} className="inline-flex items-center gap-1 whitespace-nowrap text-[0.8125rem] font-semibold text-accent hover:text-accent-ink">
+    <Link viewTransition to={to} className="inline-flex items-center gap-1 whitespace-nowrap text-[0.75rem] font-semibold text-accent hover:text-accent-ink">
       {children}
       <IconChevronRight size={13} />
     </Link>

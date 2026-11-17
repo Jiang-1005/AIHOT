@@ -54,9 +54,3 @@
   --prose-ink: #ededed;
   --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.55);
 }
-:root[data-style="clean"] h1, :root[data-style="clean"] h2 { letter-spacing: -0.02em; }
-:root[data-style="clean"] [data-top-bar] { background: var(--surface); }
-:root[data-style="clean"] [data-nav-link][aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
-@media (min-width: 700px) {
-  :root[data-style="clean"] [data-feed-card] { padding-inline: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); margin-bottom: 12px; }
-}

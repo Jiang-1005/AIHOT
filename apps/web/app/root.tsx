@@ -8,9 +8,8 @@ import { RingMark } from "@aihot/site/brand/Logo.tsx";
 import { useEffect, useState, type ReactNode } from "react";
 import type { Route } from "./+types/root";
 import "./app.css";
-import { SiteFooter, TopBar } from "./components/shell/TopBar";
 import { STYLE_BOOT_SCRIPT } from "./lib/site-styles";
-import { DataStamp } from "./components/shell/DataStamp";
+import { Sidebar } from "./components/shell/Sidebar";
 import { TabBar } from "./components/shell/TabBar";
 import { PullToRefresh } from "./components/shell/PullToRefresh";
 import { usePageTransition } from "./components/shell/transitions";
@@ -40,12 +39,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     const meta = await apiGet<SiteMeta>("/api/site/meta", {
       headers: Object.assign({}, ...webModules().map((m) => m.root?.documentHeaders?.(request) ?? {})),
       signal: request.signal,
-      // A preview stamps the branch's own data (its site/preview copy), not production's.
       base: previewApiBase(),
     });
     return { ...meta, release };
   } catch {
-    return { changelogVersion: null, dataAsOf: null, release };
+    return { changelogVersion: null, release };
   }
 }
 
@@ -88,7 +86,7 @@ export function meta({ error }: Route.MetaArgs) {
   return [{ title: titled(notFound ? "页面不存在" : "暂时无法加载") }, { name: "robots", content: "noindex" }];
 }
 
-/** Top bar, main column and phone tab bar around a page (or an error). */
+/** Sidebar, main column and phone tab bar around a page (or an error). */
 function SiteShell({ changelogVersion, children }: { changelogVersion: string | null; children: ReactNode }) {
   const navigation = useNavigation();
   // The phone search and pull-to-refresh are client-side, mounted once the page is interactive.
@@ -97,21 +95,19 @@ function SiteShell({ changelogVersion, children }: { changelogVersion: string | 
   return (
     // The desktop shell also opens on large phones held sideways, where the notch takes a side: the whole
     // shell keeps clear of it (the phone shell does so through its gutters).
-    <div className="flex min-h-dvh flex-col lg:pl-[env(safe-area-inset-left)] lg:pr-[env(safe-area-inset-right)]">
+    <div className="flex min-h-dvh lg:pl-[env(safe-area-inset-left)] lg:pr-[env(safe-area-inset-right)]">
       <NavigationProgress active={navigation.state === "loading"} />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:rounded-control focus:bg-surface focus:px-3 focus:py-2">
         跳到正文
       </a>
-      <TopBar changelogVersion={changelogVersion} />
+      <Sidebar changelogVersion={changelogVersion} />
       {/* Phone shell (≤ 699px): each page's top bar (PhoneBar), one centred column, the tab bar below.
           Desktop: the page fills the main area up to the list width (--page-max-wide), centred beyond it. */}
-      <main id="main" className="w-full min-w-0 flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] lg:px-5 lg:pb-6 lg:pt-6 wide:px-7">
+      <main id="main" className="min-w-0 flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] lg:px-5 lg:pb-[72px] lg:pt-6 wide:px-7">
         <div className="mx-auto w-full max-w-[640px] pl-[var(--gutter-l)] pr-[var(--gutter-r)] lg:max-w-[var(--page-max-wide)] lg:px-0">
           {webModules().map((m) => m.root?.Top && <m.root.Top key={m.name} />)}
-          <DataStamp />
           {children}
         </div>
-        <SiteFooter />
       </main>
       <TabBar changelogVersion={changelogVersion} />
       {interactive && <SearchOverlay />}
@@ -158,7 +154,7 @@ export function ErrorBoundary() {
     <div className="flex min-h-[70vh] items-center justify-center px-2 py-16">
       <div className="max-w-sm text-center">
         <RingMark className="mx-auto mb-5 size-10 text-accent" />
-        <div className="mono text-[0.8125rem] text-ink-4">{status}</div>
+        <div className="mono text-[0.75rem] text-ink-4">{status}</div>
         <h1 className="mt-2 text-[1.25rem] font-semibold leading-[1.3] text-ink">{notFound ? "找不到这个页面" : "暂时无法加载"}</h1>
         <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-3">
           {notFound ? "链接可能有误，或者这条内容已经下架。" : "页面暂时无法显示，请重新加载后再试。"}

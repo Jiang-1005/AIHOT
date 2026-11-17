@@ -1,5 +1,5 @@
-/* Shared by every look (the 11-17 prototypes' fixes). */
-/* Headlines break between words: WordTitle wraps 2–6 character words and short bracketed phrases. */
-.title-word { white-space: nowrap; }
-h1 { text-wrap: balance; }
-h2, h3 { text-wrap: pretty; }
+/* Classic deliberately retains the production typography and layout. */
+:root:not([data-style="classic"]) .title-word { white-space: nowrap; }
+:root:not([data-style="classic"]) h1 { text-wrap: balance; }
+:root:not([data-style="classic"]) :is(h2,h3) { text-wrap: pretty; }
+:root:not([data-style="classic"]) :is([class*="text-[0.75rem]"], .kicker, .chip, .text-xs, .soft-tag, .soft-tag-warn, .voice-badge-unverified, .voice-card-head, .voice-card-foot, .voice-row-meta, .voice-platform-mark, .voice-chip, .prose .code-block-head, .prose .code-block-copy) { font-size: 0.8125rem; }

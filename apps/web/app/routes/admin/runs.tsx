@@ -62,7 +62,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
             { key: "title", label: "新闻", render: (item) => <Link className="text-accent" to={`/admin/content/${item.articleId}`}>{item.title}</Link> },
             { key: "since", label: "开始等待", render: (item) => <Time at={item.since} /> },
             { key: "recovery", label: "下一步", render: (item) => <Badge tone={item.recovery === "manual" ? "bad" : "warn"}>{item.recovery === "manual" ? "需处理后恢复" : item.recovery === "receipt" ? "等待付费结果自动恢复" : "自动处理中"}</Badge> },
-            { key: "error", label: "原因", render: (item) => <span className="line-clamp-2 text-[0.8125rem] text-ink-3">{item.receiptId ? `回执 #${item.receiptId} · ` : ""}{item.error ?? "等待身份确认"}</span> },
+            { key: "error", label: "原因", render: (item) => <span className="line-clamp-2 text-[0.75rem] text-ink-3">{item.receiptId ? `回执 #${item.receiptId} · ` : ""}{item.error ?? "等待身份确认"}</span> },
           ]} />
         </Card>
       )}
@@ -112,7 +112,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
               { key: "n", label: "队列", render: (j) => <span className="font-mono text-[0.875rem]">{j.name}</span> },
               { key: "c", label: "失败", align: "right", render: (j) => num(j.failed) },
               { key: "l", label: "最近", render: (j) => <Time at={j.last} /> },
-              { key: "o", label: "最近错误", render: (j) => <span className="line-clamp-2 font-mono text-[0.8125rem] text-ink-3">{j.last_output}</span> },
+              { key: "o", label: "最近错误", render: (j) => <span className="line-clamp-2 font-mono text-[0.75rem] text-ink-3">{j.last_output}</span> },
             ]}
           />
         </Card>
@@ -130,7 +130,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
               { key: "s", label: "状态", render: (x) => <Badge tone={x.status === "unknown" ? "bad" : "warn"}>{x.status}</Badge> },
               { key: "w", label: "服务", render: (x) => <span className="whitespace-nowrap">{x.service}{x.model ? ` · ${x.model}` : ""}</span> },
               { key: "p", label: "用途", render: (x) => (x.subject && /^[\w-]{10,}$/.test(x.subject) && x.purpose.includes("analy") ? <Link className="text-accent" to={`/admin/content/${x.subject}`}>{x.purpose}</Link> : x.purpose) },
-              { key: "e", label: "错误", render: (x) => <span className="line-clamp-2 text-[0.8125rem] text-ink-3" title={x.error ?? ""}>{x.error}</span> },
+              { key: "e", label: "错误", render: (x) => <span className="line-clamp-2 text-[0.75rem] text-ink-3" title={x.error ?? ""}>{x.error}</span> },
               { key: "a", label: "", render: (x) => (x.status === "unknown" ? <Button size="sm" onClick={() => setReceipt(x)}>核对</Button> : null) },
             ]}
           />
@@ -164,7 +164,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
               { key: "h", label: "健康", render: (s) => <Badge tone={s.health === "failing" ? "bad" : s.health === "degraded" ? "warn" : "muted"}>{s.health}</Badge> },
               { key: "ok", label: "上次成功", render: (s) => <Time at={s.last_ok_at} /> },
               { key: "nx", label: "应抓", render: (s) => <Time at={s.next_fetch_at} /> },
-              { key: "e", label: "错误", render: (s) => <span className="line-clamp-1 text-[0.8125rem] text-ink-3" title={s.last_error ?? ""}>{s.last_error}</span> },
+              { key: "e", label: "错误", render: (s) => <span className="line-clamp-1 text-[0.75rem] text-ink-3" title={s.last_error ?? ""}>{s.last_error}</span> },
             ]}
           />
         </Card>
@@ -184,7 +184,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
             rowKey={(e) => e.error}
             empty="没有处理失败"
             columns={[
-              { key: "e", label: "错误", render: (e) => <span className="font-mono text-[0.8125rem] text-ink-2">{e.error}</span> },
+              { key: "e", label: "错误", render: (e) => <span className="font-mono text-[0.75rem] text-ink-2">{e.error}</span> },
               { key: "n", label: "条数", align: "right", render: (e) => num(e.n) },
               { key: "x", label: "示例", render: (e) => <Link className="text-accent" to={`/admin/content/${e.example}`}>查看</Link> },
               { key: "l", label: "最近", render: (e) => <Time at={e.last} /> },
@@ -202,7 +202,7 @@ export default function RunsAdmin({ loaderData }: Route.ComponentProps) {
             rowKey={(t) => t.id}
             columns={[
               { key: "at", label: "开始", render: (t) => <span className="num whitespace-nowrap">{bj(t.started_at)}</span> },
-              { key: "j", label: "任务", render: (t) => <span className="font-mono text-[0.8125rem]">{t.job}</span> },
+              { key: "j", label: "任务", render: (t) => <span className="font-mono text-[0.75rem]">{t.job}</span> },
               { key: "s", label: "结果", render: (t) => <Badge tone={t.status === "ok" ? "ok" : t.status === "failed" ? "bad" : "muted"} title={t.error ?? undefined}>{t.status ?? "运行中"}</Badge> },
               { key: "d", label: "耗时", align: "right", render: (t) => duration(t.started_at, t.finished_at) },
             ]}

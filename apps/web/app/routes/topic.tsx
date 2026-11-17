@@ -106,7 +106,7 @@ export default function TopicRoute() {
       </Link>
       <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 pb-5 pt-3 lg:pt-1">
         <div className="min-w-0 max-w-[760px]">
-          <p className="text-[0.8125rem] font-semibold tracking-[0.08em] text-accent">{topic.groupName}</p>
+          <p className="text-[0.75rem] font-semibold tracking-[0.08em] text-accent">{topic.groupName}</p>
           <h1 data-page-title="" className="mt-2 flex items-center gap-3 text-[1.75rem] font-semibold leading-[1.3] text-ink">
             {topic.brand && <BrandMark brand={topic.brand} size={34} />}
             <span>
@@ -127,7 +127,7 @@ export default function TopicRoute() {
             </span>
           </p>
         </div>
-        <div className="flex items-center gap-4 text-[0.8125rem] text-ink-4">
+        <div className="flex items-center gap-4 text-[0.75rem] text-ink-4">
           {topic.latest && (
             <span>
               <time dateTime={topic.latest.at} className="num">{monthDayTime(topic.latest.at)}</time> 更新

@@ -78,7 +78,7 @@ function Panel({ id, title, sub, right, children, className = "" }: { id?: strin
           <h2 className="text-[1rem] font-semibold leading-[1.5] text-ink">{title}</h2>
           {sub && <p className="mt-1 text-[0.875rem] text-ink-4">{sub}</p>}
         </div>
-        {right && <div className="shrink-0 text-[0.8125rem] text-ink-4">{right}</div>}
+        {right && <div className="shrink-0 text-[0.75rem] text-ink-4">{right}</div>}
       </div>
       <div className="mt-4">{children}</div>
     </section>
@@ -91,7 +91,7 @@ function RailCard({ title, right, children, className = "" }: { title: ReactNode
     <section className={`card p-5 lg:p-[24px] ${className}`}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[0.875rem] font-semibold text-ink">{title}</h2>
-        {right && <span className="num text-[0.8125rem] text-ink-4">{right}</span>}
+        {right && <span className="num text-[0.75rem] text-ink-4">{right}</span>}
       </div>
       <div className="mt-2">{children}</div>
     </section>
@@ -109,11 +109,11 @@ function TimelineRow({ r }: { r: StoryReportView }) {
   }, [r.summary, open]);
   return (
     <li className="grid gap-x-3 border-b border-line-soft py-4 last:border-b-0 lg:grid-cols-[48px_minmax(0,1fr)]">
-      <time dateTime={r.publishedAt} className="mono text-[0.8125rem] leading-[20px] text-ink-4">
+      <time dateTime={r.publishedAt} className="mono text-[0.75rem] leading-[20px] text-ink-4">
         {beijingTime(r.publishedAt)}
       </time>
       <div className="min-w-0">
-        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-[0.8125rem] leading-[20px] text-ink-4 lg:mt-0">
+        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-[0.75rem] leading-[20px] text-ink-4 lg:mt-0">
           <span className="min-w-0 truncate">{r.source.name}</span>
           {r.selected && <SelectedBadge />}
         </div>
@@ -199,7 +199,7 @@ export default function StoryPage() {
   return (
     <div className="mx-auto max-w-[var(--page-max-reading)] pb-10">
       <PhoneBar back={{ to: UP.to, label: UP.back }} title={story.title} />
-      <nav aria-label="位置" className="hidden items-center gap-3 pb-5 pt-4 text-[0.8125rem] text-ink-4 lg:flex">
+      <nav aria-label="位置" className="hidden items-center gap-3 pb-5 pt-4 text-[0.75rem] text-ink-4 lg:flex">
         <Link to={UP.to} className="inline-flex items-center gap-2 transition-colors hover:text-ink">
           <IconArrowLeft size={15} /> {UP.name}
         </Link>
@@ -208,7 +208,7 @@ export default function StoryPage() {
       </nav>
 
       <header className="max-w-[960px] pt-3 lg:pt-0">
-        <div className="flex items-center gap-2 text-[0.8125rem] text-ink-4">
+        <div className="flex items-center gap-2 text-[0.75rem] text-ink-4">
           热点事件
           <Badge tone={status.tone}>{status.label}</Badge>
         </div>
@@ -263,7 +263,7 @@ export default function StoryPage() {
               <>
                 <p className="whitespace-pre-line text-[0.875rem] leading-[1.85] text-ink-2"><MentionText runs={overviewRuns} /></p>
                 {overview.note && (
-                  <p className="mt-2 text-[0.8125rem] text-ink-4" suppressHydrationWarning>
+                  <p className="mt-2 text-[0.75rem] text-ink-4" suppressHydrationWarning>
                     {overview.note}
                   </p>
                 )}
@@ -273,7 +273,7 @@ export default function StoryPage() {
             )}
             {story.latest && (
               <div className="-mx-5 mt-5 border-t border-line-soft px-5 pt-4 lg:-mx-6 lg:px-6">
-                <div className="flex items-center gap-3 text-[0.8125rem]">
+                <div className="flex items-center gap-3 text-[0.75rem]">
                   <span className="font-semibold text-ink">最新进展</span>
                   {story.latestAt && <span className="num text-ink-4">{monthDayTime(story.latestAt)}</span>}
                 </div>
@@ -300,7 +300,7 @@ export default function StoryPage() {
                 {developments.map((d) => (
                   <li key={d.factId} className="relative">
                     <span className={`absolute -left-5 top-[7px] size-[7px] rounded-full ring-4 ring-surface ${d.factId === story.developments[0]?.factId ? "bg-accent" : "bg-line-strong"}`} aria-hidden="true" />
-                    <div className="num text-[0.8125rem] text-ink-4">
+                    <div className="num text-[0.75rem] text-ink-4">
                       {monthDayTime(d.firstReportAt)} · {d.reportCount} 篇报道
                     </div>
                     <Link viewTransition to={`/items/${d.representative.id}`} className="mt-1 block text-[0.875rem] font-semibold leading-snug text-ink transition-colors hover:text-accent">
@@ -354,7 +354,7 @@ export default function StoryPage() {
               ))
             )}
             {story.reportCount > story.timeline.length && (
-              <p className="pt-3 text-center text-[0.8125rem] text-ink-4">
+              <p className="pt-3 text-center text-[0.75rem] text-ink-4">
                 显示最近 {story.timeline.length} 篇，共 {story.reportCount} 篇报道。
               </p>
             )}
@@ -372,7 +372,7 @@ export default function StoryPage() {
                 {story.related.map((r) => (
                   <li key={r.publicId}>
                     <Link viewTransition to={`/story/${r.publicId}`} className="group flex items-baseline gap-3 py-3">
-                      <span className="shrink-0 text-[0.8125rem] text-ink-4">{r.relation === "storyline" ? "同一故事线" : "相关事件"}</span>
+                      <span className="shrink-0 text-[0.75rem] text-ink-4">{r.relation === "storyline" ? "同一故事线" : "相关事件"}</span>
                       <span className="min-w-0 flex-1 text-[0.875rem] font-medium text-ink-2 transition-colors group-hover:text-accent">{r.title}</span>
                       <IconChevronRight size={14} className="shrink-0 self-center text-ink-4" />
                     </Link>
@@ -390,8 +390,8 @@ export default function StoryPage() {
                 过去 48 小时，有 <b className="num font-semibold text-ink">{story.whyHot.participants48h}</b> 个账号或机构报道、讨论了这件事，最近 6 小时新增{" "}
                 <b className="num font-semibold text-ink">{story.whyHot.newParticipants6h}</b> 个。
               </p>
-              {!story.whyHot.observationComplete && <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-4">这段时间有些来源没能完整读到，实际参与的可能更多。</p>}
-              <p className="mt-2 text-[0.8125rem] text-ink-4">
+              {!story.whyHot.observationComplete && <p className="mt-2 text-[0.75rem] leading-relaxed text-ink-4">这段时间有些来源没能完整读到，实际参与的可能更多。</p>}
+              <p className="mt-2 text-[0.75rem] text-ink-4">
                 <span className="num">{story.whyHot.recentReports24h}</span> 篇近期报道
                 {story.whyHot.rank && inNav("/hot") && (
                   <>
@@ -406,11 +406,11 @@ export default function StoryPage() {
           )}
           {story.officialReports.length > 0 && (
             <RailCard title="官方一手" right={`${counts.official || story.officialReports.length} 篇`}>
-              <p className="text-[0.8125rem] text-ink-4">直接了解当事方的说法</p>
+              <p className="text-[0.75rem] text-ink-4">直接了解当事方的说法</p>
               <ul className="mt-1 divide-y divide-line-soft">
                 {story.officialReports.slice(0, 5).map((r) => (
                   <li key={r.id} className="py-3">
-                    <div className="truncate text-[0.8125rem] text-ink-4">{r.source.name}</div>
+                    <div className="truncate text-[0.75rem] text-ink-4">{r.source.name}</div>
                     <Link viewTransition to={`/items/${r.id}`} className="group mt-1 block text-[0.875rem] font-semibold leading-[1.6] text-ink transition-colors hover:text-accent">
                       {r.title}
                       <IconChevronRight size={13} className="ml-1 inline -translate-y-px text-ink-4 transition-transform group-hover:translate-x-0.5" />
@@ -419,7 +419,7 @@ export default function StoryPage() {
                 ))}
               </ul>
               {counts.official > 0 && (
-                <button type="button" onClick={showOfficial} className="text-[0.8125rem] text-ink-4 transition-colors hover:text-accent">
+                <button type="button" onClick={showOfficial} className="text-[0.75rem] text-ink-4 transition-colors hover:text-accent">
                   在时间线筛选全部官方报道
                 </button>
               )}
@@ -461,7 +461,7 @@ export default function StoryPage() {
                 </div>
               )}
             </dl>
-            <p className="mt-3 border-t border-line-soft pt-3 text-[0.8125rem] leading-relaxed text-ink-4">同一事件的报道集中在这里，新的进展会继续补充。</p>
+            <p className="mt-3 border-t border-line-soft pt-3 text-[0.75rem] leading-relaxed text-ink-4">同一事件的报道集中在这里，新的进展会继续补充。</p>
           </RailCard>
         </aside>
       </div>

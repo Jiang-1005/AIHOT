@@ -130,11 +130,11 @@ export function RssPanel(props: AgentPanelProps) {
           <div key={f.path} className="card flex flex-col p-4">
             <div className="flex items-center gap-2">
               <span className="text-[0.875rem] font-semibold text-ink">{f.name}</span>
-              {f.badge && <span className="inline-flex h-[18px] items-center rounded-full bg-accent-soft px-2 text-[0.8125rem] font-medium text-accent">{f.badge}</span>}
+              {f.badge && <span className="inline-flex h-[18px] items-center rounded-full bg-accent-soft px-2 text-[0.75rem] font-medium text-accent">{f.badge}</span>}
             </div>
             <p className="mt-1 flex-1 text-[0.875rem] leading-[1.7] text-ink-3">{f.desc}</p>
             <div className="mt-3 flex items-center gap-2 border-t border-line-soft pt-3">
-              <code className="mono min-w-0 flex-1 truncate text-[0.8125rem] text-ink-4">{base}{f.path}</code>
+              <code className="mono min-w-0 flex-1 truncate text-[0.75rem] text-ink-4">{base}{f.path}</code>
               <CopyButton text={addressOf(props, f.path)} label="复制地址" className="shrink-0" />
             </div>
           </div>

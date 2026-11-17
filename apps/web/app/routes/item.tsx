@@ -254,7 +254,7 @@ function ItemPreview({ preview }: { preview: FeedItemSummary }) {
           <span>·</span>
           {!preview.publishedAt && <span>收录于</span>}
           <time dateTime={shownAt} className="mono">{fullDateTime(shownAt)}</time>
-          {collected && <span className="mono order-last basis-full text-[0.8125rem] text-ink-4">{collected}</span>}
+          {collected && <span className="mono order-last basis-full text-[0.75rem] text-ink-4">{collected}</span>}
           {preview.selected && <span className="ml-1">{preview.sameEvent ? <SameEventBadge /> : <SelectedBadge />}</span>}
           {shownScore(preview.score) !== null && (
             <span className="ml-1">
@@ -265,13 +265,13 @@ function ItemPreview({ preview }: { preview: FeedItemSummary }) {
         {!isPost && <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">{preview.title}</h1>}
         {preview.summary && (
           <section className={isPost ? "mt-4" : "mt-7"}>
-            <div className="mb-2 text-[0.8125rem] font-semibold text-accent">{isPost && preview.summary.replace(/\s+/g, " ").trim() === preview.title ? "原文" : "AI 导读"}</div>
+            <div className="mb-2 text-[0.75rem] font-semibold text-accent">{isPost && preview.summary.replace(/\s+/g, " ").trim() === preview.title ? "原文" : "AI 导读"}</div>
             <p className="text-[1rem] leading-[1.8] text-ink"><MentionText runs={addressRuns(preview.summary)} /></p>
           </section>
         )}
         {preview.reason && (
           <section className="mt-6 border-t border-line pt-4">
-            <div className="mb-1 text-[0.8125rem] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
+            <div className="mb-1 text-[0.75rem] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
             <p className="text-[0.875rem] leading-[1.75] text-ink-2">{publicCopy(preview.reason)}</p>
           </section>
         )}
@@ -444,14 +444,14 @@ function ItemView({ item, followups }: Loaded) {
       <div className="mt-1 text-[0.875rem] leading-relaxed text-ink-3">
         {isX ? `@${item.x!.handle} · X` : byline ?? hostOf(item.links.original)}
       </div>
-      <div className="mt-3 text-[0.8125rem] text-ink-4">{timeLabel}</div>
+      <div className="mt-3 text-[0.75rem] text-ink-4">{timeLabel}</div>
       <time dateTime={shownAt} className="mono mt-1 block text-[0.875rem] text-ink-2">
         {fullDateTime(shownAt)}
       </time>
-      <div className="mt-1 text-[0.8125rem] text-ink-4 empty:hidden" suppressHydrationWarning>
+      <div className="mt-1 text-[0.75rem] text-ink-4 empty:hidden" suppressHydrationWarning>
         {timeAgo(shownAt)}
       </div>
-      {collected && <div className="mono mt-1 text-[0.8125rem] text-ink-4">{collected}</div>}
+      {collected && <div className="mono mt-1 text-[0.75rem] text-ink-4">{collected}</div>}
     </RailSection>
   );
   const outline = showOutline && <ArticleOutline outline={item.outline} />;
@@ -533,7 +533,7 @@ function ItemView({ item, followups }: Loaded) {
       >
         {/* Between lg and 2xl the left rail is hidden: 返回 stays at the top while reading, as on the original site.
             Below side the right rail is hidden too, and its actions and the outline join 返回. */}
-        <div className="sticky top-[var(--bar-h)] z-20 -mx-2 hidden items-center justify-between gap-3 bg-bg/90 px-2 py-2 backdrop-blur lg:flex 2xl:hidden">
+        <div className="sticky top-0 z-20 -mx-2 hidden items-center justify-between gap-3 bg-bg/90 px-2 py-2 backdrop-blur lg:flex 2xl:hidden">
           {backButton}
           <div className="flex items-center gap-1 side:hidden">
             {showOutline && (
@@ -555,7 +555,7 @@ function ItemView({ item, followups }: Loaded) {
             {!item.publishedAt && <span>收录于</span>}
             <time dateTime={shownAt} className="mono">{fullDateTime(shownAt)}</time>
             <span className="empty:hidden" suppressHydrationWarning>{timeAgo(shownAt) && `· ${timeAgo(shownAt)}`}</span>
-            {collected && <span className="mono order-last basis-full text-[0.8125rem] text-ink-4">{collected}</span>}
+            {collected && <span className="mono order-last basis-full text-[0.75rem] text-ink-4">{collected}</span>}
             {item.selected && (
               <span className="ml-1 side:hidden">
                 {item.sameEvent ? <SameEventBadge /> : <SelectedBadge />}
@@ -572,14 +572,14 @@ function ItemView({ item, followups }: Loaded) {
 
           {item.summary && (!isPost || item.summary.replace(/\s+/g, " ").trim() !== item.title) && (
             <section className={isPost ? "mt-4" : "mt-7 xl:mt-8"}>
-              <div className="mb-2 text-[0.8125rem] font-semibold text-accent">{summaryOnly ? "摘要" : "AI 导读"}</div>
+              <div className="mb-2 text-[0.75rem] font-semibold text-accent">{summaryOnly ? "摘要" : "AI 导读"}</div>
               <p className="text-[1rem] leading-[1.8] text-ink"><MentionText runs={summaryRuns} /></p>
             </section>
           )}
 
           {item.reason && !summaryOnly && (
             <section className="mt-6 border-t border-line pt-4 side:hidden">
-              <div className="mb-1 text-[0.8125rem] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
+              <div className="mb-1 text-[0.75rem] font-semibold text-ink-3">{ITEM_COPY.reasonLabel}</div>
               <p className="text-[0.875rem] leading-[1.75] text-ink-2">{publicCopy(item.reason)}</p>
             </section>
           )}
@@ -605,7 +605,7 @@ function ItemView({ item, followups }: Loaded) {
           {item.body && bodyHtml && (
             <section className="mt-9 border-t border-line pt-4 xl:mt-10">
               <div className="mb-6 flex items-center justify-between gap-3">
-                <span className="text-[0.8125rem] text-ink-4">{bodyLabel}</span>
+                <span className="text-[0.75rem] text-ink-4">{bodyLabel}</span>
                 {hasTranslation && (
                   <PillTabs
                     size="xs"

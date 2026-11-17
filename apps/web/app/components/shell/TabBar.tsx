@@ -5,7 +5,7 @@ import { tabs, type TabKey } from "./nav";
 import { noteScreen, rememberedTab, useScreen } from "./screens";
 import { markBack } from "./transitions";
 import { scrollBehavior } from "../../lib/motion";
-import { useChangelogDot } from "./TopBar";
+import { useChangelogDot } from "./Sidebar";
 
 const subscribe = () => () => {};
 const serverTab = () => null;
@@ -56,7 +56,7 @@ export function TabBar({ changelogVersion }: { changelogVersion: string | null }
                 if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: scrollBehavior() });
                 else if (revalidator.state === "idle") void revalidator.revalidate();
               }}
-              className={`relative flex flex-col items-center justify-center gap-[4px] text-[0.8125rem] transition-colors ${on ? "font-semibold text-accent" : "text-ink-3 active:text-ink"}`}
+              className={`relative flex flex-col items-center justify-center gap-[4px] text-[0.75rem] transition-colors ${on ? "font-semibold text-accent" : "text-ink-3 active:text-ink"}`}
             >
               <Icon size={23} />
               <span>{t.label}</span>

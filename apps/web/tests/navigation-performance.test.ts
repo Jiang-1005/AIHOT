@@ -158,7 +158,7 @@ test('SSR all-pages and report kinds return offline with their own content',asyn
     await context.setOffline(false);await visit(page,origin+'/daily');
     await page.getByRole('link',{name:'周报',exact:true}).click();
     await expect(page.locator('#report-start')).toContainText('周报');
-    await context.setOffline(true);await page.getByRole('link',{name:'日报',exact:true}).and(page.locator('a:not([data-nav-link])')).click();
+    await context.setOffline(true);await page.getByRole('link',{name:'日报',exact:true}).click();
     await expect(page.locator('#report-start')).toContainText('日报',{timeout:1500});
   }finally{await context.close();}
 });
@@ -177,9 +177,9 @@ test('a press on a selected link preserves visited data and the next revisit sta
     await expect(page.locator('#report-start')).toContainText('周报');
     await page.getByRole('link',{name:'周报',exact:true}).dispatchEvent('pointerdown',{button:0,pointerType:'mouse',isPrimary:true});
     await page.waitForTimeout(150);
-    await page.getByRole('link',{name:'日报',exact:true}).and(page.locator('a:not([data-nav-link])')).click();
+    await page.getByRole('link',{name:'日报',exact:true}).click();
     await expect(page.locator('#report-start')).toContainText('日报');
-    await page.getByRole('link',{name:'日报',exact:true}).and(page.locator('a:not([data-nav-link])')).dispatchEvent('pointerdown',{button:0,pointerType:'mouse',isPrimary:true});
+    await page.getByRole('link',{name:'日报',exact:true}).dispatchEvent('pointerdown',{button:0,pointerType:'mouse',isPrimary:true});
     await page.waitForTimeout(150);
     const before=requests.length;
     await page.getByRole('link',{name:'周报',exact:true}).click();

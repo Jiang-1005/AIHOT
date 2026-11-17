@@ -44,7 +44,7 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
   const short = weekdayShort(day);
   const phoneRow = (
     <>
-      <span className="text-[0.8125rem] font-bold tracking-[0.16em] text-ink">{day === today ? "今天" : date}</span>
+      <span className="text-[0.75rem] font-bold tracking-[0.16em] text-ink">{day === today ? "今天" : date}</span>
       {day === today && <span className="kicker font-normal">{date}</span>}
       <span className="kicker font-normal">{short}</span>
       <span className="ml-auto flex items-center gap-1 text-[0.875rem] text-ink-4">
@@ -97,7 +97,7 @@ export function DayHeader({ day, today, count, collapsed, onToggle, aside, aside
             </>
           )}
         </span>
-        {aside && <span className="ml-auto text-[0.8125rem] text-ink-4">{aside}</span>}
+        {aside && <span className="ml-auto text-[0.75rem] text-ink-4">{aside}</span>}
       </div>
     </div>
   );
@@ -124,14 +124,14 @@ export function TimelineSlot({ at, publishedAt, children, fresh = false, delay =
   return (
     <li
       data-card-key={dataKey}
-      className={`group/slot bleed touch:has-[a:active]:bg-bg-sunk/70 lg:mx-0 lg:px-0 lg:touch:has-[a:active]:bg-transparent ${fresh ? "animate-fade-up" : ""}`}
+      data-slot="" className={`group/slot bleed touch:has-[a:active]:bg-bg-sunk/70 lg:mx-0 lg:px-0 lg:touch:has-[a:active]:bg-transparent ${fresh ? "animate-fade-up" : ""}`}
       style={fresh ? { animationDelay: `${delay}ms` } : undefined}
     >
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
       <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-4 group-last/slot:border-b-0 lg:grid-cols-[56px_24px_minmax(0,1fr)] lg:border-b-0 lg:py-0">
-        <time dateTime={publishedAt ?? at} className="mono hidden text-ink-4 lg:block lg:pt-6 lg:text-[0.8125rem] lg:leading-[1.5] lg:group-first/slot:pt-4">
-          {day && <span className="block whitespace-nowrap text-[0.8125rem]">发布</span>}
-          {day && <span className="block whitespace-nowrap text-[0.8125rem]">{day}</span>}
+        <time data-slot-time="" dateTime={publishedAt ?? at} className="mono hidden text-ink-4 lg:block lg:pt-6 lg:text-[0.75rem] lg:leading-[1.5] lg:group-first/slot:pt-4">
+          {day && <span className="block whitespace-nowrap text-[0.75rem]">发布</span>}
+          {day && <span className="block whitespace-nowrap text-[0.75rem]">{day}</span>}
           {clock ?? ""}
         </time>
         <span aria-hidden="true" className="hidden lg:block" />
@@ -384,7 +384,7 @@ function FeedEnd({ loading, error, hasMore, manual, empty, onMore }: { loading: 
           </button>
         )
       ) : (
-        !empty && <span className="text-[0.8125rem] text-ink-4">已经到底了</span>
+        !empty && <span className="text-[0.75rem] text-ink-4">已经到底了</span>
       )}
     </div>
   );

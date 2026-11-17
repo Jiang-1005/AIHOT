@@ -51,7 +51,7 @@ export function CopyPage({ doc, rendered, eyebrow, footer }: { doc: CopyDocument
       }
     >
       <article className="pb-14 pt-3 lg:pt-2">
-        {eyebrow && <div className="mb-3 text-[0.8125rem] font-semibold text-accent">{eyebrow}</div>}
+        {eyebrow && <div className="mb-3 text-[0.75rem] font-semibold text-accent">{eyebrow}</div>}
         <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">{doc.title}</h1>
         {doc.intro && <p className="mt-4 text-[0.875rem] leading-[1.8] text-ink-3 xl:text-[1rem]">{doc.intro}</p>}
         {facts.length > 0 && (

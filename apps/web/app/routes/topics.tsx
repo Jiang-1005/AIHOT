@@ -67,7 +67,7 @@ export default function TopicsPage() {
   const selected = !facetsEqualEmpty(value);
   const [sheet, setSheet] = useState(false);
   const unreadOnly = useUnreadOnly();
-  const chip = (on: boolean) => `inline-flex rounded-full px-3 py-1 text-[0.8125rem] ${on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-2"}`;
+  const chip = (on: boolean) => `inline-flex rounded-full px-3 py-1 text-[0.75rem] ${on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-2"}`;
 
   const facetRows = (
     <FacetChipRows

@@ -2,8 +2,8 @@
 // the time in the source line, the bookmark at hand, the reason in one line and duplicate reports
 // behind one button that opens a sheet. One markup, two presentations. The card is a link as a whole, so
 // addresses in its text read short as plain words.
-import { memo } from "react";
 import { WordTitle } from "../../components/ui/WordTitle";
+import { memo } from "react";
 import { shortAddresses } from "@aihot/contracts/addresses";
 import { Link } from "react-router";
 import { IntentLink } from "../../components/ui/IntentLink";
@@ -46,10 +46,10 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
 
   return (
     <article data-feed-card="" className="relative min-w-0 lg:border-t lg:border-line lg:py-6 lg:group-first/slot:border-t-0 lg:group-first/slot:pt-4 lg:[&:has(a:hover)_h3]:text-accent" data-item-id={item.id}>
-      <header className="flex min-h-5 items-center gap-2 text-[0.8125rem] leading-[1.5] text-ink-4 lg:min-h-5 lg:gap-2">
+      <header data-fi-meta="" className="flex min-h-5 items-center gap-2 text-[0.75rem] leading-[1.5] text-ink-4 lg:min-h-5 lg:gap-2">
         <SourceLine item={item} className="text-ink-4" />
         {lead && (
-          <time dateTime={item.publishedAt ?? at} className="mono shrink-0 text-[0.8125rem] lg:hidden">
+          <time data-fi-time="" dateTime={item.publishedAt ?? at} className="mono shrink-0 text-[0.75rem] lg:hidden">
             · {lead}
           </time>
         )}
@@ -70,7 +70,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
           </span>
         </span>
       </header>
-      {dates?.collected && <p className="mono text-[0.8125rem] leading-[16px] text-ink-4 lg:mt-1">{dates.collected}</p>}
+      {dates?.collected && <p data-fi-collected="" className="mono text-[0.75rem] leading-[16px] text-ink-4 lg:mt-1">{dates.collected}</p>}
 
       {isX ? (
         item.summary ? <p className={`mt-2 whitespace-pre-line text-[0.875rem] leading-[1.7] line-clamp-5 lg:mt-2 lg:line-clamp-4 ${readTone(read, "text-ink")}`}>
@@ -80,12 +80,12 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
         </p> : <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} aria-label={`查看 ${item.x!.authorName} 的帖子`} className="absolute inset-0" />
       ) : (
         <>
-          <h3 className={`mt-1.5 line-clamp-2 text-[1rem] font-semibold leading-[1.45] transition-colors duration-150 lg:mt-2.5 lg:line-clamp-none lg:text-[1.25rem] ${readTone(read, "text-ink")}`}>
+          <h3 data-fi-title="" className={`mt-1.5 line-clamp-2 text-[1rem] font-semibold leading-[1.45] transition-colors duration-150 lg:mt-2.5 lg:line-clamp-none lg:text-[1.25rem] ${readTone(read, "text-ink")}`}>
             <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
               <WordTitle>{item.title}</WordTitle>
             </IntentLink>
           </h3>
-          {item.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:mt-2 lg:line-clamp-3">{shortAddresses(item.summary)}</p>}
+          {item.summary && <p data-fi-summary="" className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:mt-2 lg:line-clamp-3">{shortAddresses(item.summary)}</p>}
         </>
       )}
 
@@ -93,7 +93,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
       {isX && item.x!.quoted?.text && <QuotedLine quoted={item.x!.quoted} />}
 
       {(tags.length > 0 || (showTags && item.category)) && (
-        <div className="relative z-10 mt-2 hidden flex-wrap gap-x-3 gap-y-1 text-[0.8125rem] text-ink-4 lg:flex">
+        <div data-fi-tags="" className="relative z-10 mt-2 hidden flex-wrap gap-x-3 gap-y-1 text-[0.75rem] text-ink-4 lg:flex">
           {showTags && item.category && (
             <Link to={`/all?category=${item.category}`} className="hover:text-accent">
               {CATEGORY_LABELS[item.category]}
@@ -122,7 +122,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
       )}
 
       {item.reason && (
-        <div className="mt-1 lg:mt-3 lg:border-t lg:border-line-soft lg:pt-3">
+        <div data-fi-reason="" className="mt-1 lg:mt-3 lg:border-t lg:border-line-soft lg:pt-3">
           <p className="line-clamp-1 text-[0.875rem] leading-[1.7] text-note lg:line-clamp-none">{`${ITEM_COPY.reasonLabel}：`}{publicCopy(item.reason)}</p>
         </div>
       )}

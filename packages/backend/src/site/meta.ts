@@ -4,7 +4,6 @@ import path from "node:path";
 import type { ChangelogResponse, SiteMeta } from "@aihot/contracts/site";
 import { publicCopy } from "@aihot/site/public-copy";
 import { REPO_ROOT } from "../config.ts";
-import { formatDataAsOf, loadSiteSync } from "../publication/site-blobs.ts";
 
 let changelogCache: ChangelogResponse | null = null;
 
@@ -25,6 +24,5 @@ export function loadChangelog(): ChangelogResponse {
 }
 
 export function siteMeta(): SiteMeta {
-  const synced = loadSiteSync()?.syncedAt;
-  return { changelogVersion: loadChangelog().latestVersion, dataAsOf: synced ? formatDataAsOf(synced) : null };
+  return { changelogVersion: loadChangelog().latestVersion };
 }

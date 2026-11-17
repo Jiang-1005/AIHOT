@@ -3,7 +3,7 @@ import { Link, useLoaderData, useSearchParams, type ShouldRevalidateFunction } f
 import { SITE } from "@aihot/site";
 import { Wordmark } from "@aihot/site/brand/Logo.tsx";
 import type { Route } from "./+types/voices";
-import { cachedPage, loadOr404 } from "../lib/api.server";
+import { cachedPage, loadOr404, previewApiBase } from "../lib/api.server";
 import { pageReuse } from "../lib/page-reuse";
 import { pageMeta } from "../lib/seo";
 import { beijingToday, formatWhen } from "../lib/voice-time";
@@ -170,7 +170,7 @@ function voiceCompanyCounts(items: VoiceCard[]): Record<string, number> {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const upstream = new Headers();
-  const data = await loadOr404<VoicesResponse>("/api/site/voices", { responseHeaders: upstream, signal: request.signal });
+  const data = await loadOr404<VoicesResponse>("/api/site/voices", { responseHeaders: upstream, signal: request.signal, base: previewApiBase() });
   const params = new URL(request.url).searchParams;
   const sort: SortKey = params.get("sort") === "hot" ? "hot" : "latest";
   const platform = platformFromParams(params);
@@ -371,7 +371,7 @@ function tagLine(item: VoiceCard): string[] {
 function RailGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="border-b border-line-soft px-4 py-3 last:border-b-0">
-      <h3 className="mb-2 text-[0.8125rem] font-medium text-ink-4">{title}</h3>
+      <h3 className="mb-2 text-[0.75rem] font-medium text-ink-4">{title}</h3>
       <div className="flex flex-wrap gap-2">{children}</div>
     </section>
   );
@@ -382,7 +382,7 @@ function RailChip({ on, count, onClick, children }: { on: boolean; count?: numbe
   return (
     <button type="button" aria-pressed={on} disabled={empty} className={chipClass(on)} onClick={onClick}>
       {children}
-      {count !== undefined && <span className={on ? "num" : "num opacity-70"}>{count}</span>}
+      {count !== undefined && <span className="num opacity-70">{count}</span>}
     </button>
   );
 }
@@ -625,7 +625,7 @@ export default function VoicesPage() {
         <p className="mt-1 hidden text-[0.875rem] leading-[1.7] text-ink-3 lg:block">
           X、小红书和中文社区里的真实讨论。先看站内摘要，再决定要不要去原帖。
         </p>
-        <p className="mt-1 text-[0.8125rem] text-ink-4">
+        <p className="mt-1 text-[0.75rem] text-ink-4">
           共 <span className="num">{counts.total}</span> 条 · 近 7 天 <span className="num">{counts.last7}</span> 条 · 已核实原文 <span className="num">{counts.verified}</span> 条
           {fetchedAt ? ` · 数据截至 ${fetchedAt}` : ""}
         </p>
@@ -692,7 +692,7 @@ export default function VoicesPage() {
           )}
           <div ref={sentinel} className="h-8" data-voices-sentinel="" />
           {data.catalog.generatedAt && (
-            <p className="mt-4 text-[0.8125rem] text-ink-4">目录更新于 {data.catalog.generatedAt} 北京时间</p>
+            <p className="mt-4 text-[0.75rem] text-ink-4">目录更新于 {data.catalog.generatedAt} 北京时间</p>
           )}
         </div>
       </div>
@@ -831,13 +831,13 @@ function VoiceReader({ item, index, total, today, onClose, onStep, hasPrev, hasN
     >
       <div className="voice-reader-panel">
         <div className="flex items-center gap-3 border-b border-line-soft px-5 py-3">
-          <span className="text-[0.8125rem] text-ink-4">站内摘要 · 第 <span className="num">{index + 1}</span> / <span className="num">{total}</span> 条</span>
+          <span className="text-[0.75rem] text-ink-4">站内摘要 · 第 <span className="num">{index + 1}</span> / <span className="num">{total}</span> 条</span>
           <button type="button" onClick={onClose} className="ml-auto inline-flex h-8 items-center rounded-full px-3 text-[0.875rem] text-ink-3 ring-1 ring-inset ring-line hover:text-ink active:scale-[0.97]">
             关闭
           </button>
         </div>
         <div className="voice-reader-body">
-          <div className="flex flex-wrap items-center gap-2 text-[0.8125rem] text-ink-4">
+          <div className="flex flex-wrap items-center gap-2 text-[0.75rem] text-ink-4">
             <PlatformMark platform={item.platform} />
             <span>{item.platform === "X" ? item.author : item.source || item.poster}{item.platform === "X" && item.source ? ` · ${item.source}` : ""}</span>
             {unverified ? <UnverifiedBadge /> : <span className="text-accent">已核对原文</span>}
@@ -846,7 +846,7 @@ function VoiceReader({ item, index, total, today, onClose, onStep, hasPrev, hasN
           <h2 id="voice-reader-title" className="mt-3 text-[1.25rem] font-semibold leading-[1.5] text-ink">{cardTitle(item)}</h2>
           {summary ? (
             <div className="mt-4 rounded-card border-l-4 border-accent bg-bg px-4 py-3">
-              <div className="mb-1 text-[0.8125rem] text-ink-4">站内摘要</div>
+              <div className="mb-1 text-[0.75rem] text-ink-4">站内摘要</div>
               <p className="text-[1rem] leading-[1.75] text-ink-2">{summary}</p>
             </div>
           ) : null}
@@ -861,13 +861,13 @@ function VoiceReader({ item, index, total, today, onClose, onStep, hasPrev, hasN
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {stats.slice(0, 4).map((s) => (
                 <div key={s.label} className="rounded-control bg-bg px-3 py-2">
-                  <div className="text-[0.8125rem] text-ink-4">{s.label}</div>
+                  <div className="text-[0.75rem] text-ink-4">{s.label}</div>
                   <div className="num text-[1rem] font-semibold text-ink">{formatCount(s.n)}</div>
                 </div>
               ))}
             </div>
           ) : null}
-          <p className="mt-4 text-[0.8125rem] leading-[1.7] text-ink-4">
+          <p className="mt-4 text-[0.75rem] leading-[1.7] text-ink-4">
             {unverified
               ? "这条还没打开原帖核对，摘要里的数字和说法以原帖为准。"
               : "「已核对原文」指站内打开过原帖、核对了摘要里的说法。这里是站内整理，不是原文全文。"}
@@ -878,7 +878,7 @@ function VoiceReader({ item, index, total, today, onClose, onStep, hasPrev, hasN
           <button type="button" disabled={!hasNext} onClick={() => onStep(1)} className="h-8 rounded-full px-3 text-[0.875rem] text-ink-2 hover:text-ink disabled:opacity-40 active:scale-[0.97]">下一条 →</button>
           <button type="button" onClick={onClose} className="ml-auto h-8 rounded-full px-3 text-[0.875rem] text-ink-2 ring-1 ring-inset ring-line hover:text-ink active:scale-[0.97]">返回列表</button>
           <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1 rounded-full bg-accent px-4 text-[0.875rem] font-medium text-accent-contrast active:scale-[0.97]">
-            查看原帖{host ? <span className="text-[0.8125rem] opacity-80">{host}</span> : null} ↗
+            查看原帖{host ? <span className="text-[0.75rem] opacity-80">{host}</span> : null} ↗
           </a>
         </div>
       </div>

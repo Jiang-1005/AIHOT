@@ -77,8 +77,8 @@ export default function Sources({ loaderData }: Route.ComponentProps) {
                   <Link to={`/admin/sources/${encodeURIComponent(r.id)}`} className="font-medium text-ink hover:text-accent" onClick={(e) => e.stopPropagation()}>
                     {r.name}
                   </Link>
-                  <div className="font-mono text-[0.8125rem] text-ink-4">{r.id}</div>
-                  {r.health === "failing" && r.last_error && <div className="mt-1 line-clamp-1 text-[0.8125rem] text-hot">{r.last_error}</div>}
+                  <div className="font-mono text-[0.75rem] text-ink-4">{r.id}</div>
+                  {r.health === "failing" && r.last_error && <div className="mt-1 line-clamp-1 text-[0.75rem] text-hot">{r.last_error}</div>}
                 </div>
               ),
             },
@@ -103,7 +103,7 @@ export default function Sources({ loaderData }: Route.ComponentProps) {
                 <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   <Dot tone={r.enabled ? healthTone(r.health) : "muted"} />
                   {r.enabled ? HEALTH_LABEL[r.health] ?? r.health : "已暂停"}
-                  {r.fail_count > 0 && <span className="num text-[0.8125rem] text-ink-4">×{r.fail_count}</span>}
+                  {r.fail_count > 0 && <span className="num text-[0.75rem] text-ink-4">×{r.fail_count}</span>}
                 </span>
               ),
             },

@@ -2,7 +2,7 @@
    never a ground). Layout: NYT / Economist ruled columns, serif headlines, no cards, 0–2px corners.
    Prototype: research/.../styles-1117/themes/press.css. */
 :root[data-style="press"] {
-  --font-serif: Georgia, "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", "SimSun", "NSimSun", serif;
+  --font-serif: Georgia, "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   --bg: #fff1e5;
   --bg-sunk: #f2dfce;
   --surface: #fff7ef;
@@ -57,15 +57,4 @@
   --selection: rgba(20, 189, 204, 0.22);
   --prose-ink: #fff1e5;
   --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.5);
-}
-:root[data-style="press"] [data-top-bar] { background: var(--bg); border-bottom: 3px double var(--rule); }
-:root[data-style="press"] [data-brand] { font-size: 1.5rem; }
-:root[data-style="press"] [data-nav-link] { color: var(--ink); border-radius: 0; }
-:root[data-style="press"] [data-nav-link]:hover { background: none; color: var(--accent); }
-:root[data-style="press"] [data-nav-link][aria-current="page"] { box-shadow: inset 0 -2px 0 var(--rule); }
-:root[data-style="press"] [data-feed-card] h3 { font-family: var(--font-serif); font-weight: 700; }
-/* No cards: lists are ruled, 2px over a section, 1px between rows. */
-:root[data-style="press"] .card { border-color: transparent; border-top: 2px solid var(--rule); background: transparent; }
-@media (min-width: 700px) {
-  :root[data-style="press"] [data-feed-card] { border-color: var(--line); }
 }

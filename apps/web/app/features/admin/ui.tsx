@@ -45,7 +45,7 @@ export function Stat({ label, value, hint, tone }: { label: ReactNode; value: Re
     <div className="rounded-panel bg-surface px-4 py-3.5 ring-1 ring-line">
       <div className="text-[0.875rem] text-ink-3">{label}</div>
       <div className={`num mt-1 text-[1.25rem] font-semibold tracking-tight ${color}`}>{value}</div>
-      {hint && <div className="mt-0.5 text-[0.8125rem] text-ink-4">{hint}</div>}
+      {hint && <div className="mt-0.5 text-[0.75rem] text-ink-4">{hint}</div>}
     </div>
   );
 }
@@ -62,7 +62,7 @@ const TONES: Record<Tone, string> = {
 
 export function Badge({ tone = "muted", children, title }: { tone?: Tone; children: ReactNode; title?: string }) {
   return (
-    <span title={title} className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[0.8125rem] font-medium ring-1 ${TONES[tone]}`}>
+    <span title={title} className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[0.75rem] font-medium ring-1 ${TONES[tone]}`}>
       {children}
     </span>
   );
@@ -106,7 +106,7 @@ export function DataTable<T>({ rows, columns, rowKey, empty = "暂无数据", on
     <div className={scrollable ? "min-h-0 flex-1 overflow-auto" : "overflow-x-auto"} tabIndex={scrollable ? 0 : undefined}>
       <table className="w-full min-w-[640px] border-collapse text-left text-[0.875rem]">
         <thead>
-          <tr className="border-b border-line text-[0.8125rem] text-ink-3">
+          <tr className="border-b border-line text-[0.75rem] text-ink-3">
             {columns.map((c) => (
               <th key={c.key} className={`whitespace-nowrap px-3 py-2 font-medium ${scrollable ? "sticky top-0 z-10 bg-surface" : ""} ${c.align === "right" ? "text-right" : ""} ${c.className ?? ""}`}>
                 {c.label}
@@ -190,7 +190,7 @@ export function Field({ label, hint, children }: { label: ReactNode; hint?: Reac
     <label htmlFor={id} className="block">
       <span className="mb-1 block text-[0.875rem] font-medium text-ink-2">{label}</span>
       <span className="[&>*]:w-full" id={id}>{children}</span>
-      {hint && <span className="mt-1 block text-[0.8125rem] text-ink-4">{hint}</span>}
+      {hint && <span className="mt-1 block text-[0.75rem] text-ink-4">{hint}</span>}
     </label>
   );
 }
@@ -231,7 +231,7 @@ export function FilterChips({ param, options, resets = [] }: { param: string; op
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.875rem] transition-colors ${active ? "bg-ink text-bg" : "bg-surface text-ink-2 ring-1 ring-line hover:bg-bg-sunk"}`}
           >
             {o.label}
-            {o.count !== undefined && <span className={`num text-[0.8125rem] ${active ? "text-bg/70" : "text-ink-4"}`}>{o.count}</span>}
+            {o.count !== undefined && <span className={`num text-[0.75rem] ${active ? "text-bg/70" : "text-ink-4"}`}>{o.count}</span>}
           </Link>
         );
       })}
@@ -261,8 +261,8 @@ export function Json({ value, collapsed = true, label = "原始数据" }: { valu
   const [open, setOpen] = useState(!collapsed);
   return (
     <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="group rounded-control bg-bg-sunk/70 ring-1 ring-line">
-      <summary className="cursor-pointer select-none px-3 py-1.5 text-[0.8125rem] text-ink-3 hover:text-ink-2">{label}</summary>
-      {open && <pre className="max-h-[420px] overflow-auto px-3 pb-3 font-mono text-[0.8125rem] leading-relaxed text-ink-2">{JSON.stringify(value, null, 2)}</pre>}
+      <summary className="cursor-pointer select-none px-3 py-1.5 text-[0.75rem] text-ink-3 hover:text-ink-2">{label}</summary>
+      {open && <pre className="max-h-[420px] overflow-auto px-3 pb-3 font-mono text-[0.75rem] leading-relaxed text-ink-2">{JSON.stringify(value, null, 2)}</pre>}
     </details>
   );
 }

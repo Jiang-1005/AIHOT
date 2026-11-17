@@ -292,7 +292,7 @@ export function SearchField({ defaultValue = "", keep = {} }: { defaultValue?: s
           <IconClose size={13} />
         </button>
       ) : (
-        <kbd className="mono pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 rounded-mark border border-line-strong bg-surface px-2 text-[0.8125rem] leading-4 text-ink-4 lg:block">/</kbd>
+        <kbd className="mono pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 rounded-mark border border-line-strong bg-surface px-2 text-[0.75rem] leading-4 text-ink-4 lg:block">/</kbd>
       )}
     </Form>
   );

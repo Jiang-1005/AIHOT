@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Presence } from "./Presence";
 
 /** A small dropdown anchored to a trigger; closes on outside click, Escape or choosing an entry. */
-export function Menu({ trigger, label, children, triggerClassName }: { trigger: ReactNode; label: string; children: (close: () => void) => ReactNode; /** Replaces the square icon button's size (a text trigger). */ triggerClassName?: string }) {
+export function Menu({ trigger, label, children }: { trigger: ReactNode; label: string; children: (close: () => void) => ReactNode }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -14,7 +14,7 @@ export function Menu({ trigger, label, children, triggerClassName }: { trigger: 
   };
   useEffect(() => {
     if (!open) return;
-    const items = menuRef.current?.querySelectorAll<HTMLElement>('[role^="menuitem"]');
+    const items = menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]');
     (firstFocus.current === "last" ? items?.[items.length - 1] : items?.[0])?.focus();
     const onDown = (e: PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -49,11 +49,11 @@ export function Menu({ trigger, label, children, triggerClassName }: { trigger: 
           firstFocus.current = e.key === "ArrowUp" ? "last" : "first";
           setOpen(true);
           if (open) {
-            const items = menuRef.current?.querySelectorAll<HTMLElement>('[role^="menuitem"]');
+            const items = menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]');
             (e.key === "ArrowUp" ? items?.[items.length - 1] : items?.[0])?.focus();
           }
         }}
-        className={`inline-flex ${triggerClassName ?? "size-8 touch:size-11"} items-center justify-center rounded-control transition-colors ${open ? "bg-bg-sunk text-ink" : "text-ink-3 hover:bg-bg-sunk hover:text-ink"}`}
+        className={`inline-flex size-8 items-center justify-center rounded-control transition-colors touch:size-11 ${open ? "bg-bg-sunk text-ink" : "text-ink-3 hover:bg-bg-sunk hover:text-ink"}`}
       >
         {trigger}
       </button>
@@ -67,7 +67,7 @@ export function Menu({ trigger, label, children, triggerClassName }: { trigger: 
               if (e.key === "Tab") { setOpen(false); return; }
               if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
               e.preventDefault();
-              const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role^="menuitem"]'));
+              const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'));
               const current = items.indexOf(document.activeElement as HTMLElement);
               const next = e.key === "Home" ? 0 : e.key === "End" ? items.length - 1
                 : (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;

@@ -14,7 +14,7 @@ function hrefOf(e: HotStripEntry): string {
 function TrendMark({ trend }: { trend: HotStripEntry["trend"] }) {
   if (trend === "up") return <IconTrendUp size={14} strokeWidth={2.2} className="text-hot" aria-label="热度上升" />;
   if (trend === "down") return <IconTrendDown size={14} strokeWidth={2.2} className="text-ink-4" aria-label="热度回落" />;
-  if (trend === "new") return <span className="rounded-full bg-accent-soft px-2 text-[0.8125rem] font-semibold leading-4 text-accent">新</span>;
+  if (trend === "new") return <span className="rounded-full bg-accent-soft px-2 text-[0.75rem] font-semibold leading-4 text-accent">新</span>;
   if (trend === "unknown") return null; // sources behind on collection: no comparison to show
   return <IconMinus size={14} strokeWidth={2.2} className="text-ink-4" aria-label="热度持平" />;
 }
@@ -29,6 +29,7 @@ export function HotTopics({ entries }: { entries: HotStripEntry[] }) {
   if (entries.length === 0) return null;
   return (
     <section
+      data-hot-topics=""
       aria-labelledby="hot-topics"
       className="card relative mb-4 overflow-hidden bg-[radial-gradient(120%_90%_at_100%_0%,var(--hot-soft),transparent_55%)] px-4 pb-1 pt-3 lg:mb-6 lg:px-5 lg:pb-2 lg:pt-4"
     >

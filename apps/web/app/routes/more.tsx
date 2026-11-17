@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouteLoaderData } from "react-router";
 import { POLICY, SITE } from "@aihot/site";
 import type { loader as rootLoader } from "../root";
-import { useChangelogDot } from "../components/shell/TopBar";
+import { useChangelogDot } from "../components/shell/Sidebar";
 import { PhoneBar } from "../components/shell/PhoneBar";
 import { inNav } from "../components/shell/nav";
 import type { Screen } from "../components/shell/screens";
@@ -95,7 +95,7 @@ export default function MorePage() {
           <li className="flex min-h-[56px] items-center gap-3 px-4 text-[1rem] font-medium text-ink">
             <span className="w-5 text-center text-ink-3" aria-hidden="true">◐</span>
             <span className="flex-1">风格</span>
-            <StyleSelect />
+            <StyleSelect className="w-[148px]" />
           </li>
           <li className="flex min-h-[56px] items-center gap-3 px-4 text-[1rem] font-medium text-ink">
             <span className="w-5 text-center text-ink-3" aria-hidden="true">Aa</span>
@@ -117,7 +117,7 @@ export default function MorePage() {
           <RowLink row={{ to: "/feedback", label: "意见反馈", icon: <IconSend size={20} /> }} />
         </Group>
       </div>
-      <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[0.8125rem] leading-[2] text-ink-4">
+      <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[0.75rem] leading-[2] text-ink-4">
         <Link viewTransition to="/terms" className="hover:text-ink-2">{POLICY.terms.name}</Link>
         <Link viewTransition to="/privacy" className="hover:text-ink-2">隐私说明</Link>
         <a href="/feed.xml" className="hover:text-ink-2">RSS</a>

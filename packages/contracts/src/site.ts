@@ -420,11 +420,9 @@ export interface ReportNavigationResponse {
   items: ReportNavigationEntry[];
 }
 
-/** Site-wide facts for the web shell: the changelog red-dot anchor and when the site's data was last synced. */
+/** Site-wide facts for the web shell: the changelog red-dot anchor. */
 export interface SiteMeta {
   changelogVersion: string;
-  /** 「11 月 17 日 20:31 北京时间」, the last site sync; null before the first sync. */
-  dataAsOf: string | null;
 }
 
 /** One entry of the site's changelog (site/changelog.json), newest first. */

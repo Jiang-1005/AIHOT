@@ -2,7 +2,7 @@
    Readwise Reader for reading type only. Warm paper, serif headlines, 14px cards, ink green only for the
    selected state and the main button. Prototype: research/.../styles-1117/themes/paper.css. */
 :root[data-style="paper"] {
-  --font-serif: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", "SimSun", "NSimSun", serif;
+  --font-serif: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   --bg: #f6f2e9;
   --bg-sunk: #efe9dc;
   --surface: #fffdf8;
@@ -56,14 +56,3 @@
   --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 :root[data-style="paper"] body { font-size: 0.9375rem; }
-:root[data-style="paper"] [data-top-bar] { background: var(--bg); }
-:root[data-style="paper"] [data-nav-link][aria-current="page"] {
-  text-decoration: underline 2px var(--accent);
-  text-underline-offset: 8px;
-}
-:root[data-style="paper"] [data-feed-card] h3 { font-family: var(--font-serif); font-weight: 700; line-height: 1.6; }
-/* Desktop lists sit on one warm card, rows divided by hairlines (the prototype's .list). */
-@media (min-width: 700px) {
-  :root[data-style="paper"] [data-feed-card] { padding-inline: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); margin-bottom: 12px; }
-  :root[data-style="paper"] [data-feed-card] h3 { font-size: 1.125rem; }
-}
