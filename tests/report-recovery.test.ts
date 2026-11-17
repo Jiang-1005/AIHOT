@@ -130,7 +130,9 @@ test("a complete quiet week is skipped on later runs without using the issue lim
 });
 
 test("a complete quiet month stays successful across retries and does not starve the next month", async () => {
-  await dailies("2024-01-01", "2024-04-01", ["2024-01-02", "2024-03-02"]);
+  // March's report sits outside 1 March's calendar day: each run also refreshes the current day's daily
+  // over that whole day, and this case is about the monthly alone.
+  await dailies("2024-01-01", "2024-04-01", ["2024-01-02", "2024-03-03"]);
   await composeMonthly("2024-01");
   const calls = provider.hits();
   for (const seconds of [60, 1800]) {
