@@ -58,6 +58,7 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 - FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
 - FAIL 在 inputs：报告里写缺哪个文件、名字该是什么，不替别的 bot 改名或补抓。
 - FAIL 在 db：停，不同步，叫 Grok Bot。
+- FAIL 在 deps（宿主机 node_modules 不在，盒子重启后会出现）：在 /workspace/edu-hot 跑 `npm ci` 再查。sync-to-neon.sh 和 score-and-compose.sh 开头会自动补装，npm ci 失败就退出非 0，这轮停下叫 Grok Bot。
 - FAIL 在 fresh：某一项超过失败阈值没更新。热点榜：看 score-and-compose.sh 输出有没有 hot 字段、sync-to-neon.sh 有没有跑完，补跑这两条再查；热帖：查 import-voices.py 这轮跑没跑；日报、周报：再跑一次 score-and-compose.sh。还 FAIL 就在群里叫 Grok Bot。
 - WARN 在 hot（热点榜 0 条）：只是提示，照常报，写上 candidates 数。
 
