@@ -621,7 +621,7 @@ export default function VoicesPage() {
           </button>
         }
       />
-      <header className="mb-3 lg:mb-4">
+      <header data-page-head="" className="mb-3 lg:mb-4">
         <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">社区热帖</h1>
         <p className="mt-1 hidden text-[0.875rem] leading-[1.7] text-ink-3 lg:block">
           X、小红书和中文社区里的真实讨论。先看站内摘要，再决定要不要去原帖。

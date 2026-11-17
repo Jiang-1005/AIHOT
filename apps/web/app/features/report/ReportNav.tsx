@@ -107,7 +107,7 @@ export function ReportPhoneNav({ kind, index, current, today }: { kind: ReportKi
   const chip = "inline-flex h-11 shrink-0 items-center rounded-full border px-4 text-[0.875rem] transition-colors";
   if (recent.length === 0) return null;
   return (
-    <nav aria-label={`最近的${REPORT_NAMES[kind]}`} className="scrollbar-none bleed flex gap-2 overflow-x-auto pb-1 pt-2 lg:mx-0 lg:w-full lg:max-w-[1160px] lg:px-0 lg:pb-4 lg:pt-3 side:hidden">
+    <nav data-report-strip="" aria-label={`最近的${REPORT_NAMES[kind]}`} className="scrollbar-none bleed flex gap-2 overflow-x-auto pb-1 pt-2 lg:mx-0 lg:w-full lg:max-w-[1160px] lg:px-0 lg:pb-4 lg:pt-3 side:hidden">
       {recent.map((e) => {
         const on = e.key === current;
         return (

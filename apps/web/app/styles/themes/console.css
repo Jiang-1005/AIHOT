@@ -25,7 +25,7 @@
   --radius-tile: 8px;
   --radius-card: 8px;
   --radius-panel: 8px;
-  --radius-sheet: 12px;
+  --radius-sheet: 8px;
 }
 :root[data-style="console"][data-theme="dark"] {
   --bg: #09090b;

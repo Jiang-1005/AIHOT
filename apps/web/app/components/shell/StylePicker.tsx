@@ -1,9 +1,8 @@
 // The look switch (风格): a small fixed button in the top-right corner that opens the list of looks.
 // The list comes from lib/site-styles (SITE_STYLES), so a new look shows up here without touching this file.
-// Phones: the button sits in the top bar's right end, which PhoneBar keeps free (--style-picker-gutter);
-// desktop: in the main column's right gutter (app/styles/themes/picker.css). Esc or a click outside closes it.
-// A phone page without the top bar (the report pages) has no room kept for it: there the button slides away
-// while the reader scrolls down and comes back on the way up, so it never sits on the text.
+// Phones: the button sits at the page's top-right, in the top bar's right end (kept free there), and scrolls
+// away with the page, so it never sits on text further down; desktop: fixed in the main column's right gutter
+// (app/styles/themes/picker.css). Esc or a click outside closes it.
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { SITE_STYLES, setSiteStyle, useSiteStyle } from "../../lib/site-styles";
 
@@ -13,7 +12,6 @@ export function StylePicker() {
   const button = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const panelId = useId();
-  const tucked = useTuckOnScroll(open);
 
   useEffect(() => {
     if (!open) return;
@@ -50,7 +48,7 @@ export function StylePicker() {
 
   const label = SITE_STYLES.find((s) => s.id === active)?.label ?? "";
   return (
-    <div className="style-picker" data-open={open ? "" : undefined} data-tucked={tucked ? "" : undefined}>
+    <div className="style-picker" data-open={open ? "" : undefined}>
       <button
         ref={button}
         type="button"
@@ -97,35 +95,4 @@ export function StylePicker() {
       )}
     </div>
   );
-}
-
-/** Phones without a top bar: true while the reader scrolls down past the top (never while the list is open). */
-function useTuckOnScroll(open: boolean): boolean {
-  const [tucked, setTucked] = useState(false);
-  useEffect(() => {
-    let last = window.scrollY;
-    let frame = 0;
-    const check = () => {
-      frame = 0;
-      const y = window.scrollY;
-      const phone = window.innerWidth < 700;
-      const bar = document.querySelector("[data-phone-bar]");
-      const down = y > last + 2;
-      const up = y < last - 2;
-      if (!phone || bar || y < 48 || open) setTucked(false);
-      else if (down) setTucked(true);
-      else if (up) setTucked(false);
-      last = y;
-    };
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(check); };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    check();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, [open]);
-  return tucked;
 }

@@ -1,21 +1,34 @@
 /* The look switch (components/shell/StylePicker.tsx) and the room it keeps free.
-   Phones: a 40px button in the top bar's right end; PhoneBar's row ends 44px short of it.
-   Desktop (≥ 700px): the same button 12px from the window's top-right corner; the main column ends
-   56px from the edge so sticky day heads and toolbars never sit under it. */
+   Phones: a 40px button in the top bar's right end from 390px (the bar keeps 44px free), just under the bar
+   below 390px, and at the page's top-right on pages without the bar; outside the sticky bar it scrolls away
+   with the page, so it never covers text further down. Desktop (≥ 700px): the same button 12px from the
+   window's top-right corner; the main column ends 56px from the edge so sticky day heads and toolbars never
+   sit under it. */
 .style-picker {
-  position: fixed;
+  position: absolute; /* no top bar: at the page's top-right, scrolling away with it */
   transition: transform var(--duration-med) var(--ease-enter), opacity var(--duration-med) var(--ease-enter);
   z-index: 45; /* over the top bar (40), under sheets and dialogs (50) */
   top: calc(env(safe-area-inset-top) + 4px);
   right: max(4px, env(safe-area-inset-right));
 }
-[data-phone-bar] > div { padding-right: 44px; }
+/* Phones below 390px: the top bar is full (brand, 精选/往期/全部, 筛选, 搜索), so the button sits just
+   under it, beside the page's heading, and scrolls away with the page. */
+@media (max-width: 389.98px) {
+  body:has([data-phone-bar]) .style-picker { top: calc(var(--bar-h) + 4px); }
+  body:has([data-phone-bar]) :is([data-masthead], [data-page-head]) { padding-right: 44px; }
+  body:has([data-phone-bar]) [data-report-strip] { margin-right: calc(44px - var(--gutter-r)); padding-right: 0; }
+  /* The first day's sticky head starts under it; later heads stick only after it has scrolled away. */
+  body:has([data-phone-bar]) [data-feed-days] > :first-child [data-daybar] > * { padding-right: 44px; }
+}
+/* 390px and up: in the top bar's right end, which stays on screen (the bar is sticky); its row ends 44px short. */
+@media (min-width: 390px) {
+  body:has([data-phone-bar]) .style-picker { position: fixed; }
+  [data-phone-bar] > div { padding-right: 44px; }
+}
 @media (min-width: 700px) {
-  .style-picker { top: 12px; right: max(12px, env(safe-area-inset-right)); }
+  .style-picker { position: fixed; top: 12px; right: max(12px, env(safe-area-inset-right)); }
   #main { padding-right: max(56px, env(safe-area-inset-right)); }
 }
-/* Phones without a top bar, scrolling down: out of the way (focus brings it back). */
-.style-picker[data-tucked]:not(:focus-within) { transform: translateY(-56px); opacity: 0; pointer-events: none; }
 .style-picker-button {
   display: grid;
   place-items: center;
