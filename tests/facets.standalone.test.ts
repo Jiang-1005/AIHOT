@@ -2,7 +2,7 @@
 // a platform or file name counted as a company, one company under two spellings.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { companyName, facetsEmpty, parseItemFacets } from "@aihot/contracts/facets";
+import { companyName, companySpellings, facetsEmpty, HEAD_COMPANIES, parseItemFacets } from "@aihot/contracts/facets";
 
 test("values outside the lists become null and companies become chip names", () => {
   assert.deepEqual(parseItemFacets({
@@ -26,7 +26,7 @@ test("one company under its Chinese and English names is one chip", () => {
   for (const [spellings, chip] of [
     [["Google", "谷歌", "google"], "Google"],
     [["OpenAI", "Open AI", "OPENAI"], "OpenAI"],
-    [["Khan Academy", "可汗学院", "khan academy"], "Khan Academy"],
+    [["Khan Academy", "可汗学院", "khan academy", "Khan", "Khan Academy（可汗学院）"], "Khan Academy（可汗学院）"],
     [["Duolingo", "多邻国", "Duolingo（多邻国）"], "Duolingo（多邻国）"],
     [["字节跳动", "ByteDance"], "字节跳动"],
     [["阿里", "阿里巴巴", "Alibaba"], "阿里"],
@@ -38,4 +38,15 @@ test("one company under its Chinese and English names is one chip", () => {
   // A product keeps its own chip.
   assert.equal(companyName("Google Classroom"), "Google Classroom");
   assert.equal(companyName("Khanmigo"), "Khanmigo");
+});
+
+test("chip names: English only when parents know it in English, 「英文（中文）」 when they mostly know the Chinese", () => {
+  // The design data (data/facets.json) and the 精选 catalog still say "Khan Academy"; reading them gives the new chip.
+  assert.deepEqual(parseItemFacets({ companies: ["Khan Academy", "可汗学院 › Khanmigo"] }).companies, ["Khan Academy（可汗学院）", "Khanmigo"]);
+  assert.ok(HEAD_COMPANIES.includes("Khan Academy（可汗学院）"));
+  assert.ok(!(HEAD_COMPANIES as readonly string[]).includes("Khan Academy"));
+  for (const chip of ["Google", "OpenAI", "Apple", "Microsoft（微软）", "Duolingo（多邻国）", "Benesse（倍乐生）"]) assert.equal(companyName(chip), chip);
+  // A filter on the chip still finds rows stored under the old name.
+  assert.ok(companySpellings("Khan Academy").includes("Khan Academy"));
+  assert.equal(companySpellings("Khan Academy")[0], "Khan Academy（可汗学院）");
 });

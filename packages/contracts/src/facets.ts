@@ -13,7 +13,7 @@ export const SINGLE_FACETS = Object.keys(FACET_VOCAB) as SingleFacet[];
 
 export const HEAD_COMPANIES = [
   "好未来", "学而思", "新东方", "猿辅导", "作业帮", "有道", "讯飞", "高途", "豆神", "洋葱学园", "叫叫",
-  "Duolingo（多邻国）", "Khan Academy", "Chegg", "Quizlet", "Speak",
+  "Duolingo（多邻国）", "Khan Academy（可汗学院）", "Chegg", "Quizlet", "Speak",
 ] as const;
 
 /** A report's five dimensions as the public API returns them. A single choice the model could not make is null. */
@@ -33,9 +33,10 @@ export function baseLabel(value: string | null | undefined): string {
 }
 
 const NOT_A_COMPANY = new Set(["", "不涉及", "未查到", "待定", "小红书", "X", "心田花开", "心田"]);
-// One company under two spellings is one chip. A name the design already shows keeps it (Google, OpenAI,
-// Khan Academy, 阿里, 字节跳动, 腾讯, 松鼠Ai, the head companies); where both spellings are in use the chip
-// carries both, as 「Duolingo（多邻国）」 does. Products (Google Classroom, Khanmigo, 豆包) stay their own chips.
+// One company under two spellings is one chip. Chip names (体验大师, 2026-11-17): a name parents know in
+// English is written in English only (Google, OpenAI, Apple); one used in both languages that parents mostly
+// know in Chinese is 「英文（中文）」 (Duolingo（多邻国）, Khan Academy（可汗学院）, Microsoft（微软）, Benesse（倍乐生）).
+// Chinese companies keep their Chinese name. Products (Google Classroom, Khanmigo, 豆包) stay their own chips.
 const ALIASES: Record<string, readonly string[]> = {
   有道: ["网易有道", "Youdao", "NetEase Youdao"],
   讯飞: ["科大讯飞", "iFlytek", "iFLYTEK"],
@@ -44,7 +45,7 @@ const ALIASES: Record<string, readonly string[]> = {
   新东方: ["New Oriental"],
   作业帮: ["Zuoyebang"],
   猿辅导: ["Yuanfudao"],
-  "Khan Academy": ["Khan", "可汗学院", "可汗"],
+  "Khan Academy（可汗学院）": ["Khan Academy", "Khan", "可汗学院", "可汗"],
   "Duolingo（多邻国）": ["Duolingo", "多邻国"],
   "Benesse（倍乐生）": ["Benesse", "倍乐生", "ベネッセ", "Benesse Corporation", "Benesse Holdings"],
   "Microsoft（微软）": ["Microsoft", "微软", "Microsoft Corporation"],
@@ -66,6 +67,13 @@ const ALIASES: Record<string, readonly string[]> = {
 /** Case and spacing do not make a second company: "OPENAI", "Open AI" and "openai" are one. */
 const fold = (name: string) => name.toLowerCase().replace(/\s+/g, "");
 const DISPLAY_NAME = new Map(Object.entries(ALIASES).flatMap(([chip, names]) => [chip, ...names].map((n) => [fold(n), chip] as const)));
+
+/** Every stored spelling of a chip, so rows written under an older chip name still match its filter. */
+export function companySpellings(chip: string): string[] {
+  const c = companyName(chip);
+  if (c === null) return [];
+  return [c, ...(ALIASES[c] ?? [])];
+}
 
 /** One name of a 公司与产品 token as its chip shows it; null for a platform, a placeholder or a file/skill name. */
 export function companyName(name: string): string | null {

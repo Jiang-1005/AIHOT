@@ -1,7 +1,7 @@
 // Five-dimension tags (taxonomy.md) for media and 社区热帖. Catalog: AIHOT_DATA_DIR/content-tags.json.
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { baseLabel, companyName, companyNames, FACET_VOCAB, HEAD_COMPANIES } from "@aihot/contracts/facets";
+import { baseLabel, companyName, companyNames, companySpellings, FACET_VOCAB, HEAD_COMPANIES } from "@aihot/contracts/facets";
 import { config } from "../config.ts";
 import { sql } from "../db.ts";
 
@@ -66,6 +66,8 @@ export function loadLogoIndex(): { index: Record<string, string>; missing: strin
     name: it.name, path: it.path, source_url: it.source_url,
   }));
   for (const it of items) if (it.name && it.path) index[it.name] = it.path;
+  // A chip finds its logo under any spelling: the logo list says "Khan Academy", the chip is 「Khan Academy（可汗学院）」.
+  for (const [name, logo] of Object.entries(index)) { const chip = companyName(name); if (chip && !index[chip]) index[chip] = logo; }
   const missing = ((raw.missing as Array<{ name: string }>) ?? []).map((m) => m.name);
   return { index, missing, items };
 }
@@ -118,7 +120,7 @@ export function articleFacetCondition(f: FacetQuery) {
   if (!facetsActive(f)) return sql``;
   const pick = (column: "topic" | "subject" | "form" | "content_type", values: string[] | undefined) =>
     values?.length ? sql`AND af.${sql(column)} IN ${sql(values.map(baseLabel))}` : sql``;
-  const companies = [...new Set((f.company ?? []).flatMap((c) => companyName(c) ?? []))];
+  const companies = [...new Set((f.company ?? []).flatMap(companySpellings))];
   const company = f.company?.length ? sql`AND af.companies && ${companies}::text[]` : sql``;
   return sql`AND p.article_id IN (SELECT af.article_id FROM article_facets af WHERE TRUE
     ${pick("topic", f.topic)} ${pick("subject", f.subject)} ${pick("form", f.form)} ${pick("content_type", f.content_type)} ${company})`;
