@@ -58,7 +58,20 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 - FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
 - FAIL 在 inputs：报告里写缺哪个文件、名字该是什么，不替别的 bot 改名或补抓。
 - FAIL 在 db：停，不同步，叫 Grok Bot。
-- FAIL 在 hot（线上热点榜超过 24 小时没重算）：看 score-and-compose.sh 输出里有没有 hot 字段、sync-to-neon.sh 有没有跑完；补跑这两条再查。WARN 在 hot（0 条）照常报。
+- FAIL 在 fresh：某一项超过失败阈值没更新。热点榜：看 score-and-compose.sh 输出有没有 hot 字段、sync-to-neon.sh 有没有跑完，补跑这两条再查；热帖：查 import-voices.py 这轮跑没跑；日报、周报：再跑一次 score-and-compose.sh。还 FAIL 就在群里叫 Grok Bot。
+- WARN 在 hot（热点榜 0 条）：只是提示，照常报，写上 candidates 数。
+
+### 新鲜度阈值（照 dbt source freshness：warn_after / error_after）
+脚本顶部的 FRESHNESS 表是唯一出处，改阈值两处一起改。一天两轮的项目漏一轮告警、漏两轮失败；周报按自己的周期。
+
+| 项 | 取值位置 | 告警 | HEALTH FAIL |
+|---|---|---|---|
+| 热帖 | 本机 .data/voices.json 的 generatedAt | 13 小时 | 25 小时 |
+| 日报 | 本机 reports（kind=daily）max(generated_at) | 13 小时 | 25 小时 |
+| 周报 | 本机 reports（kind=weekly）max(generated_at) | 8 天 | 9 天 |
+| 热点榜 | 线上 /api/site/hot 的 computedAt | 13 小时 | 25 小时 |
+
+热点榜 0 条不算失败，只出一行提示（附本机最近一次 candidates）。`--only fresh` 只跑这一组；`--as-of` 回放时热帖和热点榜跳过。
 - WARN 只是提示，照常报，不算 FAIL。
 
 ## 红线

@@ -9,7 +9,7 @@
   issue    最新日报不早于昨天（有新稿却没出刊 = 失败）
   worker   worker 心跳（关着是已知状态，只提示）
   live     线上最新日报 = 本机最新日报，线上「数据截至」不落后本机同步时间
-  hot      线上热点榜 24 小时内重算过（超过 = FAIL）；0 条只提示，附本机 candidates 数
+  fresh    热帖、日报、周报、热点榜各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条只提示，附 candidates 数
   checkout 运维目录 /workspace/edu-hot 没缺主线 jiang/main 上的运维脚本，本分支的运维脚本也已进主线
 
 全部只读：docker exec psql SELECT、读文件、curl 公网只读接口、git 本地对象。不写库、不 push、不打印任何密钥。
@@ -29,6 +29,16 @@ REPO = "/workspace/edu-hot"
 SITE = "https://edu-ai-hot.vercel.app"
 DB = os.environ.get("EDUHOT_DB_CONTAINER", "xintian-edu-hot-db-1")
 SCORE_SLA_H = 3
+# 新鲜度阈值（照 dbt source freshness：每项一个 warn_after / error_after，超过 error_after = HEALTH FAIL）。
+# 一天两轮（9:30 / 20:30）的项目：13 小时告警、25 小时失败（漏一轮告警，漏两轮失败）。周报按自己的周期：8 天告警、9 天失败。
+# 改阈值只改这张表，docs/import-runbook.md「健康检查」一节的同名表要一起改。
+#   key       名称      取值位置                                        warn_h  fail_h
+FRESHNESS = [
+    ("voices", "热帖",   "本机 .data/voices.json 的 generatedAt",       13,     25),
+    ("daily",  "日报",   "本机 reports（kind=daily）max(generated_at)",  13,     25),
+    ("weekly", "周报",   "本机 reports（kind=weekly）max(generated_at)", 8 * 24, 9 * 24),
+    ("hot",    "热点榜", "线上 /api/site/hot 的 computedAt",             13,     25),
+]
 OPS_SCRIPTS = ["scripts/sync-to-neon.sh", "scripts/export-to-neon.sh", "scripts/resolve-neon-urls.py",
                "scripts/reset-sequences.sql", "scripts/env-exports.py", "scripts/import-voices.py",
                "scripts/import-brief-items.ts", "scripts/score-and-compose.sh", "scripts/score-and-compose.ts",
@@ -191,26 +201,41 @@ def check_live(local_latest):
     except Exception as e:
         add("WARN", "live", f"数据截至没核上：{e}")
 
-def check_hot():
-    """线上热点榜：computedAt 超过 24 小时 = 没人重算（worker 关着时靠 score-and-compose.sh 第 4 步）。"""
-    try:
+def fresh_at(key, as_of, replay):
+    """(每项最近一次更新的时间, 热点榜条数)；时间 None = 当时还没有数据，"SKIP" = 回放时没法查。"""
+    if key == "voices":
+        t = dt.datetime.strptime(json.load(open(f"{REPO}/.data/voices.json"))["generatedAt"], "%Y-%m-%d %H:%M").replace(tzinfo=TZ)
+        return ("SKIP" if t > as_of else t), None
+    if key in ("daily", "weekly"):
+        v = psql(f"SELECT to_char(max(generated_at) AT TIME ZONE 'Asia/Shanghai','YYYY-MM-DD HH24:MI') FROM reports WHERE kind='{key}' AND generated_at <= '{as_of.isoformat()}'")
+        v = v[0][0] if v else None
+        return (dt.datetime.strptime(v, "%Y-%m-%d %H:%M").replace(tzinfo=TZ) if v else None), None
+    if key == "hot":
+        if replay: return "SKIP", None
         hot = get_json("/api/site/hot")
-        at = dt.datetime.fromisoformat(hot["computedAt"].replace("Z", "+00:00")).astimezone(TZ)
-    except Exception as e:
-        add("FAIL", "hot", f"线上热点榜接口读不到：{e}"); return
-    age_h = (dt.datetime.now(TZ) - at).total_seconds() / 3600
-    n = len(hot.get("entries") or [])
-    when = at.strftime("%m-%d %H:%M")
-    if age_h > 24:
-        add("FAIL", "hot", f"线上热点榜 {when} 算的（{age_h:.0f} 小时前，超过 24 小时）→ score-and-compose.sh 没重算或没同步"); return
-    if n == 0:
+        return dt.datetime.fromisoformat(hot["computedAt"].replace("Z", "+00:00")).astimezone(TZ), len(hot.get("entries") or [])
+    raise KeyError(key)
+
+def check_freshness(as_of, replay):
+    for key, name, where, warn_h, fail_h in FRESHNESS:
         try:
-            cand = psql("SELECT coalesce(evidence->>'candidates','?') FROM hot_rankings ORDER BY computed_at DESC LIMIT 1")[0][0]
-        except Exception:
-            cand = "未查到"
-        add("WARN", "hot", f"线上热点榜 {when} 算的，0 条；本机最近一次 candidates={cand}（48 小时内够 2 个独立来源、含 1 个精选源的事件数）")
-        return
-    add("OK", "hot", f"线上热点榜 {when} 算的，{n} 条")
+            t, entries = fresh_at(key, as_of, replay)
+        except Exception as e:
+            add("FAIL", "fresh", f"{name}读不到（{where}）：{e}"); continue
+        if t == "SKIP":
+            add("SKIP", "fresh", f"{name}：回放模式不查"); continue
+        if t is None:
+            add("FAIL", "fresh", f"{name}没有任何记录（{where}）"); continue
+        age = (as_of - t).total_seconds() / 3600
+        msg = f"{name} {t:%m-%d %H:%M} 更新（{age:.0f} 小时前；告警 {warn_h}h / 失败 {fail_h}h）"
+        level = "FAIL" if age > fail_h else "WARN" if age > warn_h else "OK"
+        add(level, "fresh", msg if level == "OK" else f"{msg}，没跟上（取自{where}）")
+        if entries == 0:
+            try:
+                cand = psql("SELECT coalesce(evidence->>'candidates','?') FROM hot_rankings ORDER BY computed_at DESC LIMIT 1")[0][0]
+            except Exception:
+                cand = "未查到"
+            add("WARN", "hot", f"线上热点榜 0 条；本机最近一次 candidates={cand}（48 小时内够 2 个独立来源、含 1 个精选源的事件数）")
 
 # ---------- checkout drift ----------
 def git(*a):
@@ -243,7 +268,7 @@ def check_checkout():
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--as-of"); ap.add_argument("--slot", choices=["am", "pm"])
-    ap.add_argument("--only", choices=["inputs", "db", "live", "checkout"]); ap.add_argument("--json", action="store_true")
+    ap.add_argument("--only", choices=["inputs", "db", "live", "fresh", "checkout"]); ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
     now = dt.datetime.now(TZ)
     as_of = dt.datetime.fromisoformat(a.as_of).astimezone(TZ) if a.as_of else now
@@ -256,7 +281,8 @@ def main():
         latest = check_db(as_of) if (run("db") or not replay) else None
     if run("live"):
         if replay: add("SKIP", "live", "回放模式不查线上")
-        elif latest is not False: check_live(latest); check_hot()
+        elif latest is not False: check_live(latest)
+    if run("fresh") and latest is not False: check_freshness(as_of, replay)
     if run("checkout") and not replay: check_checkout()
     fails = [r for r in results if r[0] == "FAIL"]; warns = [r for r in results if r[0] == "WARN"]
     if a.json:
