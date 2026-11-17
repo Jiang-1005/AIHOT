@@ -1,7 +1,8 @@
 // Public scope and sync through the real api routes: a licence revocation or a withdrawal reaches
-// every exit, reports stop quoting withdrawn items, the hot board drops a withdrawn item at once, item
-// pages follow one rule, a withdrawal next to an unresolved selection leaves new snapshots at once,
-// snapshots answer conditional requests, and browsing 全部动态 leaves out low scores that a search still finds.
+// every exit, reports stop quoting withdrawn items, a withdrawn item leaves the machine exits at once
+// and the event leaves the hot board when no public source remains, item pages follow one rule, a
+// withdrawal next to an unresolved selection leaves new snapshots at once, snapshots answer
+// conditional requests, and browsing 全部动态 leaves out low scores that a search still finds.
 import { tag } from "./setup.ts";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -296,7 +297,9 @@ test("a withdrawn item leaves the hot board and the hot APIs at once, not at the
   // Two independent participants (heat counts sources, not reports).
   const second = `${SOURCE}-hot-b`;
   await sql`INSERT INTO sources (id, name, kind, tier, participation_mode, next_fetch_at) VALUES (${second}, 'Test publication B', 'rss', 'T1', 'editorial', '2100-01-01')`;
+  const ids: string[] = [];
   for (const [i, id] of [await article(), await article()].entries()) {
+    ids.push(id);
     if (i) await sql`UPDATE articles SET source_id = ${second} WHERE id = ${id}`;
     await sql`INSERT INTO fact_articles (fact_id, article_id, role) VALUES (${fact!.id}, ${id}, 'report')`;
     await sql`INSERT INTO story_signals (story_id, article_id, participant_key, source_id, kind, observed_at)
@@ -306,6 +309,8 @@ test("a withdrawn item leaves the hot board and the hot APIs at once, not at the
   await computeHotRanking();
   const rep = (await latestHotRanking())!.entries.find((e) => e.storyId === story!.id)?.representativeItemId;
   assert.ok(rep, "the story is on the board with a representative item");
+  const remaining = ids.find((id) => id !== rep);
+  assert.ok(remaining, "the story has a second public source");
   // The machine exits name the item; the hot board names the event it stands for.
   const exits = ["/api/v1/hot-topics", "/api/v1/agent/hot?limit=3"];
   for (const url of exits) assert.ok((await get(url)).body.includes(rep!), `${url} shows the item before`);
@@ -313,7 +318,19 @@ test("a withdrawn item leaves the hot board and the hot APIs at once, not at the
 
   await setVisibility(rep!, { visibility: "withdrawn", reason: "test", version: 0 }, "test");
   for (const url of exits) assert.ok(!(await get(url)).body.includes(rep!), `${url} still shows the withdrawn item`);
-  assert.ok(!(await get("/api/site/hot")).body.includes(publicId), "/api/site/hot still shows the event of the withdrawn item");
+  // Heat mode already omits withdrawn sources when it counts and picks candidates. One remaining
+  // public editorial source still qualifies, so the event stays; the withdrawn item does not.
+  const afterOne = JSON.parse((await get("/api/site/hot")).body) as { entries: Array<{ story: { publicId: string }; sourceCount: number; singleSource?: boolean; sourceNames: string[] }> };
+  const kept = afterOne.entries.find((e) => e.story.publicId === publicId);
+  assert.ok(kept, "heat mode keeps the event when one public editorial source remains");
+  assert.equal(kept.sourceCount, 1);
+  assert.equal(kept.singleSource, true);
+  assert.equal(kept.sourceNames.length, 1);
+  for (const url of exits) assert.ok((await get(url)).body.includes(remaining!), `${url} dropped the remaining source`);
+
+  await setVisibility(remaining!, { visibility: "withdrawn", reason: "test", version: 0 }, "test");
+  for (const url of exits) assert.ok(!(await get(url)).body.includes(remaining!), `${url} still shows the last withdrawn item`);
+  assert.ok(!(await get("/api/site/hot")).body.includes(publicId), "/api/site/hot still shows the event after its last public source was withdrawn");
 });
 
 test("item pages follow one rule: unsummarised editorial items keep one, hot_signal items have none", async () => {
