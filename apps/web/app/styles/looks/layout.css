@@ -35,12 +35,13 @@
   :root:not([data-style="classic"]) [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-title] { font-size: 1.375rem; }
 }
 
-/* Right rail (热点榜 top five) from 1176px; the in-feed hot strip gives way to it. */
+/* Right rail (热点榜 top five) from 1176px; the in-feed hot strip gives way to it. With an empty hot list there
+   is no rail (HomeRail renders nothing) and the feed keeps the single column, not an empty 280px track. */
 @media (min-width: 1176px) {
-  :root:not([data-style="classic"]) [data-home-grid] { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 40px; align-items: start; }
+  :root:not([data-style="classic"]) [data-home-grid]:has(> [data-home-rail]) { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 40px; align-items: start; }
   :root:not([data-style="classic"]) [data-home-main] { display: block; min-width: 0; }
   :root:not([data-style="classic"]) [data-home-rail] { display: block; position: sticky; top: 1.5rem; margin-top: 1rem; }
-  :root:not([data-style="classic"]) [data-hot-topics] { display: none; }
+  :root:not([data-style="classic"]) [data-hot-topics]:has(~ [data-home-grid] > [data-home-rail]) { display: none; }
 }
 
 /* /hot as one ranked row per story (press, paper, glass); clean keeps the cards. */
@@ -114,11 +115,14 @@
 @media (min-width: 1024px) {
   :root[data-style="glass"] [data-feed-card] { flex-direction: row; align-items: baseline; gap: 1.5rem; padding-block: 0.6875rem; border-top-color: var(--line-soft); }
   :root[data-style="glass"] [data-fi-title] { flex: 1 1 auto; min-width: 0; font-size: 0.9375rem; -webkit-line-clamp: 1; line-clamp: 1; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-  :root[data-style="glass"] [data-fi-meta] { order: 1; flex: 0 0 22rem; margin-top: 0; justify-content: flex-end; }
+  :root[data-style="glass"] [data-fi-meta] { order: 1; flex: 0 0 24rem; margin-top: 0; justify-content: flex-end; }
   :root[data-style="glass"] [data-fi-meta] > :first-child { flex: 0 1 auto; min-width: 5rem; max-width: 10rem; }
   /* The row keeps source, score and time; 精选 is already the page. */
   :root[data-style="glass"] [data-fi-meta] > span.lg\:inline-flex { display: none; }
-  :root[data-style="glass"] [data-fi-meta] [data-fi-time] { order: 1; min-width: 4.5rem; text-align: right; }
+  /* Score and bookmark end every row at the same x; the time, short (09:42) or long (发布 11月15日 09:42),
+     sits right-aligned before them, so a longer date never pushes the score column left. */
+  :root[data-style="glass"] [data-fi-meta] [data-fi-time] { display: inline; margin-left: auto; min-width: 4.5rem; text-align: right; }
+  :root[data-style="glass"] [data-fi-meta]:has([data-fi-time]) > span.ml-auto { margin-left: 0; }
   :root[data-style="glass"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] { flex-direction: column; }
   :root[data-style="glass"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-title] { font-size: 1.25rem; font-weight: 600; -webkit-line-clamp: 2; line-clamp: 2; }
   :root[data-style="glass"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-meta] { order: 0; flex-basis: auto; justify-content: flex-start; }

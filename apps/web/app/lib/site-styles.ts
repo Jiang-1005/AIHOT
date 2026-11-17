@@ -5,14 +5,20 @@
 // Adding a look: one entry here, one file app/styles/looks/<id>.css, one @import line in app.css.
 import { useSyncExternalStore } from "react";
 
-/** In the order the 外观 menu lists them; the first is the default. */
+/**
+ * In the order the 外观 menu lists them; the first is the default. `short` is the name in the sidebar picker,
+ * which fits 外观：plus four characters (180px sidebar, 13px type); a longer label sets one.
+ */
 export const SITE_STYLES = [
   { id: "classic", label: "原版" },
   { id: "paper", label: "暖纸" },
   { id: "press", label: "编辑部" },
-  { id: "clean", label: "明净／夜读" },
+  { id: "clean", label: "明净／夜读", short: "明净夜读" },
   { id: "glass", label: "浮层玻璃" },
-] as const satisfies ReadonlyArray<{ id: string; label: string }>;
+] as const satisfies ReadonlyArray<{ id: string; label: string; short?: string }>;
+
+/** The name the sidebar picker shows after 外观：. */
+export const shortLabel = (s: (typeof SITE_STYLES)[number]): string => ("short" in s ? s.short : s.label);
 
 export type SiteStyleId = (typeof SITE_STYLES)[number]["id"];
 
