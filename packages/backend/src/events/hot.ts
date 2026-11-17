@@ -19,6 +19,8 @@ export interface HotEntry {
   badges: Array<"surge" | "new" | "rising">;
   participantCount: number;
   sourceCount: number;
+  /** True when only one independent editorial source is in the window. Absent on rankings stored before heat-v2. */
+  singleSource?: boolean;
   signalCount: number;
   reportCount: number;
   sourceNames: string[];
@@ -54,11 +56,49 @@ export async function storedHotRanking(db: Db = sql): Promise<HotRanking | null>
   return { id: row.id, computedAt: row.computed_at.toISOString(), ruleVersion: row.rule_version, entries: row.entries, coverage: row.evidence };
 }
 
-export const HOT_RULE_VERSION = "heat-v1-48h-halflife24h";
-/** Evidence counts while its source time is this recent (grouping looks back as far for discussion posts). */
 export const HEAT_WINDOW_HOURS = 48;
 const HALF_LIFE_HOURS = 24;
 const MIN_PARTICIPANTS = 2;
+const MIN_EDITORIAL = 1;
+/** Hacker News gravity and time base, from the last public news.arc (righto.com, 2009). */
+export const HN_GRAVITY = 1.8;
+export const HN_TIMEBASE_HOURS = 2;
+
+export type HotRankingMode = "heat" | "threshold";
+export function hotRankingMode(): HotRankingMode {
+  return process.env.HOT_RANKING_MODE === "threshold" ? "threshold" : "heat";
+}
+export function hotRuleVersion(mode: HotRankingMode = hotRankingMode()): string {
+  return mode === "threshold" ? "heat-v2-threshold-48h" : "heat-v2-hn-score-48h";
+}
+/** @deprecated use hotRuleVersion(); kept so existing imports keep working. */
+export const HOT_RULE_VERSION = hotRuleVersion();
+
+/**
+ * Continuous heat used when HOT_RANKING_MODE=heat: independent editorial sources first,
+ * then log10(1 + engagement), then HN-style age decay. Window is still 48 hours.
+ */
+export function rankingScore(sourceCount: number, engagement: number, ageHours: number): number {
+  const sources = Math.max(0, sourceCount);
+  const eng = Math.max(0, engagement);
+  const age = Math.max(0, ageHours);
+  return (sources + Math.log10(1 + eng)) / (age + HN_TIMEBASE_HOURS) ** HN_GRAVITY;
+}
+/** One decimal on a 100× scale, so a 1-source, 0-engagement, just-published item is 28.7. */
+export function rankingHeatIndex(score: number): number {
+  return Math.round(score * 1000) / 10;
+}
+
+export function engagementFromRaw(raw: unknown): number {
+  if (!raw || typeof raw !== "object") return 0;
+  const o = raw as Record<string, unknown>;
+  const n = (v: unknown) => {
+    const x = typeof v === "number" ? v : typeof v === "string" ? Number(v) : 0;
+    return Number.isFinite(x) && x > 0 ? x : 0;
+  };
+  return n(o.favorite) + n(o.retweet) + n(o.favorite_count) + n(o.retweet_count) + n(o.like_count) + n(o.reply_count) + n(o.quote_count);
+}
+
 
 interface HeatRow {
   story_id: number;
@@ -182,9 +222,28 @@ export function heatIndex(heat: number): number {
 }
 
 export async function computeHotRanking(at = new Date()): Promise<{ id: number; entries: number }> {
+  const mode = hotRankingMode();
   const behind = behindSources(await sourceClocks(), at.getTime(), true);
-  const rows = (await heatRows(at, behind)).filter((r) => Number(r.participants) >= MIN_PARTICIPANTS && Number(r.editorial_participants) >= 1);
-  rows.sort((a, b) => Number(b.heat) - Number(a.heat) || (b.latest_at?.getTime() ?? 0) - (a.latest_at?.getTime() ?? 0));
+  const rows = (await heatRows(at, behind)).filter((r) => Number(r.editorial_participants) >= MIN_EDITORIAL && (mode !== "threshold" || Number(r.participants) >= MIN_PARTICIPANTS));
+  const storyIds = rows.map((r) => r.story_id);
+  const engagement = new Map<number, number>();
+  if (storyIds.length) {
+    const engRows = await sql<{ story_id: number; raw: unknown }[]>`
+      SELECT cs.story_id, a.raw
+      FROM ${currentSignals()} cs JOIN articles a ON a.id = cs.article_id
+      WHERE cs.story_id = ANY(${storyIds}::bigint[]) AND cs.observed_at > ${at}::timestamptz - make_interval(hours => ${HEAT_WINDOW_HOURS}) AND cs.observed_at <= ${at}`;
+    for (const row of engRows) {
+      engagement.set(Number(row.story_id), (engagement.get(Number(row.story_id)) ?? 0) + engagementFromRaw(row.raw));
+    }
+  }
+  const ageHours = (r: HeatRow) => Math.max(0, (at.getTime() - (r.latest_at?.getTime() ?? at.getTime())) / 3600_000);
+  const scoreOf = (r: HeatRow) => rankingScore(Number(r.editorial_participants), engagement.get(r.story_id) ?? 0, ageHours(r));
+  if (mode === "heat") {
+    rows.sort((a, b) => scoreOf(b) - scoreOf(a) || (b.latest_at?.getTime() ?? 0) - (a.latest_at?.getTime() ?? 0));
+  } else {
+    rows.sort((a, b) => Number(b.heat) - Number(a.heat) || (b.latest_at?.getTime() ?? 0) - (a.latest_at?.getTime() ?? 0));
+  }
+
 
   const entries: HotEntry[] = [];
   for (const r of rows) {
@@ -203,9 +262,9 @@ export async function computeHotRanking(at = new Date()): Promise<{ id: number; 
     type Report = (typeof reports)[number];
     const byFact = new Map<number, Report[]>();
     for (const report of reports) byFact.set(report.fact_id, [...(byFact.get(report.fact_id) ?? []), report]);
-    const sourceCount = (list: Report[]) => new Set(list.map((report) => report.source_id)).size;
+    const factSourceCount = (list: Report[]) => new Set(list.map((report) => report.source_id)).size;
     const firstSeen = (list: Report[]) => Math.min(...list.map((report) => report.timeline_at.getTime()));
-    const members = [...byFact.values()].sort((a, b) => sourceCount(b) - sourceCount(a) || firstSeen(a) - firstSeen(b) || a[0]!.fact_id - b[0]!.fact_id)[0]!;
+    const members = [...byFact.values()].sort((a, b) => factSourceCount(b) - factSourceCount(a) || firstSeen(a) - firstSeen(b) || a[0]!.fact_id - b[0]!.fact_id)[0]!;
     const selected = members.filter((report) => report.selected);
     const rep = pickRepresentative(selected.length ? selected : members);
     const participants = await sql<{ name: string; kind: "editorial" | "signal"; tier: string; at: Date }[]>`
@@ -215,7 +274,8 @@ export async function computeHotRanking(at = new Date()): Promise<{ id: number; 
       ORDER BY cs.participant_key, (cs.kind = 'editorial') DESC, cs.observed_at DESC`;
     // The reporting sources of the window, latest first (signal participants are counted separately).
     const reporting = participants.filter((p) => p.kind === "editorial").sort((x, y) => y.at.getTime() - x.at.getTime());
-    const heat = heatIndex(Number(r.heat));
+    const heat = mode === "heat" ? rankingHeatIndex(scoreOf(r)) : heatIndex(Number(r.heat));
+    const sourceCount = Number(r.editorial_participants);
     // The change against six hours before compares only participants whose sources were observed
     // throughout; with none of the earlier ones observed there is no comparison.
     const prevAll = heatIndex(Number(r.heat_prev));
@@ -239,7 +299,8 @@ export async function computeHotRanking(at = new Date()): Promise<{ id: number; 
       trendPct: pct === null ? null : Math.round(pct * 1000) / 10,
       badges,
       participantCount: Number(r.participants),
-      sourceCount: Number(r.editorial_participants),
+      sourceCount,
+      singleSource: sourceCount === 1,
       signalCount: Number(r.signal_participants),
       reportCount: reports.length,
       sourceNames,
@@ -256,8 +317,17 @@ export async function computeHotRanking(at = new Date()): Promise<{ id: number; 
   }
   const [row] = await sql<{ id: number }[]>`
     INSERT INTO hot_rankings (computed_at, rule_version, entries, evidence, published)
-    VALUES (${at}, ${HOT_RULE_VERSION}, ${sql.json(entries as never)},
-            ${sql.json({ windowHours: HEAT_WINDOW_HOURS, halfLifeHours: HALF_LIFE_HOURS, minParticipants: MIN_PARTICIPANTS, candidates: rows.length } as never)}, true)
+    VALUES (${at}, ${hotRuleVersion(mode)}, ${sql.json(entries as never)},
+            ${sql.json({
+              mode,
+              windowHours: HEAT_WINDOW_HOURS,
+              halfLifeHours: HALF_LIFE_HOURS,
+              minParticipants: mode === "threshold" ? MIN_PARTICIPANTS : 1,
+              minEditorial: MIN_EDITORIAL,
+              gravity: HN_GRAVITY,
+              timebaseHours: HN_TIMEBASE_HOURS,
+              candidates: rows.length,
+            } as never)}, true)
     RETURNING id`;
   // Keep a bounded history of rankings.
   await sql`DELETE FROM hot_rankings WHERE computed_at < now() - interval '30 days'`;

@@ -243,6 +243,11 @@ export interface HotEntryView {
   latest: string | null;
   /** A picture from the story's public reports (the representative first), for the leading cards. */
   cover: { url: string; srcSet?: string; width: number | null; height: number | null } | null;
+  /** Latest evidence time; list rows may show this as a relative「3 小时前」. */
+  latestAt?: string | null;
+  firstReportAt?: string | null;
+  /** True when only one independent editorial source is behind the row; the label is「1 个来源」. */
+  singleSource?: boolean;
 }
 
 export interface HotResponse {
@@ -314,6 +319,9 @@ export interface StoryDetail {
   topics: TopicLink[];
   /** The pages its overview names (mentions.ts). */
   mentions: MentionTarget[];
+  /** Distinct editorial sources on the event, each linking to one of its reports. */
+  sources?: Array<{ name: string; itemId: string; publishedAt: string }>;
+  sourceNames?: string[];
 }
 
 // Reports (daily / weekly / monthly)

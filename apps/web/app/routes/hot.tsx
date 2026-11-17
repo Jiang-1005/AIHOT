@@ -1,25 +1,27 @@
 import { useLoaderData } from "react-router";
+import { Link } from "react-router";
 import type { Route } from "./+types/hot";
 import { IntentLink } from "../components/ui/IntentLink";
-import type { HotEntryView, HotResponse } from "@aihot/contracts/site";
+import type { FeedItemSummary, HotEntryView, HotResponse, PoolResponse, TimelineResponse } from "@aihot/contracts/site";
 import { beijingDate } from "@aihot/contracts/time";
 import { shortAddresses } from "@aihot/contracts/addresses";
 import { SEO_TITLES, subjectAfter, withSubject } from "@aihot/site";
-import { cachedPage, loadOr404 } from "../lib/api.server";
+import { apiGet, cachedPage, loadOr404 } from "../lib/api.server";
 import { pageReuse } from "../lib/page-reuse";
-import { archiveLd, pageMeta } from "../lib/seo";
-import { monthDay, monthDayTime } from "../lib/format";
+import { archiveLd, listPath, pageMeta, timelineApiParams } from "../lib/seo";
+import { monthDay, relativeTime } from "../lib/format";
 import { Badge } from "../components/ui/Badge";
-import { EmptyState } from "../components/ui/Page";
-import { IconChevronDown, IconInfo } from "../components/icons";
+import { EmptyState, MoreLink } from "../components/ui/Page";
+import { IconChevronDown, IconChevronRight, IconInfo } from "../components/icons";
 import { Sparkline } from "../features/hot/Sparkline";
-import { Faces } from "../features/hot/Faces";
 import { Delta } from "../features/hot/Delta";
 import { PhoneBar } from "../components/shell/PhoneBar";
 import { Picture } from "../components/ui/Picture";
 import { navUp } from "../components/shell/nav";
 import { scrollBehavior } from "../lib/motion";
 import type { Screen } from "../components/shell/screens";
+import { computedAtBeijing, emptyKind, isStale, sourceLine, updatedAtLabel, type Fallback, type FallbackItem } from "../features/hot/presentation";
+import { applyPreview, previewEnabled, previewFallback } from "../features/hot/preview";
 
 export const handle: Screen = { tab: navUp("/hot").tab, name: "热点" };
 export { pageHeaders as headers } from "../lib/api.server";
@@ -27,8 +29,54 @@ export { pageHeaders as headers } from "../lib/api.server";
 export const clientLoader = pageReuse<typeof loader>().clientLoader;
 export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
+function asFallbackItem(item: Pick<FeedItemSummary, "id" | "title" | "source" | "timelineAt" | "publishedAt" | "selected">): FallbackItem {
+  return {
+    id: item.id,
+    title: item.title,
+    sourceName: item.source.name,
+    at: item.timelineAt ?? item.publishedAt,
+    selected: item.selected,
+  };
+}
+
+async function tryGet<T>(path: string, signal?: AbortSignal): Promise<T | null> {
+  try {
+    return await apiGet<T>(path, { signal });
+  } catch {
+    return null;
+  }
+}
+
+async function loadFallback(signal?: AbortSignal): Promise<Fallback> {
+  const featured = await tryGet<TimelineResponse>(
+    listPath("/api/site/timeline", timelineApiParams({ channel: "all", category: null, tag: null, slot: "featured" })),
+    signal,
+  );
+  const featuredItems = (featured?.cards ?? []).slice(0, 8).map((c) => asFallbackItem(c.item));
+  if (featuredItems.length) return { kind: "featured", items: featuredItems };
+  const pool = await tryGet<PoolResponse>(listPath("/api/site/pool", { page: 1 }), signal);
+  const latest = (pool?.items ?? []).slice(0, 8).map(asFallbackItem);
+  if (latest.length) return { kind: "latest", items: latest };
+  return null;
+}
+
 export async function loader({ request }: { request: Request }) {
-  return cachedPage(120, { hot: await loadOr404<HotResponse>("/api/site/hot", { signal: request.signal }) });
+  const url = new URL(request.url);
+  const state = previewEnabled() ? url.searchParams.get("state") : null;
+  const upstream = new Headers();
+  let remote: HotResponse;
+  try {
+    remote = await loadOr404<HotResponse>("/api/site/hot", { signal: request.signal, responseHeaders: upstream });
+  } catch (error) {
+    if (!previewEnabled()) throw error;
+    remote = { computedAt: null, windowHours: 48, entries: [] };
+  }
+  const { hot, usingFixture } = applyPreview(remote, state);
+  let fallback: Fallback = null;
+  if (hot.entries.length === 0) {
+    fallback = usingFixture ? previewFallback() : await loadFallback(request.signal);
+  }
+  return cachedPage(120, { hot, fallback, usingFixture }, usingFixture ? undefined : upstream);
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -56,21 +104,23 @@ const BADGES: Record<HotEntryView["badges"][number], { label: string; tone: "hot
 const RANK_COLOR = ["text-rank-1", "text-rank-2", "text-rank-3"];
 const rankColor = (rank: number) => RANK_COLOR[rank - 1] ?? "text-rank-rest";
 const pad = (rank: number) => String(rank).padStart(2, "0");
+function formatHeat(heat: number): string {
+  const n = Math.round(heat * 10) / 10;
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
 
-/** "某媒体、某账号 等 4 个来源 · 7 位参与者". */
 function Voices({ e }: { e: HotEntryView }) {
-  const names = e.sourceNames.slice(0, 2);
   return (
     <span className="min-w-0 text-[0.875rem] leading-snug text-ink-4">
-      {/* Lines break between the phrases, never inside one. */}
-      <span className="whitespace-nowrap">
-        {names.length > 0 && <span className="text-ink-3">{names.join("、")}</span>}
-        {e.sourceCount > names.length ? ` 等 ${e.sourceCount} 个来源` : names.length ? " 报道" : `${e.sourceCount} 个来源`}
-      </span>
-      <span className="mx-2 text-line-strong">·</span>
-      <span className="whitespace-nowrap">
-        <span className="num">{e.participantCount}</span> 位参与者
-      </span>
+      <span className="text-ink-3">{sourceLine(e.sourceCount, e.sourceNames)}</span>
+      {e.latestAt && (
+        <>
+          <span className="mx-2 text-line-strong">·</span>
+          <time className="whitespace-nowrap num" dateTime={e.latestAt} suppressHydrationWarning>
+            {relativeTime(e.latestAt)}
+          </time>
+        </>
+      )}
     </span>
   );
 }
@@ -105,7 +155,7 @@ function HeatPanel({ e }: { e: HotEntryView }) {
       <div className="flex items-baseline justify-between text-[0.75rem] text-ink-4">
         <span className="font-semibold text-ink-3">24 小时热度</span>
         <span>
-          峰值 <span className="mono text-ink-2">{Math.round(peak)}</span>
+          峰值 <span className="mono text-ink-2">{formatHeat(peak)}</span>
           {peakAt >= 0 && <span> · {peakAt === e.spark.length - 1 ? "当前" : `${e.spark.length - 1 - peakAt} 小时前`}</span>}
         </span>
       </div>
@@ -118,12 +168,24 @@ function HeatPanel({ e }: { e: HotEntryView }) {
   );
 }
 
+function FullListLink() {
+  return (
+    <a
+      href="#full-list"
+      className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[0.875rem] font-semibold text-accent hover:text-accent-ink lg:hidden"
+    >
+      完整榜单
+      <IconChevronRight size={14} />
+    </a>
+  );
+}
+
 /** No. 1: the event people are talking about most, with its picture, digest, latest turn and day of heat. */
-function Lead({ e }: { e: HotEntryView }) {
+function Lead({ e, hasMore }: { e: HotEntryView; hasMore: boolean }) {
   const panel = !e.cover && e.spark.filter((v) => v !== null).length >= 3;
   return (
     <article className="card card-hover card-press group relative flex flex-col overflow-hidden p-5 sm:p-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <span className={`mono text-[0.75rem] font-bold tracking-[0.16em] ${rankColor(e.rank)}`}>NO.{pad(e.rank)}</span>
         <Badges e={e} />
         <Delta trend={e.trend} pct={e.trendPct} className="ml-auto" />
@@ -153,29 +215,32 @@ function Lead({ e }: { e: HotEntryView }) {
               {e.latest}
             </p>
           )}
-          {/* The voices drop under the faces when the card is too narrow for both (small phones). */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Faces participants={e.participants} total={e.participantCount} size={24} />
             <Voices e={e} />
           </div>
         </div>
         <div className="flex w-full shrink-0 items-end justify-between gap-5 sm:ml-auto sm:w-auto sm:justify-end">
           {!panel && <Sparkline values={e.spark} className="h-10 w-[140px]" />}
           <div className="text-right">
-            <div className="mono text-[1.75rem] font-semibold leading-none tracking-[-0.03em] text-ink">{Math.round(e.heat)}</div>
+            <div className="mono text-[1.75rem] font-semibold leading-none tracking-[-0.03em] text-ink">{formatHeat(e.heat)}</div>
             <div className="mt-1 text-[0.75rem] text-ink-4">热度指数</div>
           </div>
         </div>
       </div>
+      {hasMore && (
+        <div className="mt-4 flex lg:hidden">
+          <FullListLink />
+        </div>
+      )}
     </article>
   );
 }
 
-/** No. 2 and 3: the same card, smaller, without the picture. */
+/** No. 2 and 3 (desktop): the same card, smaller, without the picture. */
 function Runner({ e }: { e: HotEntryView }) {
   return (
     <article className="card card-hover card-press group relative flex flex-col px-5 py-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <span className={`mono text-[0.75rem] font-bold tracking-[0.16em] ${rankColor(e.rank)}`}>NO.{pad(e.rank)}</span>
         <Badges e={e} />
         <Delta trend={e.trend} pct={e.trendPct} className="ml-auto" />
@@ -186,55 +251,68 @@ function Runner({ e }: { e: HotEntryView }) {
       {e.summary && <p className="mt-2 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:line-clamp-1">{shortAddresses(e.summary)}</p>}
       <div className="mt-auto flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pt-3">
         <div className="flex min-w-0 flex-col gap-2">
-          <Faces participants={e.participants} total={e.participantCount} size={20} />
-          <span className="text-[0.75rem] text-ink-4">
-            <span className="whitespace-nowrap"><span className="num">{e.sourceCount}</span> 个来源</span> ·{" "}
-            <span className="whitespace-nowrap"><span className="num">{e.participantCount}</span> 位参与者</span>
+          <span className="text-[0.75rem] leading-snug text-ink-4">
+            <span className="text-ink-3">{sourceLine(e.sourceCount, e.sourceNames)}</span>
+            {e.latestAt && (
+              <>
+                <span className="mx-1">·</span>
+                <time className="whitespace-nowrap num" dateTime={e.latestAt} suppressHydrationWarning>
+                  {relativeTime(e.latestAt)}
+                </time>
+              </>
+            )}
           </span>
         </div>
         <div className="ml-auto flex items-end gap-3">
           <Sparkline values={e.spark} className="h-7 w-[92px]" />
-          <span className="mono text-[1.75rem] font-semibold leading-none tracking-[-0.02em] text-ink">{Math.round(e.heat)}</span>
+          <span className="mono text-[1.75rem] font-semibold leading-none tracking-[-0.02em] text-ink">{formatHeat(e.heat)}</span>
         </div>
       </div>
     </article>
   );
 }
 
-/** No. 4–10: a row each, with a line of the digest, faces, the day of heat and the index. */
+/** Compact ranked row: name, source line, heat and movement sit in fixed columns. */
 function Row({ e }: { e: HotEntryView }) {
   return (
-    <li className="group relative grid grid-cols-[30px_minmax(0,1fr)] items-start gap-x-3 px-4 py-3 transition-colors hover:bg-bg-sunk/70 sm:px-5 wide:grid-cols-[44px_minmax(0,1fr)_auto_104px_76px] wide:items-center wide:gap-x-6 wide:px-6 wide:py-4 dark:hover:bg-bg-muted/40">
-      <span className={`mono text-[1rem] font-semibold leading-[24px] wide:text-[1rem] ${rankColor(e.rank)}`} aria-label={`热度排名第 ${e.rank} 位`}>
+    <li className="group relative grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-x-3 px-4 py-3 transition-colors hover:bg-bg-sunk/70 sm:px-5 wide:grid-cols-[2.75rem_minmax(0,1fr)_minmax(8rem,14rem)_104px_76px] wide:items-center wide:gap-x-6 wide:px-6 wide:py-4 dark:hover:bg-bg-muted/40">
+      <span className={`mono w-full text-right text-[1rem] font-semibold leading-[24px] tabular-nums ${rankColor(e.rank)}`} aria-label={`热度排名第 ${e.rank} 位`}>
         {pad(e.rank)}
       </span>
       <div className="min-w-0">
         <h3 className="text-[0.875rem] font-semibold leading-[1.55] text-ink">
           <StoryLink e={e} className="group-hover:text-accent" />
           {e.badges.length > 0 && (
-            <span className="ml-2 inline-flex translate-y-[-2px] gap-1 align-middle">
+            <span className="ml-2 inline-flex translate-y-[-2px] flex-wrap gap-1 align-middle">
               <Badges e={e} />
             </span>
           )}
         </h3>
         {e.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.65] text-ink-4 wide:line-clamp-1">{shortAddresses(e.summary)}</p>}
-        <div className="mt-2 flex items-center gap-3 wide:hidden">
-          <Faces participants={e.participants} total={e.participantCount} size={20} />
-          <span className="text-[0.75rem] text-ink-4">
-            <span className="num">{e.sourceCount}</span> 个来源
-          </span>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 wide:hidden">
+          <span className="min-w-0 text-[0.75rem] text-ink-4">{sourceLine(e.sourceCount, e.sourceNames)}</span>
+          {e.latestAt && (
+            <time className="whitespace-nowrap text-[0.75rem] text-ink-4 num" dateTime={e.latestAt} suppressHydrationWarning>
+              {relativeTime(e.latestAt)}
+            </time>
+          )}
           <span className="ml-auto flex items-center gap-2">
-            <span className="mono text-[1rem] font-semibold leading-none text-ink">{Math.round(e.heat)}</span>
+            <span className="mono text-[1rem] font-semibold leading-none text-ink">{formatHeat(e.heat)}</span>
             <Delta trend={e.trend} pct={e.trendPct} />
           </span>
         </div>
       </div>
-      <div className="hidden items-center gap-3 wide:flex">
-        <Faces participants={e.participants} total={e.participantCount} size={20} />
+      <div className="hidden min-w-0 flex-col items-start gap-0.5 text-[0.75rem] text-ink-4 wide:flex">
+        <span>{sourceLine(e.sourceCount, e.sourceNames)}</span>
+        {e.latestAt && (
+          <time className="whitespace-nowrap num" dateTime={e.latestAt} suppressHydrationWarning>
+            {relativeTime(e.latestAt)}
+          </time>
+        )}
       </div>
       <Sparkline values={e.spark} className="hidden h-7 w-[104px] wide:block" />
       <div className="hidden flex-col items-end gap-1 wide:flex">
-        <span className="mono text-[1.25rem] font-semibold leading-none tracking-[-0.02em] text-ink">{Math.round(e.heat)}</span>
+        <span className="mono text-[1.25rem] font-semibold leading-none tracking-[-0.02em] text-ink">{formatHeat(e.heat)}</span>
         <Delta trend={e.trend} pct={e.trendPct} />
       </div>
     </li>
@@ -249,27 +327,89 @@ function showMethod() {
   method.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
 }
 
+function FeedActions() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+      <Link viewTransition to="/" className="inline-flex items-center gap-1 whitespace-nowrap text-[0.875rem] font-semibold text-accent hover:text-accent-ink">
+        去看精选
+        <IconChevronRight size={14} />
+      </Link>
+      <Link viewTransition to="/all" className="inline-flex items-center gap-1 whitespace-nowrap text-[0.875rem] font-semibold text-accent hover:text-accent-ink">
+        去看全部动态
+        <IconChevronRight size={14} />
+      </Link>
+    </div>
+  );
+}
+
+function FallbackList({ fallback }: { fallback: NonNullable<Fallback> }) {
+  const to = fallback.kind === "featured" ? "/" : "/all";
+  const title = fallback.kind === "featured" ? "先看精选" : "先看最新动态";
+  const more = fallback.kind === "featured" ? "更多精选" : "全部动态";
+  return (
+    <section aria-label={title} className="mt-6">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 px-1">
+        <h2 className="text-[0.875rem] font-semibold text-ink">{title}</h2>
+        <MoreLink to={to}>{more}</MoreLink>
+      </div>
+      <ol className="card divide-y divide-line-soft overflow-hidden">
+        {fallback.items.map((item) => (
+          <li key={item.id}>
+            <Link viewTransition to={`/items/${item.id}`} className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-bg-sunk/70 sm:px-5 dark:hover:bg-bg-muted/40">
+              <span className="text-[0.875rem] font-semibold leading-[1.55] text-ink">{item.title}</span>
+              <span className="flex flex-wrap items-center gap-x-2 text-[0.75rem] text-ink-4">
+                <span>{item.sourceName}</span>
+                {item.selected && <span>精选</span>}
+                <time className="num" dateTime={item.at} suppressHydrationWarning>
+                  {relativeTime(item.at)}
+                </time>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 export default function HotPage() {
-  const { hot } = useLoaderData<typeof loader>();
+  const { hot, fallback, usingFixture } = useLoaderData<typeof loader>();
+  const stale = isStale(hot.computedAt);
   const [lead, ...rest] = hot.entries;
   const runners = rest.slice(0, 2);
-  const others = rest.slice(2);
+  const phoneRows = hot.entries.slice(1);
+  const desktopRows = hot.entries.slice(3);
+  const kind = !lead ? emptyKind(hot.computedAt) : null;
+
+  const freshSub = (
+    <>
+      过去 {hot.windowHours}{`${subjectAfter(" 小时", "圈")}讨论最多的 `}{hot.entries.length || 10} 件事
+      {hot.computedAt && (
+        <>
+          {" · "}
+          <span className="num">{updatedAtLabel(hot.computedAt)}</span>
+        </>
+      )}
+    </>
+  );
+  const staleSub = (
+    <>
+      榜单已过期
+      {hot.computedAt && (
+        <>
+          {" · "}
+          上次更新于 <span className="num">{computedAtBeijing(hot.computedAt)}</span>
+        </>
+      )}
+    </>
+  );
+
   return (
     <div className="pb-10">
       <PhoneBar
         title="热点"
         large
-        sub={
-          <>
-            过去 {hot.windowHours}{`${subjectAfter(" 小时", "圈")}讨论最多的 `}{hot.entries.length || 10} 件事
-            {hot.computedAt && (
-              <>
-                {" · "}
-                <span className="num">{monthDayTime(hot.computedAt)}</span> 更新
-              </>
-            )}
-          </>
-        }
+        sub={stale ? staleSub : freshSub}
         actions={
           <button type="button" onClick={showMethod} className="flex h-11 items-center gap-1 px-3 text-[0.875rem] text-accent active:opacity-50">
             <IconInfo size={17} /> 怎么算
@@ -278,56 +418,99 @@ export default function HotPage() {
       />
       <header className="hidden flex-wrap items-end justify-between gap-x-6 gap-y-2 pb-5 pt-1 lg:flex">
         <div>
-          <div className="flex items-center gap-2 text-[0.75rem] font-semibold tracking-[0.08em] text-hot">
-            <span className="relative flex size-2" aria-hidden="true">
-              <span className="relative inline-flex size-2 rounded-full bg-hot" />
-            </span>
-            实时热度
-          </div>
+          {stale ? (
+            <div className="text-[0.75rem] font-semibold tracking-[0.08em] text-ink-3">榜单已过期</div>
+          ) : (
+            <div className="flex items-center gap-2 text-[0.75rem] font-semibold tracking-[0.08em] text-hot">
+              <span className="relative flex size-2" aria-hidden="true">
+                <span className="relative inline-flex size-2 rounded-full bg-hot" />
+              </span>
+              实时热度
+            </div>
+          )}
           <h1 className="mt-2 text-[1.75rem] font-semibold leading-[1.3] text-ink">{withSubject("热点榜")}</h1>
-          <p className="mt-2 text-[0.875rem] text-ink-3">过去 {hot.windowHours}{` 小时，${withSubject("圈")}讨论最多的 `}{hot.entries.length || 10} 件事</p>
+          {stale ? (
+            <p className="mt-2 text-[0.875rem] text-ink-2">
+              {hot.computedAt
+                ? `上次更新于 ${computedAtBeijing(hot.computedAt)}，已超过一轮。下面仍是当时的榜单，仅供参考。`
+                : "榜单尚未算出，正在重算。"}
+            </p>
+          ) : (
+            <p className="mt-2 text-[0.875rem] text-ink-3">过去 {hot.windowHours}{` 小时，${withSubject("圈")}讨论最多的 `}{hot.entries.length || 10} 件事</p>
+          )}
         </div>
-        {hot.computedAt && (
+        {hot.computedAt && !stale && (
           <p className="text-[0.75rem] text-ink-4">
-            <span className="num">{monthDayTime(hot.computedAt)}</span> 更新 · 按讨论热度排序
+            <span className="num">{updatedAtLabel(hot.computedAt)}</span>
+            {" · 按讨论热度排序"}
           </p>
         )}
       </header>
 
+      {usingFixture && (
+        <p className="mb-4 text-[0.75rem] leading-relaxed text-ink-4">本页是预览，不是线上库。第 1 条取自本机库 11 月 12 日曾上榜的多来源事件，用来验收来源行；后面 9 条来自 2026 年 11 月 17 日 12:59（北京时间）备份、按新公式在 48 小时窗口内排序。查空状态可加 ?state=empty 或 ?state=stale-empty，过期但有内容用 ?state=stale。</p>
+      )}
+
       {!lead ? (
         <div className="card rounded-sheet">
-          <EmptyState title="暂时没有热点">还没有足够多来源共同讨论的事件。</EmptyState>
+          {kind === "stale" ? (
+            <EmptyState
+              title="榜单已过期，正在重算"
+              action={<FeedActions />}
+            >
+              {hot.computedAt
+                ? `上次更新于 ${computedAtBeijing(hot.computedAt)}，已超过一轮（13 小时）。先看精选或全部动态。`
+                : "榜单还没有算出来。先看精选或全部动态。"}
+            </EmptyState>
+          ) : (
+            <EmptyState title="本轮没有多源事件" action={<FeedActions />}>
+              过去 {hot.windowHours} 小时，还没有足够多来源共同讨论的事件。先看精选或全部动态。
+            </EmptyState>
+          )}
         </div>
       ) : (
         <>
-          <section aria-label="热度前三" className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-4">
+          <section aria-label="热度榜首" className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-4">
             <div className="grid grid-cols-1 lg:col-span-7 lg:row-span-2 xl:col-span-8">
-              <Lead e={lead} />
+              <Lead e={lead} hasMore={hot.entries.length > 1} />
             </div>
             {runners.map((e) => (
-              <div key={e.story.publicId} className="grid grid-cols-1 lg:col-span-5 xl:col-span-4">
+              <div key={e.story.publicId} className="hidden grid-cols-1 lg:grid lg:col-span-5 xl:col-span-4">
                 <Runner e={e} />
               </div>
             ))}
           </section>
 
-          {others.length > 0 && (
-            <section aria-label="其余热点" className="mt-6 lg:mt-7">
-              <div className="mb-3 flex items-baseline justify-between px-1">
+          {(phoneRows.length > 0 || desktopRows.length > 0) && (
+            <section id="full-list" aria-label="完整榜单" className="mt-6 scroll-mt-[calc(var(--bar-h)+16px)] lg:mt-7">
+              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1">
                 <h2 className="text-[0.875rem] font-semibold text-ink">
-                  继续看 <span className="num font-normal text-ink-4">No.{pad(others[0]!.rank)}–{pad(others[others.length - 1]!.rank)}</span>
+                  完整榜单{" "}
+                  <span className="num font-normal text-ink-4 lg:hidden">No.{pad(phoneRows[0]?.rank ?? 2)}–{pad(hot.entries[hot.entries.length - 1]!.rank)}</span>
+                  <span className="num hidden font-normal text-ink-4 lg:inline">
+                    {desktopRows.length > 0 ? `No.${pad(desktopRows[0]!.rank)}–${pad(desktopRows[desktopRows.length - 1]!.rank)}` : ""}
+                  </span>
                 </h2>
-                <span className="hidden text-[0.75rem] text-ink-4 wide:block">参与者 · 24 小时走势 · 热度指数</span>
+                <span className="hidden text-[0.75rem] text-ink-4 wide:block">来源 · 更新时间 · 24 小时走势 · 热度指数</span>
               </div>
-              <ol className="card divide-y divide-line-soft overflow-hidden">
-                {others.map((e) => (
+              <ol className="card divide-y divide-line-soft overflow-hidden lg:hidden">
+                {phoneRows.map((e) => (
                   <Row key={e.story.publicId} e={e} />
                 ))}
               </ol>
+              {desktopRows.length > 0 && (
+                <ol className="card hidden divide-y divide-line-soft overflow-hidden lg:block">
+                  {desktopRows.map((e) => (
+                    <Row key={e.story.publicId} e={e} />
+                  ))}
+                </ol>
+              )}
             </section>
           )}
         </>
       )}
+
+      {fallback && <FallbackList fallback={fallback} />}
 
       <details id="hot-method" className="disclosure group/method mt-8 scroll-mt-[calc(var(--bar-h)+16px)] text-[0.75rem] text-ink-4">
         <summary className="flex items-center gap-2 py-1 transition-colors hover:text-ink-2">
@@ -340,7 +523,7 @@ export default function HotPage() {
           </span>
         </summary>
         <div className="max-w-[760px] space-y-2 pb-2 pl-[20px] pt-2 leading-[1.75] text-ink-3">
-          <p>热度看的是有多少账号和机构在讨论同一件事：同一家重复发只算一次，越近的讨论分量越重，每过 24 小时减半。它反映讨论有多热闹，不代表报道质量。</p>
+          <p>热度先看有多少家独立报道在讨论同一件事，再计入公开互动的对数，越近的讨论分量越重，每过 24 小时减半（Hacker News 式衰减）。它反映讨论有多热闹，不代表报道质量。只有一家来源时也会上榜，并标明「1 个来源」。</p>
           <p>榜单只看过去 48 小时。走势只拿同一批一直在看的来源比较，反映的是我们看得到的范围，不代表全网人数；没有可比的历史时，不画走势线。</p>
           <p>
             来源名单只列能公开阅读的报道；参与讨论的还有一些不在名单里展示的账号和机构。同一家机构在不同平台发帖合并算一家，所以参与者可能比来源还少。点进事件，可以看各方的报道和观点。

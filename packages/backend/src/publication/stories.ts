@@ -95,6 +95,18 @@ function reportView(r: ReportRow): StoryReportView {
   };
 }
 
+/** One row per source, latest (selected first) report as the link; not sliced. */
+function sourcesOf(reports: ReportRow[]): Array<{ name: string; itemId: string; publishedAt: string }> {
+  const ranked = [...reports].sort((a, b) => Number(b.selected) - Number(a.selected) || b.at.getTime() - a.at.getTime() || a.id.localeCompare(b.id));
+  const seen = new Map<string, { name: string; itemId: string; publishedAt: string }>();
+  for (const r of ranked) {
+    const key = r.source_id || r.source_name;
+    if (seen.has(key)) continue;
+    seen.set(key, { name: publicSourceName(r.source_name), itemId: r.id, publishedAt: r.at.toISOString() });
+  }
+  return [...seen.values()];
+}
+
 /** The story's reports newest first, its developments, and its latest and first non-mention reports. */
 async function storyContent(storyId: number, now: Date) {
   const [s] = await sql<{ public_id: string; title: string }[]>`SELECT public_id::text, title FROM stories WHERE id = ${storyId}`;
@@ -170,6 +182,7 @@ export async function loadStoryDetail(storyId: number, now = new Date()): Promis
   // Without a digest or a summary of its own, the story opens with its first development's representative report.
   const origin = developments[developments.length - 1]?.representative;
   const excerpt = !text.digest && !text.summary && origin?.summary ? { text: origin.summary, sourceName: publicSourceName(origin.source_name) } : null;
+  const sources = sourcesOf(reports);
   return {
     publicId: s.public_id,
     title: s.title,
@@ -198,6 +211,8 @@ export async function loadStoryDetail(storyId: number, now = new Date()): Promis
     related: related.map((r) => ({ publicId: r.public_id, title: r.title, relation: r.relation })),
     topics,
     mentions: await mentionsIn([text.digest ?? text.summary ?? excerpt?.text]),
+    sources,
+    sourceNames: sources.map((s) => s.name),
   };
 }
 
@@ -279,6 +294,9 @@ export async function loadHot(): Promise<HotResponse> {
         summary: summary && summary.length > 480 ? summary.slice(0, 480).join('') + '…' : text.summary,
         latest: text.latest,
         cover: picture && coverUrl ? { url: coverUrl, srcSet: proxiedImageSet(picture.url, "hero") ?? undefined, width: picture.width, height: picture.height } : null,
+        latestAt: e.latestAt,
+        firstReportAt: e.firstReportAt,
+        singleSource: e.singleSource ?? e.sourceCount <= 1,
       };
     }),
   };

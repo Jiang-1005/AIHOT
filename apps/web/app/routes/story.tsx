@@ -140,6 +140,18 @@ type Order = "desc" | "asc";
 // The report filter and shared reading order, per history entry: back from a report restores the view.
 const viewCache = sessionCache<{ savedAt: number; filter: Filter; order: Order }>("aihot:story-view:", 30 * 60 * 1000);
 
+
+function allSources(story: StoryDetail): Array<{ name: string; itemId: string; publishedAt: string }> {
+  if (story.sources && story.sources.length > 0) return story.sources;
+  const seen = new Map<string, { name: string; itemId: string; publishedAt: string }>();
+  for (const r of story.timeline) {
+    if (seen.has(r.source.name)) continue;
+    seen.set(r.source.name, { name: r.source.name, itemId: r.id, publishedAt: r.publishedAt });
+  }
+  return [...seen.values()];
+}
+
+
 export default function StoryPage() {
   const { story } = useLoaderData<typeof loader>();
   const entry = useLocation().key;
@@ -167,6 +179,7 @@ export default function StoryPage() {
     official: story.timeline.filter((r) => r.source.firstParty).length,
     selected: story.timeline.filter((r) => r.selected).length,
   };
+  const sources = allSources(story);
   const days = useMemo(() => {
     const list = story.timeline.filter((r) => (filter === "official" ? r.source.firstParty : filter === "selected" ? r.selected : true));
     const sorted = [...list].sort((a, b) => (order === "desc" ? Date.parse(b.publishedAt) - Date.parse(a.publishedAt) : Date.parse(a.publishedAt) - Date.parse(b.publishedAt)));
@@ -184,6 +197,7 @@ export default function StoryPage() {
         ? { label: "报道摘要", text: story.excerpt.text, note: `摘自 ${story.excerpt.sourceName}` }
         : null;
   const [overviewRuns] = useMemo(() => linkMentions([overview?.text], story.mentions), [overview?.text, story.mentions]);
+
   const showOfficial = () => {
     setFilter("official");
     goSection(SECTIONS.reports);
@@ -418,6 +432,23 @@ export default function StoryPage() {
               )}
             </RailCard>
           )}
+          {sources.length > 0 && (
+            <RailCard title="全部来源" right={`${sources.length} 个`}>
+              <ul className="divide-y divide-line-soft">
+                {sources.map((s) => (
+                  <li key={`${s.name}-${s.itemId}`} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-3">
+                    <Link viewTransition to={`/items/${s.itemId}`} className="min-w-0 text-[0.875rem] font-semibold text-ink transition-colors hover:text-accent">
+                      {s.name}
+                    </Link>
+                    <time className="shrink-0 text-[0.75rem] text-ink-4 num" dateTime={s.publishedAt}>
+                      {monthDayTime(s.publishedAt)}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            </RailCard>
+          )}
+
           {story.topics.length > 0 && (
             <RailCard title="相关主题">
               <div className="flex flex-wrap gap-2">

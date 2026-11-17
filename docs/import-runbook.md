@@ -44,8 +44,8 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
     /workspace/edu-hot/scripts/score-and-compose.sh
 
 - 它做四件事：给 processing_state=new 的稿子打分（会调 DeepSeek），把打过分的归进事件并刷新事件摘要，写所有缺的日报/周报/月报并刷新当天日报，最后重算热点榜（原来 worker 每 5 分钟算一次）。
-- 输出一行 JSON：counts 是各步数量，reports.generated 是新写或刷新的期数，hot.entries 是上榜条数，hot.candidates 是过了门槛（48 小时内至少 2 个独立来源、其中至少 1 个精选源）的事件数。ok=false 或退出码非 0 就停下，不同步，在群里叫 Grok Bot。
-- hot.entries=0 不算失败：门槛没变，是 48 小时内没有两家以上来源报道同一件事。照常同步，报告里写一句「热点榜 0 条（candidates=N）」。
+- 输出一行 JSON：counts 是各步数量，reports.generated 是新写或刷新的期数，hot.entries 是上榜条数，hot.candidates 是本轮参与排序的事件数（默认 heat 模式：48 小时内至少 1 个精选源；HOT_RANKING_MODE=threshold 时仍要求至少 2 个独立来源且其中 1 个精选源）。ok=false 或退出码非 0 就停下，不同步，在群里叫 Grok Bot。
+- hot.entries=0 不算失败。heat 模式下表示 48 小时内没有带精选源的事件；threshold 模式下表示没有两家以上来源（且含 1 个精选源）共同报道的事件。照常同步，报告里写一句「热点榜 0 条（candidates=N，mode=…）」。
 - 可重复跑；不挑内容、不改打分规则和门槛（门槛在 docs/selection.md）。
 - 一天没跑会漏刊：稿子当天没打分，第二天补打分后不会自动进前一天的日报（按上线时间算窗口），需要 Grok Bot 手动补。所以早晚两轮都要跑。
 
@@ -73,6 +73,14 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 
 热点榜 0 条不算失败，只出一行提示（附本机最近一次 candidates）。`--only fresh` 只跑这一组；`--as-of` 回放时热帖和热点榜跳过。
 - WARN 只是提示，照常报，不算 FAIL。
+
+## 热点榜计分切换（2026-11-17）
+
+默认 `HOT_RANKING_MODE=heat`：按独立精选源数量为主、互动取对数、HN 式衰减（窗口仍 48 小时、半衰期 24 小时）排序，单来源也可以上榜，页面标「1 个来源」。旧门槛（至少 2 个独立来源且至少 1 个精选源）可用 `HOT_RANKING_MODE=threshold` 一键切回，规则版本分别是 `heat-v2-hn-score-48h` 和 `heat-v2-threshold-48h`。
+
+本机 API 容器改模式：在本机栈环境里设置或取消 `HOT_RANKING_MODE`，重启 api 容器（不要开 worker），再跑 `score-and-compose.sh`。不要把连接串写进命令或日志。改的是本机计算结果；不同步 Neon，线上接口不会变。
+
+页面上：`computedAt` 超过一轮（13 小时）就去掉「实时热度」，页头改成带北京时间的过期提示。空列表要分清「已过期/正在重算」和「本轮没有多源事件」。健康检查的 13 小时告警 / 25 小时失败阈值不变。
 
 ## 红线
 - 不打印任何密钥、口令、连接串；不 pkill qodercli（只杀自己的 PID）。
