@@ -49,3 +49,10 @@ test("non-http URLs count as missing", () => {
   const rows = sourceRows({ timeline: [], sources: [{ name: "x", itemId: "a", publishedAt: "2026-11-10T07:26:22.000Z", url: "javascript:alert(1)" }] });
   assert.equal(rows[0]!.url, null);
 });
+
+test("previewApiBase: a Vercel preview reads its own api; production and local keep API_BASE_URL", async () => {
+  const { previewApiBase } = await import("../app/lib/api.server.ts");
+  assert.equal(previewApiBase({ VERCEL_ENV: "preview", VERCEL_URL: "edu-ai-abc.vercel.app" }), "https://edu-ai-abc.vercel.app");
+  assert.equal(previewApiBase({ VERCEL_ENV: "production", VERCEL_URL: "edu-ai-abc.vercel.app" }), undefined);
+  assert.equal(previewApiBase({}), undefined);
+});

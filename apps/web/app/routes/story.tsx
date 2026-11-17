@@ -7,7 +7,7 @@ import { SITE } from "@aihot/site";
 import { linkMentions } from "@aihot/contracts/mentions";
 import { addressRuns } from "@aihot/contracts/addresses";
 import { MentionText } from "../components/ui/MentionText";
-import { cachedPage, loadOr404 } from "../lib/api.server";
+import { cachedPage, loadOr404, previewApiBase } from "../lib/api.server";
 import { pageReuse } from "../lib/page-reuse";
 import { breadcrumbLd, pageMeta, storyLd, titled } from "../lib/seo";
 import { beijingDate, beijingTime } from "@aihot/contracts/time";
@@ -34,7 +34,8 @@ export const clientLoader = pageReuse<typeof loader>().clientLoader;
 export const shouldRevalidate = pageReuse<typeof loader>().shouldRevalidate;
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const story = await loadOr404<StoryDetail>(`/api/site/stories/${encodeURIComponent(params.publicId)}`, { signal: request.signal, merged: (id) => `/story/${id}` });
+  // A preview reads its own api, so the event page shows this branch's sources (with original links).
+  const story = await loadOr404<StoryDetail>(`/api/site/stories/${encodeURIComponent(params.publicId)}`, { signal: request.signal, merged: (id) => `/story/${id}`, base: previewApiBase() });
   return cachedPage(300, { story });
 }
 

@@ -7,6 +7,14 @@ import { logError } from "./errors.server.ts";
 /** Where the api listens (API_BASE_URL, set by the deployment); development uses the default. */
 export const API_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3001";
 
+/**
+ * A Vercel preview's own api (https://$VERCEL_URL), so a preview page reads the branch's backend instead of
+ * whatever API_BASE_URL the project points at; undefined outside previews.
+ */
+export function previewApiBase(env: Record<string, string | undefined> = process.env): string | undefined {
+  return env.VERCEL_ENV === "preview" && env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined;
+}
+
 /** An api answer other than 2xx. A merged story answers 308 with the story it now lives in. */
 class ApiError extends Error {
   readonly status: number;
@@ -20,9 +28,9 @@ class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(path: string, init?: { signal?: AbortSignal; headers?: Record<string, string>; responseHeaders?: Headers }): Promise<T> {
+export async function apiGet<T>(path: string, init?: { signal?: AbortSignal; headers?: Record<string, string>; responseHeaders?: Headers; base?: string }): Promise<T> {
   try {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
+    const res = await fetch(`${init?.base ?? API_BASE_URL}${path}`, {
       headers: { accept: "application/json", "x-aihot-ssr": "1", ...init?.headers },
       redirect: "manual",
       signal: init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(15_000)]) : AbortSignal.timeout(15_000),
@@ -47,9 +55,9 @@ export async function apiGet<T>(path: string, init?: { signal?: AbortSignal; hea
  * Maps API failures to route responses: real 404s, the permanent redirect of a merged page (`merged`
  * gives the page of the id it was merged into), the search-busy page, otherwise 503.
  */
-export async function loadOr404<T>(path: string, opts: { busyRedirect?: string; merged?: (id: string) => string; responseHeaders?: Headers; signal?: AbortSignal } = {}): Promise<T> {
+export async function loadOr404<T>(path: string, opts: { busyRedirect?: string; merged?: (id: string) => string; responseHeaders?: Headers; signal?: AbortSignal; base?: string } = {}): Promise<T> {
   try {
-    return await apiGet<T>(path, { responseHeaders: opts.responseHeaders, signal: opts.signal });
+    return await apiGet<T>(path, { responseHeaders: opts.responseHeaders, signal: opts.signal, base: opts.base });
   } catch (error) {
     if (opts.signal?.aborted) throw error;
     if (error instanceof ApiError) {
