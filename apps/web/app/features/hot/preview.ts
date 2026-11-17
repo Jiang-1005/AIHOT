@@ -1,29 +1,28 @@
 import type { HotResponse } from "@aihot/contracts/site";
-import { hotPreviewFixture, hotPreviewFallback } from "./fixtures/preview-data";
-import type { Fallback } from "./presentation";
 
-/** Preview pages (Vercel preview, or HOT_PREVIEW_FIXTURE=1) may serve a local export instead of Neon. */
-export function previewEnabled(): boolean {
-  return process.env.HOT_PREVIEW_FIXTURE === "1" || process.env.VERCEL_ENV === "preview";
+/** Preview pages (Vercel preview, or HOT_PREVIEW_FIXTURE=1) accept ?state= to show the board's other states. */
+export function previewEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.HOT_PREVIEW_FIXTURE === "1" || env.VERCEL_ENV === "preview";
 }
 
-function hoursAgoIso(hours: number, now = Date.now()): string {
+export const DEMO_STATES = ["empty", "stale", "stale-empty"] as const;
+export type DemoState = (typeof DEMO_STATES)[number];
+
+export function demoState(raw: string | null): DemoState | null {
+  return (DEMO_STATES as readonly string[]).includes(raw ?? "") ? (raw as DemoState) : null;
+}
+
+function hoursAgoIso(hours: number, now: number): string {
   return new Date(now - hours * 3_600_000).toISOString();
 }
 
-export function applyPreview(hot: HotResponse, state: string | null, now = Date.now()): { hot: HotResponse; usingFixture: boolean } {
-  if (!previewEnabled()) return { hot, usingFixture: false };
-  const list = hotPreviewFixture();
-  if (state === "empty") return { hot: { computedAt: hoursAgoIso(1, now), windowHours: 48, entries: [] }, usingFixture: true };
-  if (state === "stale-empty") return { hot: { computedAt: hoursAgoIso(14, now), windowHours: 48, entries: [] }, usingFixture: true };
-  if (state === "stale") return { hot: { ...list, computedAt: hoursAgoIso(14, now) }, usingFixture: true };
-  // Default preview: when Neon is empty or the reviewer asks for the fixture, show the local export as a fresh list.
-  if (state === "fixture" || hot.entries.length === 0) {
-    return { hot: { ...list, computedAt: hoursAgoIso(1, now) }, usingFixture: true };
-  }
-  return { hot, usingFixture: false };
-}
-
-export function previewFallback(): Fallback {
-  return hotPreviewFallback();
+/**
+ * The real /api/site/hot answer, except for the three demo states: empty (fresh, nothing ranked),
+ * stale (the real list, its time pushed back 14 hours) and stale-empty (expired and empty).
+ */
+export function applyDemoState(hot: HotResponse, state: DemoState | null, now = Date.now()): HotResponse {
+  if (state === "empty") return { computedAt: hoursAgoIso(1, now), windowHours: hot.windowHours, entries: [] };
+  if (state === "stale-empty") return { computedAt: hoursAgoIso(14, now), windowHours: hot.windowHours, entries: [] };
+  if (state === "stale") return { ...hot, computedAt: hoursAgoIso(14, now) };
+  return hot;
 }

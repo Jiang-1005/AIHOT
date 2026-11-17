@@ -46,5 +46,12 @@ export function sourceLine(sourceCount: number, sourceNames: readonly string[]):
   return `${shown.join("、")} · ${count} 个来源`;
 }
 
+/** sourceLine split so the count (「1 个来源」「等 5 个来源」) can be kept on one line: [names, count]. */
+export function sourceLineParts(sourceCount: number, sourceNames: readonly string[]): [string, string] {
+  const line = sourceLine(sourceCount, sourceNames);
+  const m = /^(.*?)((?: · | 等 )?\d+ 个来源)$/.exec(line);
+  return m ? [m[1]!, m[2]!] : ["", line];
+}
+
 export type FallbackItem = { id: string; title: string; sourceName: string; at: string; selected: boolean };
 export type Fallback = { kind: "featured" | "latest"; items: FallbackItem[] } | null;

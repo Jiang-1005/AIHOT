@@ -18,6 +18,7 @@ import { itemAvailability } from "@aihot/backend/publication/availability";
 import { listTopicSummaries, loadTopicPage, topicBrowseLinks } from "@aihot/backend/publication/topics";
 import { registerFeedback } from "./feedback.ts";
 import { loadHot, loadStoryDetail, resolveStory } from "@aihot/backend/publication/stories";
+import { previewHotSnapshot } from "@aihot/backend/publication/hot-preview";
 import { listReports, loadReport, reportNavigation, loadReportNavigation, loadReportMonth, type ReportKind } from "@aihot/backend/publication/reports";
 import { looseQuery, QueryError, sendJsonWithEtag, sendProblem } from "../http/respond.ts";
 import { loadVoicesPage } from "@aihot/backend/publication/voices";
@@ -177,7 +178,7 @@ export function registerSite(app: FastifyInstance) {
   registerFeedback(app);
 
   app.get("/api/site/hot", siteHandler(async (req, reply) => {
-    const data = await loadHot();
+    const data = previewHotSnapshot() ?? (await loadHot());
     return sendJsonWithEtag(req, reply, data, { etagPrefix: "hot", cacheControl: "public, max-age=30, s-maxage=30" });
   }));
 

@@ -6,7 +6,7 @@ import type { FeedItemSummary, HotEntryView, HotResponse, PoolResponse, Timeline
 import { beijingDate } from "@aihot/contracts/time";
 import { shortAddresses } from "@aihot/contracts/addresses";
 import { SEO_TITLES, subjectAfter, withSubject } from "@aihot/site";
-import { apiGet, cachedPage, loadOr404 } from "../lib/api.server";
+import { apiGet, cachedPage, loadOr404, previewApiBase } from "../lib/api.server";
 import { pageReuse } from "../lib/page-reuse";
 import { archiveLd, listPath, pageMeta, timelineApiParams } from "../lib/seo";
 import { monthDay, relativeTime } from "../lib/format";
@@ -20,8 +20,8 @@ import { Picture } from "../components/ui/Picture";
 import { navUp } from "../components/shell/nav";
 import { scrollBehavior } from "../lib/motion";
 import type { Screen } from "../components/shell/screens";
-import { computedAtBeijing, emptyKind, isStale, sourceLine, updatedAtLabel, type Fallback, type FallbackItem } from "../features/hot/presentation";
-import { applyPreview, previewEnabled, previewFallback } from "../features/hot/preview";
+import { computedAtBeijing, emptyKind, isStale, sourceLineParts, updatedAtLabel, type Fallback, type FallbackItem } from "../features/hot/presentation";
+import { applyDemoState, demoState, previewEnabled } from "../features/hot/preview";
 
 export const handle: Screen = { tab: navUp("/hot").tab, name: "热点" };
 export { pageHeaders as headers } from "../lib/api.server";
@@ -41,12 +41,11 @@ function asFallbackItem(item: Pick<FeedItemSummary, "id" | "title" | "source" | 
 
 async function tryGet<T>(path: string, signal?: AbortSignal): Promise<T | null> {
   try {
-    return await apiGet<T>(path, { signal });
+    return await apiGet<T>(path, { signal, base: previewApiBase() });
   } catch {
     return null;
   }
 }
-
 async function loadFallback(signal?: AbortSignal): Promise<Fallback> {
   const featured = await tryGet<TimelineResponse>(
     listPath("/api/site/timeline", timelineApiParams({ channel: "all", category: null, tag: null, slot: "featured" })),
@@ -61,22 +60,13 @@ async function loadFallback(signal?: AbortSignal): Promise<Fallback> {
 }
 
 export async function loader({ request }: { request: Request }) {
-  const url = new URL(request.url);
-  const state = previewEnabled() ? url.searchParams.get("state") : null;
+  // Always the real api (a preview reads its own); ?state= only switches a preview to a demo state.
+  const state = previewEnabled() ? demoState(new URL(request.url).searchParams.get("state")) : null;
   const upstream = new Headers();
-  let remote: HotResponse;
-  try {
-    remote = await loadOr404<HotResponse>("/api/site/hot", { signal: request.signal, responseHeaders: upstream });
-  } catch (error) {
-    if (!previewEnabled()) throw error;
-    remote = { computedAt: null, windowHours: 48, entries: [] };
-  }
-  const { hot, usingFixture } = applyPreview(remote, state);
-  let fallback: Fallback = null;
-  if (hot.entries.length === 0) {
-    fallback = usingFixture ? previewFallback() : await loadFallback(request.signal);
-  }
-  return cachedPage(120, { hot, fallback, usingFixture }, usingFixture ? undefined : upstream);
+  const remote = await loadOr404<HotResponse>("/api/site/hot", { signal: request.signal, responseHeaders: upstream, base: previewApiBase() });
+  const hot = applyDemoState(remote, state);
+  const fallback: Fallback = hot.entries.length === 0 ? await loadFallback(request.signal) : null;
+  return cachedPage(120, { hot, fallback, demo: state }, state ? undefined : upstream);
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -109,10 +99,21 @@ function formatHeat(heat: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
+/** Names may wrap; the count never splits (「1 个来源」 stays on one line). */
+function SourceLine({ e }: { e: HotEntryView }) {
+  const [names, count] = sourceLineParts(e.sourceCount, e.sourceNames);
+  return (
+    <>
+      {names}
+      <span className="whitespace-nowrap">{count}</span>
+    </>
+  );
+}
+
 function Voices({ e }: { e: HotEntryView }) {
   return (
     <span className="min-w-0 text-[0.875rem] leading-snug text-ink-4">
-      <span className="text-ink-3">{sourceLine(e.sourceCount, e.sourceNames)}</span>
+      <span className="text-ink-3"><SourceLine e={e} /></span>
       {e.latestAt && (
         <>
           <span className="mx-2 text-line-strong">·</span>
@@ -252,7 +253,7 @@ function Runner({ e }: { e: HotEntryView }) {
       <div className="mt-auto flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pt-3">
         <div className="flex min-w-0 flex-col gap-2">
           <span className="text-[0.75rem] leading-snug text-ink-4">
-            <span className="text-ink-3">{sourceLine(e.sourceCount, e.sourceNames)}</span>
+            <span className="text-ink-3"><SourceLine e={e} /></span>
             {e.latestAt && (
               <>
                 <span className="mx-1">·</span>
@@ -290,7 +291,7 @@ function Row({ e }: { e: HotEntryView }) {
         </h3>
         {e.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.65] text-ink-4 wide:line-clamp-1">{shortAddresses(e.summary)}</p>}
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 wide:hidden">
-          <span className="min-w-0 text-[0.75rem] text-ink-4">{sourceLine(e.sourceCount, e.sourceNames)}</span>
+          <span className="min-w-0 text-[0.75rem] text-ink-4"><SourceLine e={e} /></span>
           {e.latestAt && (
             <time className="whitespace-nowrap text-[0.75rem] text-ink-4 num" dateTime={e.latestAt} suppressHydrationWarning>
               {relativeTime(e.latestAt)}
@@ -303,7 +304,7 @@ function Row({ e }: { e: HotEntryView }) {
         </div>
       </div>
       <div className="hidden min-w-0 flex-col items-start gap-0.5 text-[0.75rem] text-ink-4 wide:flex">
-        <span>{sourceLine(e.sourceCount, e.sourceNames)}</span>
+        <span><SourceLine e={e} /></span>
         {e.latestAt && (
           <time className="whitespace-nowrap num" dateTime={e.latestAt} suppressHydrationWarning>
             {relativeTime(e.latestAt)}
@@ -373,7 +374,7 @@ function FallbackList({ fallback }: { fallback: NonNullable<Fallback> }) {
 }
 
 export default function HotPage() {
-  const { hot, fallback, usingFixture } = useLoaderData<typeof loader>();
+  const { hot, fallback, demo } = useLoaderData<typeof loader>();
   const stale = isStale(hot.computedAt);
   const [lead, ...rest] = hot.entries;
   const runners = rest.slice(0, 2);
@@ -432,7 +433,9 @@ export default function HotPage() {
           {stale ? (
             <p className="mt-2 text-[0.875rem] text-ink-2">
               {hot.computedAt
-                ? `上次更新于 ${computedAtBeijing(hot.computedAt)}，已超过一轮。下面仍是当时的榜单，仅供参考。`
+                ? lead
+                  ? `上次更新于 ${computedAtBeijing(hot.computedAt)}，已超过一轮。下面仍是当时的榜单，仅供参考。`
+                  : `上次更新于 ${computedAtBeijing(hot.computedAt)}，已超过一轮，正在重算。`
                 : "榜单尚未算出，正在重算。"}
             </p>
           ) : (
@@ -447,8 +450,8 @@ export default function HotPage() {
         )}
       </header>
 
-      {usingFixture && (
-        <p className="mb-4 text-[0.75rem] leading-relaxed text-ink-4">本页是预览，不是线上库。第 1 条取自本机库 11 月 12 日曾上榜的多来源事件，用来验收来源行；后面 9 条来自 2026 年 11 月 17 日 12:59（北京时间）备份、按新公式在 48 小时窗口内排序。查空状态可加 ?state=empty 或 ?state=stale-empty，过期但有内容用 ?state=stale。</p>
+      {demo && (
+        <p className="mb-4 text-[0.75rem] leading-relaxed text-ink-4">预览演示状态（?state={demo}）：{demo === "stale" ? "榜单内容取自接口，只把更新时间往前推了 14 小时" : "榜单按空榜演示"}，不是接口原样。去掉参数即为接口当前结果。</p>
       )}
 
       {!lead ? (

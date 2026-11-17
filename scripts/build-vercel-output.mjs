@@ -160,6 +160,7 @@ for (const rel of [
   "site/brand",
   "site/pages",
   "site/changelog.json",
+  "site/preview",
   "industry/topics.json",
   "industry/prompts",
   "assets/og-fonts",
