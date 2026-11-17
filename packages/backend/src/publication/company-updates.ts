@@ -411,7 +411,9 @@ export async function loadCompanyUpdatesPage(now = new Date()) {
       )
   `;
 
-  const buckets = new Map<string, CompanyUpdateItem[]>();
+  // fromBackfill only steers dedupe below and is stripped before items leave this function.
+  type BucketItem = CompanyUpdateItem & { fromBackfill?: boolean };
+  const buckets = new Map<string, BucketItem[]>();
   const itemCompanies = new Map<string, Set<string>>();
   for (const company of COMPANY_ROSTER) buckets.set(company.id, []);
 
@@ -439,7 +441,7 @@ export async function loadCompanyUpdatesPage(now = new Date()) {
     const title = scrubPublic(row.title);
     const source = scrubPublic(publicSourceName(row.source_name));
     if (!title) continue;
-    const item: CompanyUpdateItem & { fromBackfill?: boolean } = {
+    const item: BucketItem = {
       id: row.id,
       title,
       url: row.url,
