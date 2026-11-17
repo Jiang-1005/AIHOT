@@ -3,13 +3,13 @@
 
 导入员每轮在 sync-to-neon.sh 之后跑一次；任何 bot 动过本机栈（重启、恢复、换分支）后也跑一次。
 它不看「脚本跑没跑」，只看结果对不对：
-  inputs   输入文件按约定命名、按时到位（雷达 x-posts-feishu-new-YYYYMMDD-am|pm.csv，行业 daily-YYYY-MM-DD/items.csv|items-pm.csv）
+  inputs   清单里的输入文件按时到位（雷达 x-posts-feishu-new-YYYYMMDD-am|pm.csv，行业 daily-YYYY-MM-DD/items.csv|items-pm.csv）；清单外的文件名只提示，不算缺件
   db       本机库在、不空
   scoring  导进来的稿子 3 小时内打完分（worker 关着时靠 score-and-compose.sh）
   issue    最新日报不早于昨天（有新稿却没出刊 = 失败）
   worker   worker 心跳（关着是已知状态，只提示）
   live     线上最新日报 = 本机最新日报，线上「数据截至」不落后本机同步时间
-  fresh    热帖、日报、周报、热点榜、本机库备份各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条只提示，附 candidates 数
+  fresh    热帖、日报、周报、热点榜、本机库备份各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条默认提示，附当前口径的 candidates；若候选≥1 且已过应刷新的一轮则升级为失败
   deps     宿主机 node_modules/@aihot/backend 在（sync-to-neon.sh 跑 migrate.ts 要用）
   checkout 运维目录 /workspace/edu-hot 没缺主线 jiang/main 上的运维脚本，本分支的运维脚本也已进主线
 
@@ -62,23 +62,25 @@ def existed(path, as_of):
     return os.path.exists(path) and dt.datetime.fromtimestamp(os.path.getmtime(path), TZ) <= as_of
 
 # ---------- inputs ----------
-def check_inputs(as_of, slot):
+def check_inputs(as_of, slot, radar_dir=None, briefs=None):
+    # 缺不缺只按清单里的文件算：雷达要 x-posts-feishu-new-YYYYMMDD-am|pm.csv。
+    # 清单外的同日文件只 WARN，不能因为它们在就把「清单文件还没到」升级成 FAIL。
+    radar_dir = radar_dir or RADAR_DIR
+    briefs = briefs or BRIEFS
     day = as_of.date(); ymd = day.strftime("%Y%m%d"); iso = day.isoformat()
-    want = f"{RADAR_DIR}/x-posts-feishu-new-{ymd}-{slot}.csv"
+    want = f"{radar_dir}/x-posts-feishu-new-{ymd}-{slot}.csv"
     bad_pat = re.compile(r"^x-posts-feishu-new-(?!\d{8}-(am|pm)\.csv$).+\.csv$")
-    misnamed = [os.path.basename(p) for p in glob.glob(f"{RADAR_DIR}/x-posts-feishu-new-*.csv")
+    misnamed = [os.path.basename(p) for p in glob.glob(f"{radar_dir}/x-posts-feishu-new-*.csv")
                 if bad_pat.match(os.path.basename(p)) and existed(p, as_of)
                 and (iso in p or ymd in p)]
     if existed(want, as_of):
         add("OK", "inputs", f"雷达 {os.path.basename(want)} 在")
-    elif misnamed:
-        add("FAIL", "inputs", f"雷达文件名不合约定：{', '.join(misnamed)}，应为 {os.path.basename(want)}（日期 8 位不带横线，后缀只能 am/pm）")
     else:
         add("FAIL" if slot_due(as_of, slot, "radar") else "WARN", "inputs", f"雷达 {os.path.basename(want)} 还没到")
     for m in misnamed:
-        if existed(want, as_of) and m != os.path.basename(want):
-            add("WARN", "inputs", f"雷达目录里还有不合约定的同日文件 {m}（以后请直接按约定命名）")
-    ddir = f"{BRIEFS}/daily-{iso}"
+        if m != os.path.basename(want):
+            add("WARN", "inputs", f"雷达目录里还有不合约定的同日文件 {m}（不计入缺件；以后请直接按约定命名）")
+    ddir = f"{briefs}/daily-{iso}"
     canon = f"{ddir}/{'items.csv' if slot == 'am' else 'items-pm.csv'}"
     if existed(canon, as_of):
         add("OK", "inputs", f"行业 daily-{iso}/{os.path.basename(canon)} 在")
@@ -238,11 +240,110 @@ def check_freshness(as_of, replay):
         level = "FAIL" if age > fail_h else "WARN" if age > warn_h else "OK"
         add(level, "fresh", msg if level == "OK" else f"{msg}，没跟上（取自{where}）")
         if entries == 0:
-            try:
-                cand = psql("SELECT coalesce(evidence->>'candidates','?') FROM hot_rankings ORDER BY computed_at DESC LIMIT 1")[0][0]
-            except Exception:
-                cand = "未查到"
-            add("WARN", "hot", f"线上热点榜 0 条；本机最近一次 candidates={cand}（48 小时内够 2 个独立来源、含 1 个精选源的事件数）")
+            level, msg = assess_empty_hot_board(t, as_of, last_sync_at())
+            add(level, "hot", msg)
+
+
+# 热点榜空列表：默认只 WARN。若当前口径（默认 heat，允许单来源）已有候选，
+# 且已经过了「下一轮同步本应写上新榜」的时间，才升级为 FAIL——这是线上空了多日却没人发现的那种无声故障。
+# 同步点是每天 9:30 / 20:30；再留 30 分钟给导入员跑完（10:00 / 21:00）才按墙钟升级。
+# 若本机 site-sync.json 显示已经在下一轮同步点之后同步过，也立刻升级（不必等满这 30 分钟）。
+SYNC_SLOTS = ((9, 30), (20, 30))
+HOT_REFRESH_GRACE = dt.timedelta(minutes=30)
+HEAT_WINDOW = "48 hours"
+
+def hot_ranking_mode():
+    m = (os.environ.get("HOT_RANKING_MODE") or "").strip()
+    if not m:
+        try:
+            env = dict(os.environ, DOCKER_HOST=os.environ.get("DOCKER_HOST", "tcp://127.0.0.1:2375"))
+            api = os.environ.get("EDUHOT_API_CONTAINER", "xintian-edu-hot-api-1")
+            p = subprocess.run(["docker", "exec", api, "printenv", "HOT_RANKING_MODE"],
+                               capture_output=True, text=True, env=env, timeout=10)
+            m = (p.stdout or "").strip()
+        except Exception:
+            m = ""
+    return "threshold" if m == "threshold" else "heat"
+
+def last_sync_at():
+    try:
+        raw = json.load(open(f"{REPO}/.data/site-sync.json")).get("syncedAt", "")
+        return dt.datetime.strptime(raw, "%Y-%m-%d %H:%M").replace(tzinfo=TZ) if raw else None
+    except Exception:
+        return None
+
+def next_scheduled_sync(computed_at):
+    """computed_at 之后的下一个 9:30 / 20:30（北京时间）。"""
+    day = computed_at.date()
+    for _ in range(3):
+        for h, m in SYNC_SLOTS:
+            cand = dt.datetime(day.year, day.month, day.day, h, m, tzinfo=TZ)
+            if cand > computed_at:
+                return cand
+        day += dt.timedelta(days=1)
+    raise RuntimeError("next_scheduled_sync")
+
+def hot_board_should_have_refreshed(computed_at, as_of, last_sync=None):
+    nxt = next_scheduled_sync(computed_at)
+    if last_sync is not None and last_sync >= nxt:
+        return True
+    return as_of >= nxt + HOT_REFRESH_GRACE
+
+def count_hot_candidates(mode, at):
+    """与 computeHotRanking 同一道门：48 小时窗口内，heat 要 ≥1 个精选源；threshold 还要 ≥2 个独立来源。已撤回的来源不计入。"""
+    sql = f"""
+    WITH cs AS (
+      SELECT DISTINCT ON (ss.story_id, ss.participant_key)
+        ss.story_id, ss.observed_at,
+        CASE WHEN s.participation_mode = 'editorial' THEN 'editorial' ELSE 'signal' END AS kind
+      FROM story_signals ss
+      JOIN articles a ON a.id = ss.article_id
+      JOIN sources s ON s.id = a.source_id
+      LEFT JOIN publications p ON p.article_id = ss.article_id
+      WHERE s.participation_mode <> 'isolated'
+        AND coalesce(p.visibility, 'public') <> 'withdrawn'
+        AND (s.participation_mode <> 'editorial' OR EXISTS (
+          SELECT 1 FROM fact_articles fa JOIN facts f ON f.id = fa.fact_id
+          WHERE fa.article_id = ss.article_id AND f.story_id = ss.story_id
+            AND fa.role <> 'mention'
+            AND (fa.manual IS TRUE OR NOT EXISTS (
+              SELECT 1 FROM analyses evidence_an
+              WHERE evidence_an.id = p.analysis_id AND evidence_an.output->>'scope' = 'composite'
+            ))
+        ))
+      ORDER BY ss.story_id, ss.participant_key, (ss.kind = 'editorial') DESC, ss.observed_at DESC
+    ),
+    obs AS (
+      SELECT story_id,
+        count(*) FILTER (WHERE observed_at > timestamp with time zone '{at.isoformat()}' - interval '{HEAT_WINDOW}'
+                           AND observed_at <= timestamp with time zone '{at.isoformat()}') AS participants,
+        count(*) FILTER (WHERE observed_at > timestamp with time zone '{at.isoformat()}' - interval '{HEAT_WINDOW}'
+                           AND observed_at <= timestamp with time zone '{at.isoformat()}'
+                           AND kind = 'editorial') AS editorial
+      FROM cs GROUP BY story_id
+    )
+    SELECT count(*) FROM obs o JOIN stories st ON st.id = o.story_id
+    WHERE st.merged_into IS NULL AND editorial >= 1
+      {'AND participants >= 2' if mode == 'threshold' else ''};
+    """
+    return int(psql(sql)[0][0])
+
+def assess_empty_hot_board(computed_at, as_of, last_sync=None, mode=None, candidates=None):
+    mode = mode or hot_ranking_mode()
+    try:
+        cand = count_hot_candidates(mode, as_of) if candidates is None else int(candidates)
+        cand_txt = str(cand)
+    except Exception:
+        cand, cand_txt = None, "未查到"
+    if mode == "threshold":
+        gate = "48 小时内至少 2 个独立来源且含 1 个精选源的事件数"
+    else:
+        gate = "48 小时内至少 1 个精选源的事件数"
+    msg = f"线上热点榜 0 条；本机 {mode} 口径 candidates={cand_txt}（{gate}）"
+    if cand is not None and cand >= 1 and hot_board_should_have_refreshed(computed_at, as_of, last_sync):
+        due = next_scheduled_sync(computed_at) + HOT_REFRESH_GRACE
+        return "FAIL", f"{msg}，过了应刷新的一轮（{due:%m-%d %H:%M} 后仍是空榜）"
+    return "WARN", msg
 
 def check_host_deps():
     """sync-to-neon.sh 在宿主机跑 migrate.ts，要 node_modules/@aihot/backend；盒子重启可能把它清掉。"""

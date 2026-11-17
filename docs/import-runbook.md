@@ -56,11 +56,12 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 
 - 最后一行是 HEALTH OK 才算这轮完成；报告里加一行「健康检查：OK」，或原样贴 HEALTH FAIL 那一行。FAIL 就不报完成。
 - FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
-- FAIL 在 inputs：报告里写缺哪个文件、名字该是什么，不替别的 bot 改名或补抓。
+- FAIL 在 inputs：只报告清单里该有、且已过截止时间仍缺的文件（雷达早 8:25 / 晚 19:20，脚本在 8:40 / 19:35 才升为 FAIL；行业早 8:50 / 晚 19:50，脚本在 9:05 / 20:05 才升为 FAIL）。目录里多出来的、名字不合约定的雷达文件只 WARN，不算缺件，不替别的 bot 改名或补抓。
 - FAIL 在 db：停，不同步，叫 Grok Bot。
 - FAIL 在 deps（宿主机 node_modules 不在，盒子重启后会出现）：在 /workspace/edu-hot 跑 `npm ci` 再查。sync-to-neon.sh 和 score-and-compose.sh 开头会自动补装，npm ci 失败就退出非 0，这轮停下叫 Grok Bot。
 - FAIL 在 fresh：某一项超过失败阈值没更新。热点榜：看 score-and-compose.sh 输出有没有 hot 字段、sync-to-neon.sh 有没有跑完，补跑这两条再查；热帖：查 import-voices.py 这轮跑没跑；日报、周报：再跑一次 score-and-compose.sh。还 FAIL 就在群里叫 Grok Bot。
-- WARN 在 hot（热点榜 0 条）：只是提示，照常报，写上 candidates 数。
+- WARN 在 hot（热点榜 0 条）：默认只是提示，照常报，写上当前口径的 candidates（默认 heat：48 小时内至少 1 个精选源；`HOT_RANKING_MODE=threshold` 时才是至少 2 个独立来源且含 1 个精选源）。
+- FAIL 在 hot（线上 0 条但本机已有候选）：本机按当前口径已能排出 ≥1 个候选，且已经过了「下一轮同步本应写下新榜」的时间（每天 9:30 / 20:30 后再留 30 分钟，即 10:00 / 21:00；或者本机 `site-sync.json` 已经在那个同步点之后跑过）。先看 score-and-compose.sh 的 hot 字段和 sync-to-neon.sh 有没有跑完，补跑后再查；还 FAIL 就在群里叫 Grok Bot。生产还停在上一轮空记录、下一轮还没到的合理窗口内，保持 WARN，不要当成失败。
 
 ### 新鲜度阈值（照 dbt source freshness：warn_after / error_after）
 脚本顶部的 FRESHNESS 表是唯一出处，改阈值两处一起改。一天两轮的项目漏一轮告警、漏两轮失败；周报按自己的周期。
@@ -73,7 +74,7 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 | 热点榜 | 线上 /api/site/hot 的 computedAt | 13 小时 | 25 小时 |
 | 本机库备份 | /home/box/edu-hot-local/backups 里最新 local-*.dump 的修改时间 | 13 小时 | 25 小时 |
 
-热点榜 0 条不算失败，只出一行提示（附本机最近一次 candidates）。`--only fresh` 只跑这一组；`--as-of` 回放时热帖和热点榜跳过。
+热点榜 0 条默认只出一行提示（附本机按当前 `HOT_RANKING_MODE` 现算的 candidates，默认 heat，允许单来源）。若候选 ≥1，且已经过了应刷新的一轮（见上面 FAIL 在 hot），则升级为 HEALTH FAIL。`--only fresh` 只跑这一组；`--as-of` 回放时热帖和热点榜跳过。
 - WARN 只是提示，照常报，不算 FAIL。
 
 ## 热点榜计分切换（2026-11-17）
@@ -93,7 +94,7 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 | 热帖 | 📡 AI 教育内容雷达（grok-posts.json、x-posts-feishu-new-*.csv）+ collect-cn-community.py | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot；信源由 C J 定 |
 | 日报 | 🔭 AI 教培行业观察的公司、政策、媒体条目（items*.csv）+ 热帖，score-and-compose.sh 出刊 | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot |
 | 周报 | 同日报，score-and-compose.sh 按周出刊 | 8 天 / 9 天 | 群里 @🤖 Grok Bot |
-| 热点榜 | 已归事件的稿件，score-and-compose.sh 第 4 步重算 | 13 小时 / 25 小时；0 条只提示 | 群里 @🤖 Grok Bot；上榜门槛由 C J 定 |
+| 热点榜 | 已归事件的稿件，score-and-compose.sh 第 4 步重算 | 13 小时 / 25 小时；0 条默认提示，候选≥1 且过了一轮该刷新的同步则失败 | 群里 @🤖 Grok Bot；上榜门槛由 C J 定 |
 
 阈值以 check-pipeline-health.py 顶部的 FRESHNESS 表为准。
 
