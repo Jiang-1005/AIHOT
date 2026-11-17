@@ -33,16 +33,45 @@ export function baseLabel(value: string | null | undefined): string {
 }
 
 const NOT_A_COMPANY = new Set(["", "不涉及", "未查到", "待定", "小红书", "X", "心田花开", "心田"]);
-const DISPLAY_NAME: Record<string, string> = {
-  网易有道: "有道", 科大讯飞: "讯飞", 豆神教育: "豆神", Khan: "Khan Academy", 可汗学院: "Khan Academy",
-  Duolingo: "Duolingo（多邻国）", 多邻国: "Duolingo（多邻国）",
+// One company under two spellings is one chip. A name the design already shows keeps it (Google, OpenAI,
+// Khan Academy, 阿里, 字节跳动, 腾讯, 松鼠Ai, the head companies); where both spellings are in use the chip
+// carries both, as 「Duolingo（多邻国）」 does. Products (Google Classroom, Khanmigo, 豆包) stay their own chips.
+const ALIASES: Record<string, readonly string[]> = {
+  有道: ["网易有道", "Youdao", "NetEase Youdao"],
+  讯飞: ["科大讯飞", "iFlytek", "iFLYTEK"],
+  豆神: ["豆神教育"],
+  好未来: ["TAL", "TAL Education"],
+  新东方: ["New Oriental"],
+  作业帮: ["Zuoyebang"],
+  猿辅导: ["Yuanfudao"],
+  "Khan Academy": ["Khan", "可汗学院", "可汗"],
+  "Duolingo（多邻国）": ["Duolingo", "多邻国"],
+  "Benesse（倍乐生）": ["Benesse", "倍乐生", "ベネッセ", "Benesse Corporation", "Benesse Holdings"],
+  "Microsoft（微软）": ["Microsoft", "微软", "Microsoft Corporation"],
+  Google: ["谷歌", "Google LLC", "Alphabet"],
+  OpenAI: ["Open AI"],
+  Apple: ["苹果", "苹果公司"],
+  Amazon: ["亚马逊"],
+  NVIDIA: ["英伟达", "Nvidia"],
+  DeepSeek: ["深度求索"],
+  阿里: ["阿里巴巴", "Alibaba", "阿里巴巴集团"],
+  字节跳动: ["ByteDance", "字节"],
+  腾讯: ["Tencent"],
+  百度: ["Baidu"],
+  华为: ["Huawei"],
+  月之暗面: ["Moonshot AI"],
+  智谱: ["Zhipu", "智谱AI", "Zhipu AI"],
+  松鼠Ai: ["松鼠AI", "Squirrel AI"],
 };
+/** Case and spacing do not make a second company: "OPENAI", "Open AI" and "openai" are one. */
+const fold = (name: string) => name.toLowerCase().replace(/\s+/g, "");
+const DISPLAY_NAME = new Map(Object.entries(ALIASES).flatMap(([chip, names]) => [chip, ...names].map((n) => [fold(n), chip] as const)));
 
 /** One name of a 公司与产品 token as its chip shows it; null for a platform, a placeholder or a file/skill name. */
 export function companyName(name: string): string | null {
   const n = String(name ?? "").trim();
   if (NOT_A_COMPANY.has(n) || /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$/.test(n)) return null;
-  return DISPLAY_NAME[n] ?? n;
+  return DISPLAY_NAME.get(fold(n)) ?? n;
 }
 
 /** Every chip a token stands for: 「好未来 › 学而思」 is found under both 好未来 and 学而思. */

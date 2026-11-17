@@ -91,17 +91,9 @@ export function loadContentTagMap(): Record<string, ContentTags> {
 
 function companyMatches(token: string, selected: string): boolean {
   const parts = token.split(/\s*[›>／/]\s*/).map((s) => s.trim()).filter(Boolean);
-  const aliases: Record<string, string[]> = {
-    有道: ["有道", "网易有道"],
-    讯飞: ["讯飞", "科大讯飞"],
-    豆神: ["豆神", "豆神教育"],
-    "Khan Academy": ["Khan Academy", "Khan", "可汗学院"],
-    Duolingo: ["Duolingo", "多邻国", "Duolingo（多邻国）"],
-    "Duolingo（多邻国）": ["Duolingo", "多邻国", "Duolingo（多邻国）"],
-    多邻国: ["Duolingo", "多邻国", "Duolingo（多邻国）"],
-  };
-  const names = new Set([selected, ...(aliases[selected] ?? [])].map((s) => s.toLowerCase()));
-  return parts.some((p) => names.has(p.toLowerCase()) || p === selected || selected.includes(p) || p.includes(selected));
+  // The aliases (倍乐生 and Benesse, 微软 and Microsoft, ...) are the ones the stored dimensions use.
+  const chip = companyName(selected);
+  return parts.some((p) => (chip !== null && companyName(p) === chip) || p === selected || selected.includes(p) || p.includes(selected));
 }
 
 export function tagsMatchFacets(tags: ContentTags | undefined, facets: FacetQuery): boolean {
