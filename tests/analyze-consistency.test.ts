@@ -81,9 +81,10 @@ test("a failed analysis commit rolls back its judgement and receipt completion; 
   assert.equal((await sql`SELECT 1 FROM publications WHERE article_id=${articleId}`).length, 0);
   const hits = provider.hits();
   assert.equal((await processArticle(articleId)).state, "pass");
-  assert.equal(provider.hits(), hits, "retry commits the persisted responses without buying them again");
+  // The only new request is the separate five-dimension call, which runs after the judgement commits.
+  assert.equal(provider.hits(), hits + 1, "retry commits the persisted responses without buying them again");
   assert.equal((await sql`SELECT 1 FROM analyses WHERE article_id=${articleId}`).length, 1);
-  const completed = await sql`SELECT id,status FROM receipts WHERE subject=${subject} ORDER BY id`;
+  const completed = await sql`SELECT id,status FROM receipts WHERE subject=${subject} AND purpose <> 'facets_article' ORDER BY id`;
   assert.deepEqual(completed.map(r => r.id), received.map(r => r.id));
   assert.ok(completed.every(r => r.status === "completed"));
   assert.deepEqual({ ...(await sql`SELECT selected, selection_candidate FROM publications WHERE article_id=${articleId}`)[0] },

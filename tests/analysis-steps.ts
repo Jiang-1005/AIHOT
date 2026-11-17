@@ -4,11 +4,12 @@
 // working when a site rewrites the prompts and recalibrates the thresholds for its own industry.
 import { MEND_SYSTEM, SCORE_SYSTEM, selectionThreshold, STRUCTURE_SYSTEM } from "@aihot/backend/editorial/analyze";
 import { PREFILTER_SYSTEM, UNDERSTAND_SYSTEM } from "@aihot/backend/editorial/writing";
+import { FACETS_SYSTEM } from "@aihot/backend/editorial/facets";
 
-export type AnalysisStep = "prefilter" | "score" | "structure" | "understand" | "summarize" | "wording";
+export type AnalysisStep = "prefilter" | "score" | "structure" | "understand" | "summarize" | "wording" | "facets";
 
 const BY_SYSTEM = new Map<string, AnalysisStep>([
-  [PREFILTER_SYSTEM, "prefilter"], [SCORE_SYSTEM, "score"], [STRUCTURE_SYSTEM, "structure"], [UNDERSTAND_SYSTEM, "understand"], [MEND_SYSTEM, "wording"],
+  [PREFILTER_SYSTEM, "prefilter"], [SCORE_SYSTEM, "score"], [STRUCTURE_SYSTEM, "structure"], [UNDERSTAND_SYSTEM, "understand"], [MEND_SYSTEM, "wording"], [FACETS_SYSTEM, "facets"],
 ]);
 
 /** The step of a chat request, from its body as the provider receives it; the title/summary prompt comes without a system message. */

@@ -1,19 +1,9 @@
 // Five-dimension tags (taxonomy.md) for media and 社区热帖. Catalog: AIHOT_DATA_DIR/content-tags.json.
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { config, REPO_ROOT } from "../config.ts";
-
-export const FACET_VOCAB = {
-  topic: ["公司与资本", "产品与功能", "政策与合规", "研究与证据", "教学实践", "观点与趋势"],
-  subject: ["表达与口语", "阅读写作", "绘本伴读", "情商与SEL", "英语", "数理与提分", "全科通用", "不涉及"],
-  form: ["App与网页", "大模型学习模式", "教师工具与平台", "学习机与平板", "词典笔与点读绘本机", "AI玩具与陪伴设备", "服务（线下或真人+AI）", "不涉及"],
-  content_type: ["新闻快讯", "官方发布", "深度分析", "测评体验", "研究报告", "观点评论", "教程与提示词", "用户自述"],
-} as const;
-
-export const HEAD_COMPANIES = [
-  "好未来", "学而思", "新东方", "猿辅导", "作业帮", "有道", "讯飞", "高途", "豆神", "洋葱学园", "叫叫",
-  "Duolingo（多邻国）", "Khan Academy", "Chegg", "Quizlet", "Speak",
-] as const;
+import { baseLabel, companyName, companyNames, companySpellings, FACET_VOCAB, HEAD_COMPANIES } from "@aihot/contracts/facets";
+import { config } from "../config.ts";
+import { sql } from "../db.ts";
 
 export interface ContentTags {
   topic?: string;
@@ -29,11 +19,6 @@ export interface FacetQuery {
   form?: string[];
   content_type?: string[];
   company?: string[];
-}
-
-export function baseLabel(value: string | null | undefined): string {
-  if (!value) return "";
-  return String(value).split("｜")[0].trim();
 }
 
 export function parseFacetQuery(q: Record<string, string>): FacetQuery {
@@ -81,6 +66,8 @@ export function loadLogoIndex(): { index: Record<string, string>; missing: strin
     name: it.name, path: it.path, source_url: it.source_url,
   }));
   for (const it of items) if (it.name && it.path) index[it.name] = it.path;
+  // A chip finds its logo under any spelling: the logo list says "Khan Academy", the chip is 「Khan Academy（可汗学院）」.
+  for (const [name, logo] of Object.entries(index)) { const chip = companyName(name); if (chip && !index[chip]) index[chip] = logo; }
   const missing = ((raw.missing as Array<{ name: string }>) ?? []).map((m) => m.name);
   return { index, missing, items };
 }
@@ -106,17 +93,9 @@ export function loadContentTagMap(): Record<string, ContentTags> {
 
 function companyMatches(token: string, selected: string): boolean {
   const parts = token.split(/\s*[›>／/]\s*/).map((s) => s.trim()).filter(Boolean);
-  const aliases: Record<string, string[]> = {
-    有道: ["有道", "网易有道"],
-    讯飞: ["讯飞", "科大讯飞"],
-    豆神: ["豆神", "豆神教育"],
-    "Khan Academy": ["Khan Academy", "Khan", "可汗学院"],
-    Duolingo: ["Duolingo", "多邻国", "Duolingo（多邻国）"],
-    "Duolingo（多邻国）": ["Duolingo", "多邻国", "Duolingo（多邻国）"],
-    多邻国: ["Duolingo", "多邻国", "Duolingo（多邻国）"],
-  };
-  const names = new Set([selected, ...(aliases[selected] ?? [])].map((s) => s.toLowerCase()));
-  return parts.some((p) => names.has(p.toLowerCase()) || p === selected || selected.includes(p) || p.includes(selected));
+  // The aliases (倍乐生 and Benesse, 微软 and Microsoft, ...) are the ones the stored dimensions use.
+  const chip = companyName(selected);
+  return parts.some((p) => (chip !== null && companyName(p) === chip) || p === selected || selected.includes(p) || p.includes(selected));
 }
 
 export function tagsMatchFacets(tags: ContentTags | undefined, facets: FacetQuery): boolean {
@@ -133,6 +112,20 @@ export function tagsMatchFacets(tags: ContentTags | undefined, facets: FacetQuer
   return true;
 }
 
+/**
+ * The reports whose stored five dimensions (article_facets) match: within a dimension any chosen
+ * value, across dimensions all of them. Empty when no dimension is chosen.
+ */
+export function articleFacetCondition(f: FacetQuery) {
+  if (!facetsActive(f)) return sql``;
+  const pick = (column: "topic" | "subject" | "form" | "content_type", values: string[] | undefined) =>
+    values?.length ? sql`AND af.${sql(column)} IN ${sql(values.map(baseLabel))}` : sql``;
+  const companies = [...new Set((f.company ?? []).flatMap(companySpellings))];
+  const company = f.company?.length ? sql`AND af.companies && ${companies}::text[]` : sql``;
+  return sql`AND p.article_id IN (SELECT af.article_id FROM article_facets af WHERE TRUE
+    ${pick("topic", f.topic)} ${pick("subject", f.subject)} ${pick("form", f.form)} ${pick("content_type", f.content_type)} ${company})`;
+}
+
 export function articleIdsMatchingFacets(facets: FacetQuery): string[] | null {
   if (!facetsActive(facets)) return null;
   const map = loadContentTagMap();
@@ -142,16 +135,6 @@ export function articleIdsMatchingFacets(facets: FacetQuery): string[] | null {
     if (tagsMatchFacets(tags, facets)) ids.add(key);
   }
   return [...ids];
-}
-
-function chipName(token: string): string | null {
-  if (!token || token === "不涉及" || token === "未查到" || token === "待定" || token === "小红书" || token === "X" || token === "心田花开" || token === "心田") return null;
-  // filename / skill
-  if (/^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$/.test(token) && !token.includes("›")) return null;
-  const company = token.split(/\s*[›>／/]\s*/)[0]?.trim();
-  if (!company) return null;
-  const display: Record<string, string> = { 网易有道: "有道", 科大讯飞: "讯飞", 豆神教育: "豆神", Khan: "Khan Academy", Duolingo: "Duolingo（多邻国）", 多邻国: "Duolingo（多邻国）" };
-  return display[company] ?? company;
 }
 
 export function loadFacetsMeta() {
@@ -182,10 +165,7 @@ export function loadFacetsMeta() {
     inc(counts.subject, tags.subject);
     inc(counts.form, tags.form);
     inc(counts.content_type, tags.content_type);
-    for (const token of tags.companies ?? []) {
-      const name = chipName(token);
-      if (name) counts.company[name] = (counts.company[name] ?? 0) + 1;
-    }
+    for (const name of new Set((tags.companies ?? []).flatMap((t) => companyNames(t).slice(0, 1)))) counts.company[name] = (counts.company[name] ?? 0) + 1;
   }
   return {
     vocab: FACET_VOCAB,
