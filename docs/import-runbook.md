@@ -48,6 +48,17 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 - 可重复跑；不挑内容、不改打分规则和门槛（门槛在 docs/selection.md）。
 - 一天没跑会漏刊：稿子当天没打分，第二天补打分后不会自动进前一天的日报（按上线时间算窗口），需要 Grok Bot 手动补。所以早晚两轮都要跑。
 
+## 健康检查（2026-11-17 起，每轮同步后必跑）
+第 4 步 sync-to-neon.sh 跑完之后：
+
+    python3 /workspace/edu-hot/scripts/check-pipeline-health.py
+
+- 最后一行是 HEALTH OK 才算这轮完成；报告里加一行「健康检查：OK」，或原样贴 HEALTH FAIL 那一行。FAIL 就不报完成。
+- FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
+- FAIL 在 inputs：报告里写缺哪个文件、名字该是什么，不替别的 bot 改名或补抓。
+- FAIL 在 db：停，不同步，叫 Grok Bot。
+- WARN 只是提示，照常报，不算 FAIL。
+
 ## 红线
 - 不打印任何密钥、口令、连接串；不 pkill qodercli（只杀自己的 PID）。
 - 不写 /workspace/edu-radar/grok-posts.json（那是内容雷达的产物）。
