@@ -16,7 +16,7 @@ C J 2026-11-13 10:40 确认：从今晚 20:30 那轮起导入由「教育AIHOT �
 
 ## 每轮步骤（9:30 / 20:30 北京时间；晚轮只导早上之后新增的）
 1. 输入
-   - 媒体：/workspace/ai-edu/briefs/daily-YYYY-MM-DD/ 下所有 items*.csv（早 items.csv，晚 items-pm.csv 或 items-evening.csv；12 列表头）。缺文件就写明缺了，不要自己补抓芥末堆、中国教育在线、多知、EdSurge、K-12 Dive、The 74。
+   - 媒体：/workspace/ai-edu/briefs/daily-YYYY-MM-DD/ 下的约定文件（早 items.csv，晚 items-pm.csv 或别名 items-evening.csv；12 列表头）。缺文件就写明缺了，不要自己补抓芥末堆、中国教育在线、多知、EdSurge、K-12 Dive、The 74。导入用 `/workspace/edu-hot/scripts/import-brief-items.sh --date YYYY-MM-DD`（它会先把运维目录这份脚本拷进 API 容器再跑，只读上面这些约定文件名）。同目录里的 items-noon.csv、items.dedup.csv、核验清单等非正式文件只提示，不会被自动读进来；不要把它们当作 --file 传进去。
    - 新品：同目录 ph-items.csv，没有就跳过。
    - 国内公司动态/政策：/workspace/ai-edu/briefs/backfill-2026-11-10/ 的 items-backfill*.csv、policy-backfill*.csv 比上次导入新时运行：
      docker cp /workspace/ai-edu/briefs/backfill-2026-11-10/. xintian-edu-hot-api-1:/tmp/backfill-2026-11-10/
@@ -56,7 +56,7 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 
 - 最后一行是 HEALTH OK 才算这轮完成；报告里加一行「健康检查：OK」，或原样贴 HEALTH FAIL 那一行。FAIL 就不报完成。
 - FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
-- FAIL 在 inputs：只报告清单里该有、且已过截止时间仍缺的文件（雷达早 8:25 / 晚 19:20，脚本在 8:40 / 19:35 才升为 FAIL；行业早 8:50 / 晚 19:50，脚本在 9:05 / 20:05 才升为 FAIL）。目录里多出来的、名字不合约定的雷达文件只 WARN，不算缺件，不替别的 bot 改名或补抓。
+- FAIL 在 inputs：只报告清单里该有、且已过截止时间仍缺的文件（雷达早 8:25 / 晚 19:20，脚本在 8:40 / 19:35 才升为 FAIL；行业早 8:50 / 晚 19:50，脚本在 9:05 / 20:05 才升为 FAIL）。目录里多出来的、名字不合约定的雷达文件只 WARN，不算缺件，不替别的 bot 改名或补抓。行业目录里的非正式 items 文件（如 items-noon.csv、items.dedup.csv）同样只 WARN，因为 import-brief-items.ts 不会自动读它们；只有「会被读进来、且含有不在正式 items 里的条目」才升为 FAIL。
 - FAIL 在 db：停，不同步，叫 Grok Bot。
 - FAIL 在 deps（宿主机 node_modules 不在，盒子重启后会出现）：在 /workspace/edu-hot 跑 `npm ci` 再查。sync-to-neon.sh 和 score-and-compose.sh 开头会自动补装，npm ci 失败就退出非 0，这轮停下叫 Grok Bot。
 - FAIL 在 fresh：某一项超过失败阈值没更新。热点榜：看 score-and-compose.sh 输出有没有 hot 字段、sync-to-neon.sh 有没有跑完，补跑这两条再查；热帖：查 import-voices.py 这轮跑没跑；日报、周报：再跑一次 score-and-compose.sh。还 FAIL 就在群里叫 Grok Bot。
@@ -92,7 +92,7 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 | 输出 | 数据从哪来 | 新鲜度阈值（告警 / FAIL） | 出问题叫谁 |
 |---|---|---|---|
 | 热帖 | 📡 AI 教育内容雷达（grok-posts.json、x-posts-feishu-new-*.csv）+ collect-cn-community.py | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot；信源由 C J 定 |
-| 日报 | 🔭 AI 教培行业观察的公司、政策、媒体条目（items*.csv）+ 热帖，score-and-compose.sh 出刊 | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot |
+| 日报 | 🔭 AI 教培行业观察的公司、政策、媒体条目（约定的 items.csv / items-pm.csv，别名 items-evening.csv）+ 热帖，score-and-compose.sh 出刊 | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot |
 | 周报 | 同日报，score-and-compose.sh 按周出刊 | 8 天 / 9 天 | 群里 @🤖 Grok Bot |
 | 热点榜 | 已归事件的稿件，score-and-compose.sh 第 4 步重算 | 13 小时 / 25 小时；0 条默认提示，候选≥1 且过了一轮该刷新的同步则失败 | 群里 @🤖 Grok Bot；上榜门槛由 C J 定 |
 

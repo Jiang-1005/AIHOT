@@ -44,7 +44,7 @@ FRESHNESS = [
 BACKUP_DIR = "/home/box/edu-hot-local/backups"
 OPS_SCRIPTS = ["scripts/sync-to-neon.sh", "scripts/export-to-neon.sh", "scripts/resolve-neon-urls.py",
                "scripts/reset-sequences.sql", "scripts/env-exports.py", "scripts/import-voices.py",
-               "scripts/import-brief-items.ts", "scripts/score-and-compose.sh", "scripts/score-and-compose.ts",
+               "scripts/import-brief-items.ts", "scripts/import-brief-items.sh", "scripts/score-and-compose.sh", "scripts/score-and-compose.ts",
                "scripts/check-pipeline-health.py", "docs/import-runbook.md"]
 
 results = []  # (level, check, message)
@@ -90,25 +90,40 @@ def check_inputs(as_of, slot, radar_dir=None, briefs=None):
             add("WARN", "inputs", f"行业晚轮用了别名 items-evening.csv，约定是 items-pm.csv")
         else:
             add("FAIL" if slot_due(as_of, slot, "industry") else "WARN", "inputs", f"行业 daily-{iso}/{os.path.basename(canon)} 还没到")
-    # import-brief-items.ts 读 ^items.*\.csv$：多出来的文件会被一起导入
+    # import-brief-items.ts 自动发现只读约定文件名；清单外的 items*.csv 不会被读进来。
     if os.path.isdir(ddir):
         canon_urls = set()
-        for n in ("items.csv", "items-pm.csv", "items-evening.csv"):
+        for n in OFFICIAL_ITEMS_NAMES:
             canon_urls |= urls_of(f"{ddir}/{n}", "原文链接")
         for p in sorted(glob.glob(f"{ddir}/items*.csv")):
             n = os.path.basename(p)
-            if n in ("items.csv", "items-pm.csv", "items-evening.csv") or not existed(p, as_of):
+            if n in OFFICIAL_ITEMS_NAMES or not existed(p, as_of):
                 continue
-            if not has_col(p, "原文链接"):
-                add("WARN", "inputs", f"{n} 也匹配 items*.csv，但没有「原文链接」列，导入会整份跳过；中间文件请换个不以 items 开头的名字")
-                continue
-            extra = urls_of(p, "原文链接") - canon_urls
-            if extra:
-                add("FAIL", "inputs", f"{n} 会被 import-brief-items.ts 一起读进来，且有 {len(extra)} 条不在正式 items 里（候选/删掉的条目会上站）")
-            else:
-                add("WARN", "inputs", f"{n} 也匹配 items*.csv，目前和正式文件链接一致；中间文件请换个不以 items 开头的名字")
+            extra = urls_of(p, "原文链接") - canon_urls if has_col(p, "原文链接") else set()
+            level, msg = assess_extra_items_file(n, extra_count=len(extra), will_read=importer_auto_reads_items(n), has_url_col=has_col(p, "原文链接"))
+            add(level, "inputs", msg)
+
+# Keep in sync with OFFICIAL_BRIEF_ITEM_FILES in scripts/import-brief-items.ts
+OFFICIAL_ITEMS_NAMES = ("items.csv", "items-pm.csv", "items-evening.csv")
+
+def importer_auto_reads_items(name):
+    return name in OFFICIAL_ITEMS_NAMES
+
+def assess_extra_items_file(name, extra_count, will_read, has_url_col=True):
+    """Informal items files are WARN once the importer will not read them.
+    FAIL is reserved for a file that would be imported and has unofficial URLs."""
+    if will_read and has_url_col and extra_count:
+        return "FAIL", f"{name} 会被 import-brief-items.ts 一起读进来，且有 {extra_count} 条不在正式 items 里（候选/删掉的条目会上站）"
+    if will_read and not has_url_col:
+        return "WARN", f"{name} 会被 import-brief-items.ts 读进来，但没有「原文链接」列，导入会整份跳过"
+    if not has_url_col:
+        return "WARN", f"{name} 不是约定的正式 items 文件，且没有「原文链接」列；import-brief-items.ts 不会读进来"
+    if extra_count:
+        return "WARN", f"{name} 不是约定的正式 items 文件，其中有 {extra_count} 条不在正式 items 里；import-brief-items.ts 不会读进来"
+    return "WARN", f"{name} 不是约定的正式 items 文件；import-brief-items.ts 不会读进来"
 
 def has_col(path, col):
+
     try:
         with open(path, encoding="utf-8-sig") as f:
             return col in (next(csv.reader(f), []) or [])

@@ -1,16 +1,19 @@
 // Generic daily brief items import (company / policy / media materials).
-// Accepts a date and one or more items*.csv files. Idempotent: dedupes by 原文链接
+// Accepts a date and one or more official items files. Idempotent: dedupes by 原文链接
 // (within the batch and against existing articles). Does not change official collectors.
 //
-// Usage (inside xintian-edu-hot-api-1, or from the repo root with DATABASE_URL):
+// Usage (prefer scripts/import-brief-items.sh, which copies this file into the
+// api container first). Inside xintian-edu-hot-api-1, or from the repo root with DATABASE_URL:
 //   node /app/scripts/import-brief-items.ts --date 2026-11-13
 //   node /app/scripts/import-brief-items.ts --date 2026-11-13 --file /data/brief-20261113-items.csv
-//   node /app/scripts/import-brief-items.ts --date 2026-11-13 /data/items.csv /data/items-extra.csv
+//   node /app/scripts/import-brief-items.ts --date 2026-11-13 /data/items.csv /data/items-pm.csv
 //
-// When --file / positional paths are omitted, the script looks for:
+// When --file / positional paths are omitted, auto-discovery only reads official names:
 //   /data/brief-YYYYMMDD-items.csv
-//   /data/items*.csv
-//   /workspace/ai-edu/briefs/daily-YYYY-MM-DD/items*.csv
+//   /data/items.csv, items-pm.csv, items-evening.csv
+//   /workspace/ai-edu/briefs/daily-YYYY-MM-DD/{items.csv,items-pm.csv,items-evening.csv}
+// Mid-day or working files such as items-noon.csv, items.dedup.csv, or 核验清单
+// are not auto-imported. Pass them with --file only if you really intend to.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { beijingDate, beijingMidnight } from "@aihot/contracts/time";
@@ -100,6 +103,9 @@ function parseArgs(argv: string[]): { date: string; files: string[] } {
   return { date: chosen, files };
 }
 
+// Keep in sync with OFFICIAL_ITEMS_NAMES in scripts/check-pipeline-health.py
+const OFFICIAL_BRIEF_ITEM_FILES = new Set(["items.csv", "items-pm.csv", "items-evening.csv"]);
+
 function discoverFiles(date: string): string[] {
   const compact = date.replaceAll("-", "");
   const found: string[] = [];
@@ -109,7 +115,7 @@ function discoverFiles(date: string): string[] {
   for (const dir of dirs) {
     if (!existsSync(dir)) continue;
     for (const name of readdirSync(dir)) {
-      if (!/^items.*\.csv$/i.test(name)) continue;
+      if (!OFFICIAL_BRIEF_ITEM_FILES.has(name)) continue;
       found.push(path.join(dir, name));
     }
   }
@@ -178,7 +184,7 @@ async function ensureSource(id: string, name: string, existing?: boolean) {
 const { date: today, files: argFiles } = parseArgs(process.argv.slice(2));
 const files = argFiles.length ? uniqueExisting(argFiles) : discoverFiles(today);
 if (!files.length) {
-  throw new Error(`no items*.csv found for ${today}; pass --file or copy the CSV to /data/brief-${today.replaceAll("-", "")}-items.csv`);
+  throw new Error(`no official items.csv / items-pm.csv / items-evening.csv (or /data/brief-${today.replaceAll("-", "")}-items.csv) found for ${today}; pass --file if you mean to import a specific path`);
 }
 
 type Incoming = { row: Record<string, string>; file: string; url: string; norm: string };
