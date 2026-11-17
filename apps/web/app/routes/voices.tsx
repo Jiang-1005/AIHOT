@@ -11,6 +11,7 @@ import type { Screen } from "../components/shell/screens";
 import { PhoneBar } from "../components/shell/PhoneBar";
 import { EmptyState } from "../components/ui/Page";
 import { PillTabs } from "../components/ui/Tabs";
+import { useModal } from "../components/ui/modal";
 import {
   EMPTY_FACETS,
   FacetChipRows,
@@ -400,6 +401,10 @@ export default function VoicesPage() {
   const [verify, setVerify] = useState<VerifyKey>(verifyFromParams(params));
   const [view, setView] = useState<ViewKey>(params.get("view") === "compact" ? "compact" : "cards");
   const [sheet, setSheet] = useState(false);
+  const sheetPanel = useRef<HTMLDivElement>(null);
+  const closeSheet = useCallback(() => setSheet(false), []);
+  // The phone filter sheet: Escape closes it, Tab stays inside, and focus goes back to 筛选.
+  useModal({ open: sheet, panel: sheetPanel, onClose: closeSheet });
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
   const [items, setItems] = useState(data.items);
   const [partial, setPartial] = useState(Boolean(data.itemsPartial));
@@ -694,8 +699,8 @@ export default function VoicesPage() {
 
       {sheet && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <button type="button" className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={() => setSheet(false)} />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-sheet bg-surface pb-8 shadow-[var(--shadow-overlay)]">
+          <button type="button" tabIndex={-1} className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={closeSheet} />
+          <div ref={sheetPanel} role="dialog" aria-modal="true" aria-label="筛选" tabIndex={-1} className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-sheet bg-surface pb-8 shadow-[var(--shadow-overlay)] outline-none">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line-soft bg-surface px-4 py-3">
               <h2 className="text-[1rem] font-semibold text-ink">筛选</h2>
               <div className="flex items-center gap-2">

@@ -19,7 +19,7 @@ import { SearchOverlay } from "./features/search/SearchOverlay";
 import { BackToTop, NavigationProgress } from "./components/shell/Chrome";
 import { buttonClass } from "./components/ui/Controls";
 import { rememberPage, APPEARANCE_BOOT_SCRIPT, useAppearanceSync } from "./lib/local-state";
-import { apiGet } from "./lib/api.server";
+import { apiGet, previewApiBase } from "./lib/api.server";
 import { useHydratedFlag } from "./lib/hydration";
 import { titled } from "./lib/seo";
 import { webModules } from "./site-modules";
@@ -40,6 +40,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     const meta = await apiGet<SiteMeta>("/api/site/meta", {
       headers: Object.assign({}, ...webModules().map((m) => m.root?.documentHeaders?.(request) ?? {})),
       signal: request.signal,
+      // A preview stamps the branch's own data (its site/preview copy), not production's.
+      base: previewApiBase(),
     });
     return { ...meta, release };
   } catch {
