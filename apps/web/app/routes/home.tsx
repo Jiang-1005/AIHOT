@@ -10,6 +10,7 @@ import { inNav } from "../components/shell/nav";
 import type { Screen } from "../components/shell/screens";
 import type { FacetsMeta } from "../components/facets/FacetChips";
 import { featuredFacetMeta } from "../lib/featured-facets";
+import { FocusCarousel } from "../features/motion/LiveCards";
 import { Timeline } from "../features/feed/Timeline";
 import { HotTopics } from "../features/feed/HotTopics";
 import { Masthead, type MastheadIssue } from "../features/feed/Masthead";
@@ -62,6 +63,8 @@ export default function Home() {
       <ActiveFilters base="/" category={filters.category} channel={filters.channel} tag={filters.tag} />
       {front && <Masthead today={today} issue={issue} todayCount={data.dayCounts[today] ?? 0} />}
       <DesktopFacetBlock base="/" title={title} titleHidden={front} meta={featuredFacets ?? facets} facets={!!featuredFacets} search={<SearchField keep={{ category: filters.category }} />} />
+
+      {front && <FocusCarousel entries={data.cards.map((c) => ({ id: c.item.id, title: c.item.title, summary: c.item.summary, source: c.item.source.name, score: c.item.score }))} />}
 
       {data.hot && inNav("/hot") && <HotTopics entries={data.hot} />}
 

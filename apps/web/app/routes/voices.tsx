@@ -7,6 +7,7 @@ import { cachedPage, loadOr404 } from "../lib/api.server";
 import { pageReuse } from "../lib/page-reuse";
 import { pageMeta } from "../lib/seo";
 import { beijingToday, formatWhen } from "../lib/voice-time";
+import { FlashStack } from "../features/motion/LiveCards";
 import type { Screen } from "../components/shell/screens";
 import { PhoneBar } from "../components/shell/PhoneBar";
 import { EmptyState } from "../components/ui/Page";
@@ -665,6 +666,12 @@ export default function VoicesPage() {
             />
           </div>
 
+          {!scoped && (
+            <FlashStack
+              entries={filtered.slice(0, 8).map((v) => ({ id: v.id, title: cardTitle(v), platform: v.platform, when: formatWhen(v, today) }))}
+              onOpen={openReader}
+            />
+          )}
           {partial && (
             <div className="voices-status" role="status" aria-live="polite" data-voices-status={catalogFailed ? "error" : "loading"}>
               {catalogFailed ? (

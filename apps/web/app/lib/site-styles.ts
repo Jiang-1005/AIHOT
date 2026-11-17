@@ -9,7 +9,7 @@ export const SITE_STYLES = [
   { id: "paper", label: "晨报", hint: "报纸分栏，衬线大标题" },
   { id: "console", label: "控制台", hint: "密集列表，适合快速扫读" },
   { id: "bento", label: "看板", hint: "大卡片，头条一块主色" },
-  // Next: { id: "motion", label: "微动", hint: "…" } with app/styles/themes/motion.css (design: themes-1117 src/motion.css).
+  { id: "motion", label: "微动", hint: "会自己动的卡片，深色大圆角" },
 ] as const satisfies ReadonlyArray<{ id: string; label: string; hint: string }>;
 
 export type SiteStyleId = (typeof SITE_STYLES)[number]["id"];

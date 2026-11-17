@@ -4,6 +4,7 @@
 @import "./styles/themes/paper.css";
 @import "./styles/themes/console.css";
 @import "./styles/themes/bento.css";
+@import "./styles/themes/motion.css";
 /* Classes also live in the site's logo and changelog drawings (site/brand, site/changelog) and in the
    modules' web code (their other files are not scanned: words in backend code and data would become classes). */
 @source "../../../site/brand";
