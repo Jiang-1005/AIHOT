@@ -132,5 +132,83 @@ class EmptyHotBoard(unittest.TestCase):
         self.assertIn("至少 2 个独立来源且含 1 个精选源", msg)
 
 
+
+class IndustryInputs(unittest.TestCase):
+    def setUp(self):
+        h.results.clear()
+        self.tmp = tempfile.TemporaryDirectory()
+        self.radar = Path(self.tmp.name) / "radar"
+        self.briefs = Path(self.tmp.name) / "briefs"
+        self.radar.mkdir()
+        self.briefs.mkdir()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def write_csv(self, rel, urls, when, header=True):
+        p = self.briefs / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        if header:
+            lines = ["原文链接,标题"] + [f"{u},t" for u in urls]
+        else:
+            lines = ["标题"] + ["t" for _ in urls]
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        ts = when.timestamp()
+        os.utime(p, (ts, ts))
+        return p
+
+    def run_inputs(self, as_of, slot):
+        h.results.clear()
+        h.check_inputs(as_of, slot, radar_dir=str(self.radar), briefs=str(self.briefs))
+        return [(lv, msg) for lv, ck, msg in h.results if ck == "inputs" and "雷达" not in msg]
+
+    def test_official_name_list_matches_importer(self):
+        self.assertEqual(h.OFFICIAL_ITEMS_NAMES, ("items.csv", "items-pm.csv", "items-evening.csv"))
+        self.assertTrue(h.importer_auto_reads_items("items.csv"))
+        self.assertTrue(h.importer_auto_reads_items("items-pm.csv"))
+        self.assertTrue(h.importer_auto_reads_items("items-evening.csv"))
+        self.assertFalse(h.importer_auto_reads_items("items-noon.csv"))
+        self.assertFalse(h.importer_auto_reads_items("items.dedup.csv"))
+        src = Path(h.__file__).with_name("import-brief-items.ts").read_text(encoding="utf-8")
+        self.assertIn('new Set(["items.csv", "items-pm.csv", "items-evening.csv"])', src)
+        self.assertNotIn("items*.csv", src.split("function discoverFiles", 1)[1].split("function uniqueExisting", 1)[0])
+
+    def test_noon_extras_are_warn_because_importer_will_not_read_them(self):
+        t = at("2026-11-17T13:24:00")
+        self.write_csv("daily-2026-11-17/items.csv", ["https://official.example/a"], t)
+        self.write_csv("daily-2026-11-17/items-noon.csv", [
+            "https://www.edu.tw/News_Content.aspx?n=9E7AC85F1954DDA8&s=C11B7907E97AA5F9",
+            "https://www.jiji.com/jc/article?k=000000014.000126494&g=prt",
+        ], t)
+        rows = self.run_inputs(at("2026-11-17T15:49:00"), "pm")
+        noon = [(lv, msg) for lv, msg in rows if "items-noon.csv" in msg]
+        self.assertEqual(len(noon), 1, rows)
+        self.assertEqual(noon[0][0], "WARN")
+        self.assertIn("2 条不在正式 items 里", noon[0][1])
+        self.assertIn("不会读进来", noon[0][1])
+        self.assertFalse(any(lv == "FAIL" for lv, _ in rows), rows)
+        self.assertTrue(any(lv == "WARN" and "items-pm.csv 还没到" in msg for lv, msg in rows), rows)
+
+    def test_dedup_without_url_col_is_warn_not_fail(self):
+        t = at("2026-11-17T12:20:00")
+        self.write_csv("daily-2026-11-17/items.csv", ["https://official.example/a"], t)
+        self.write_csv("daily-2026-11-17/items.dedup.核验清单.csv", ["ignored"], t, header=False)
+        rows = self.run_inputs(at("2026-11-17T12:30:00"), "am")
+        hit = [(lv, msg) for lv, msg in rows if "核验清单" in msg]
+        self.assertEqual(len(hit), 1, rows)
+        self.assertEqual(hit[0][0], "WARN")
+        self.assertIn("不会读进来", hit[0][1])
+        self.assertFalse(any(lv == "FAIL" for lv, _ in rows), rows)
+
+    def test_fail_reserved_for_files_the_importer_would_still_read(self):
+        level, msg = h.assess_extra_items_file("items-noon.csv", extra_count=2, will_read=True, has_url_col=True)
+        self.assertEqual(level, "FAIL")
+        self.assertIn("会被 import-brief-items.ts 一起读进来", msg)
+        self.assertIn("2 条不在正式 items 里", msg)
+        level, msg = h.assess_extra_items_file("items-noon.csv", extra_count=2, will_read=False, has_url_col=True)
+        self.assertEqual(level, "WARN")
+        self.assertIn("不会读进来", msg)
+
+
 if __name__ == "__main__":
     unittest.main()
