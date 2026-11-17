@@ -123,7 +123,7 @@ function Voices({ e }: { e: HotEntryView }) {
       <span className="text-ink-3"><SourceLine e={e} /></span>
       {e.latestAt && (
         <>
-          <span className="mx-2 text-line-strong">·</span>
+          <span className="mx-2 text-line-strong" aria-hidden="true">·</span>
           <time className="whitespace-nowrap num" dateTime={e.latestAt} suppressHydrationWarning>
             {relativeTime(e.latestAt)}
           </time>

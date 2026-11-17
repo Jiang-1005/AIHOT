@@ -382,7 +382,7 @@ function RailChip({ on, count, onClick, children }: { on: boolean; count?: numbe
   return (
     <button type="button" aria-pressed={on} disabled={empty} className={chipClass(on)} onClick={onClick}>
       {children}
-      {count !== undefined && <span className="num opacity-70">{count}</span>}
+      {count !== undefined && <span className={on ? "num" : "num opacity-70"}>{count}</span>}
     </button>
   );
 }

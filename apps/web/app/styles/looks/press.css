@@ -16,7 +16,7 @@
   --line-strong: #807973;
   --line-soft: #e3d6ca;
   --rule: #33302e;
-  --accent: #0d7680;
+  --accent: #0c6f78; /* FT teal #0d7680, a shade darker so small teal text clears AA on its tint */
   --accent-ink: #0a5e66;
   --accent-soft: rgba(13, 118, 128, 0.09);
   --accent-softer: rgba(13, 118, 128, 0.09);
