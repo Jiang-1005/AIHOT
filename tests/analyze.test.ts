@@ -15,7 +15,7 @@ import { QUEUES, stopBoss } from "@aihot/backend/jobs/queue";
 import { compactAnswerFirstSummary, enforceIdentity, MAX_BODY_CHARS, parseTranslateOutput } from "@aihot/backend/editorial/writing";
 import { READER_WORDING } from "@aihot/industry/wording";
 import { SELECTION } from "@aihot/industry/selection";
-import { ITEM_TYPES } from "@aihot/industry/taxonomy";
+import { ITEM_TYPES, TOPIC_TAGS } from "@aihot/industry/taxonomy";
 
 const T = tag();
 const SOURCE = `test-analyze-${T}`;
@@ -26,19 +26,21 @@ interface Req { step: AnalysisStep; marker: string; user: string }
 const requests: Req[] = [];
 const MARKERS = ["CLEAR", "RESCUE", "LOW", "OFFTOPIC", "BARE", "VAGUE", "THIN", "SENSITIVE", "推文", "WORDY", "REFUSAL", "RENUMBER", "UNMENDED", "ECOSYS"];
 // The scores sit a few points around the pack's single threshold and understand floor, so each case means
-// the same after a site recalibrates them: selected when the two add up to 2 × threshold, written like a
-// selected item when they add up to more than 2 × FLOOR, translated otherwise.
+// the same after a site recalibrates them: selected when their mean, rounded down (plus any relevance bonus),
+// reaches the threshold, written like a selected item when that mean is above FLOOR, translated otherwise.
 const T1 = selectionThreshold({ tier: "T1" })!;
 const T2 = selectionThreshold({ tier: "T2" })!;
 const FLOOR = UNDERSTAND_FLOOR;
 const CLASS = Object.keys(SELECTION.classes)[0];
 const scoreAnswers: Record<string, number[]> = {
-  CLEAR: [T1 + 3, T1 - 1], RESCUE: [FLOOR + 1, FLOOR], LOW: [FLOOR, FLOOR - 1], THIN: [T1, T1], SENSITIVE: [T1, T1], 推文: [FLOOR, FLOOR],
+  CLEAR: [T1 + 3, T1 - 1], RESCUE: [FLOOR + 2, FLOOR], LOW: [FLOOR, FLOOR - 1], THIN: [T1, T1], SENSITIVE: [T1, T1], 推文: [FLOOR, FLOOR],
   BARE: [FLOOR - 2, FLOOR - 4], VAGUE: [T1, T1 + 2], WORDY: [T1, T1], REFUSAL: [T1, T1], RENUMBER: [T1, T1], UNMENDED: [T1, T1],
   ECOSYS: [T1 + 3, T1 - 1],
 };
 
 const WORDY = ["WORDY", "REFUSAL", "RENUMBER", "UNMENDED"];
+// A topic tag from the pack's own vocabulary: a tag outside it is dropped from the structure's answer.
+const TOPIC_TAG = TOPIC_TAGS[0];
 
 // One stub stands in for DashScope (prefilter, structure), Zhipu (score, understand) and DeepSeek (summarize).
 const provider = await stub((_hit, req) => {
@@ -64,7 +66,7 @@ const provider = await stub((_hit, req) => {
     if (marker === "SENSITIVE") return new Reply(400, { contentFilter: [{ level: 1, role: "user" }], error: { code: "1301", message: "系统检测到输入或生成内容可能包含不安全或敏感内容" } });
     return answer({ itemType: "model_release", authorRole: "principal", tags: ["模型发布", "开源", "Agent", "不存在的标签"], editorialJudgment: `理由 ${marker}`, titleZh: `理解标题 ${marker}`, summaryZh: `理解摘要 ${marker}。第二句补充一个关键数字。` });
   }
-  if (step === "structure") return answer({ category: "ai-models", tags: ["模型发布", "推理"], subjects: ["anthropic", "unknown-co"], scope: "single", fact: { title: `事实 ${marker}`, subject: "某公司", action: "发布", object: "模型", occurredAt: null, evidence: "a lab released a model", conditions: [] } });
+  if (step === "structure") return answer({ category: "ai-models", tags: ["模型发布", TOPIC_TAG], subjects: ["anthropic", "unknown-co"], scope: "single", fact: { title: `事实 ${marker}`, subject: "某公司", action: "发布", object: "模型", occurredAt: null, evidence: "a lab released a model", conditions: [] } });
   return answer(`title_zh: 翻译标题 ${marker}\nsummary_zh: 翻译摘要 ${marker}。第二句补充影响。`);
 });
 pointModels(provider.url);
@@ -102,7 +104,7 @@ test("a selected item: prefilter, two scores, the content understanding and the 
   const r = await row(id);
   assert.deepEqual([r.title_zh, r.reason_zh, r.category, r.receipt_ids.length], ["理解标题 CLEAR", "理由 CLEAR", "ai-models", 5]);
   // Failure case: the writer's independent labels contradict the structural category.
-  assert.deepEqual(r.tags, ["模型发布", "推理", "Anthropic"], "category and tags come from the same structural judgement, plus the verified subject tag");
+  assert.deepEqual(r.tags, ["模型发布", TOPIC_TAG, "Anthropic"], "category and tags come from the same structural judgement, plus the verified subject tag");
   assert.deepEqual(r.subjects, ["anthropic"]);
   assert.deepEqual([r.output.writer, r.output.itemType, r.output.prefilter.label, r.output.fact.title], ["understand", "model_release", "PASS", "事实 CLEAR"]);
   assert.equal(r.output.scope, "single");
@@ -181,12 +183,12 @@ test("structure retains grounded conditions, rejects invented or unseen quotes, 
 
 test("a near-selected item is written like a selected one; below the floor it is translated", async () => {
   const near = await analyzeArticle(await article("RESCUE"));
-  assert.deepEqual([near!.output!.selected, near!.output!.reasonZh], [false, "理由 RESCUE"], `${FLOOR + 1} + ${FLOOR} > 2 × ${FLOOR}`);
+  assert.deepEqual([near!.output!.selected, near!.output!.reasonZh], [false, "理由 RESCUE"], `floor((${FLOOR + 2} + ${FLOOR}) / 2) > ${FLOOR}`);
   const lowId = await article("LOW");
   const low = await analyzeArticle(lowId);
   assert.deepEqual([low!.output!.selected, low!.output!.titleZh, low!.output!.reasonZh], [false, "翻译标题 LOW", null]);
   assert.deepEqual(calls("LOW").sort(), ["prefilter", "score", "score", "structure", "summarize"]);
-  assert.deepEqual((await row(lowId)).tags, ["模型发布", "推理", "Anthropic"], "structure tags");
+  assert.deepEqual((await row(lowId)).tags, ["模型发布", TOPIC_TAG, "Anthropic"], "structure tags");
 });
 
 test("the prefilter's BLOCK stops everything; UNKNOWN with material goes on like PASS", async () => {

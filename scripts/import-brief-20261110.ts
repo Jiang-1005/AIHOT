@@ -2,6 +2,7 @@
 // Disabled external sources only — does not change the 23 official collectors.
 // Usage: docker exec -w /app xintian-edu-hot-api-1 node /app/scripts/import-brief-20261110.ts
 import { readFileSync } from "node:fs";
+import { beijingMidnight } from "@aihot/contracts/time";
 import { installModules } from "@aihot/backend/modules";
 import { closeDb, sql } from "@aihot/backend/db";
 import { stopBoss } from "@aihot/backend/jobs/queue";
@@ -114,7 +115,7 @@ const summary = {
 const today = "2026-11-10";
 function slotOf(day: string | null): string {
   if (!day) return "undated";
-  const age = Math.round((Date.parse(`${today}T00:00:00+08:00`) - Date.parse(`${day}T00:00:00+08:00`)) / 86400000);
+  const age = Math.round((beijingMidnight(today).getTime() - beijingMidnight(day).getTime()) / 86400000);
   if (age <= 7) return "featured";
   if (age <= 30) return "archive";
   return "older";
@@ -154,7 +155,7 @@ for (const r of rows) {
       continue;
     }
     await ensureSource(src.id, src.name, src.existing);
-    const publishedAt = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00+08:00`) : null;
+    const publishedAt = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? beijingMidnight(day) : null;
     const ageMs = publishedAt ? Date.now() - publishedAt.getTime() : null;
     const explicitBackfill = publishedAt && ageMs != null && ageMs > 48 * 3600 * 1000 ? "brief-2026-11-10" : (!publishedAt ? "brief-2026-11-10-undated" : null);
     const res = await upsertMaterial({

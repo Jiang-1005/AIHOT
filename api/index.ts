@@ -4,8 +4,8 @@ import { installModules } from "@aihot/backend/modules";
 import { SERVER_MODULES } from "@aihot/site/modules/server";
 import { DEPLOYMENT } from "@aihot/site";
 import { feishuLoginConfigured } from "@aihot/backend/admin/auth";
-import { gateMisconfigured } from "@aihot/backend/public-gate";
-import { buildApp } from "../apps/api/src/app.ts";
+import { gateMisconfigured } from "@aihot/contracts/public-gate";
+import { buildApp, hydrateCatalogsAtBoot } from "../apps/api/src/app.ts";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 installModules(SERVER_MODULES);
@@ -21,7 +21,7 @@ if (config.environmentName === "production" && !(config.adminPassword && config.
   throw new Error("Refusing to start in production: set ADMIN_PASSWORD (at least 12 characters) or configure Feishu sign-in");
 }
 
-const appPromise = buildApp().then(async (app) => {
+const appPromise = hydrateCatalogsAtBoot().then(buildApp).then(async (app) => {
   await app.ready();
   return app;
 });

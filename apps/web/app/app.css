@@ -310,7 +310,7 @@
     gap: 0.25rem;
     height: 2rem;
     padding: 0 0.75rem;
-    border-radius: 999px;
+    border-radius: 9999px;
     font-size: 0.75rem;
     color: var(--ink-4);
     background: var(--bg-sunk);
@@ -815,7 +815,7 @@
   align-items: center;
   gap: 4px;
   height: 32px;
-  border-radius: 999px;
+  border-radius: 9999px;
   padding: 0 12px;
   font-size: 0.75rem;
   line-height: 1;
@@ -835,7 +835,7 @@
 .voice-skel { min-height: 160px; }
 .voice-skel-line {
   height: 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-mark);
   background: var(--bg-muted);
 }
 .voice-skel-line:last-child { width: 60%; }
@@ -876,7 +876,9 @@
   }
   .voice-reader-panel {
     max-height: 92dvh;
-    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    border-radius: 0;
+    border-top-left-radius: var(--radius-sheet);
+    border-top-right-radius: var(--radius-sheet);
   }
 }
 

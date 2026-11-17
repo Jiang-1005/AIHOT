@@ -20,12 +20,12 @@ for(let f=0;f<2;f++) {
   facts.push(fact!.id);
   for(let n=0;n<6;n++) {
     const id = `${key}-${f}-${n}`;
-    const at = new Date(+now - (f===0 ? 10*86400000 : 3600000) + n*1000);
+    const at = new Date(+now - (f===0 ? 5*86400000 : 3600000) + n*1000);
     await sql`INSERT INTO articles (id,source_id,identity_key,url,title,timeline_at,discovered_at)
       VALUES (${id},${n===2?officialSource!.id:source!.id},${id},${'https://example.org/'+id},${id},${at},${at})`;
-    await sql`INSERT INTO publications (article_id,source_id,title,url,channel,timeline_at,discovered_at,sort_at,story_id,fact_id,
+    await sql`INSERT INTO publications (article_id,source_id,title,url,channel,published_at,timeline_at,discovered_at,sort_at,story_id,fact_id,
       selected,eligible,visible_after,tags,first_party,body_mode,score)
-      VALUES (${id},${n===2?officialSource!.id:source!.id},${id},${'https://example.org/'+id},'news',${at},${at},${at},${story!.id},${fact!.id},
+      VALUES (${id},${n===2?officialSource!.id:source!.id},${id},${'https://example.org/'+id},'news',${at},${at},${at},${at},${story!.id},${fact!.id},
       true,true,${at},${[key]},${n===2},'full',${90-n})`;
     await sql`INSERT INTO fact_articles (fact_id,article_id,role) VALUES (${fact!.id},${id},'report')`;
   }
@@ -38,7 +38,7 @@ after(closeDb);
 test('selected news keeps each fact at its first appearance under its representative',async()=>{
   const timeline = await loadTimeline({channel:'all',category:null,tag:key,now});
   assert.deepEqual(timeline.cards.map(c=>c.item.id),[`${key}-1-2`,`${key}-0-2`]);
-  assert.deepEqual(timeline.cards.map(c=>c.anchorAt),[new Date(+now-3600000).toISOString(),new Date(+now-10*86400000).toISOString()]);
+  assert.deepEqual(timeline.cards.map(c=>c.anchorAt),[new Date(+now-3600000).toISOString(),new Date(+now-5*86400000).toISOString()]);
   assert.deepEqual(timeline.cards.map(c=>c.group!.reportCount),[6,6]);
   assert.deepEqual(timeline.cards.map(c=>c.group!.additionalSourceCount),[1,1]);
   assert.ok(timeline.cards.every(c=>!('latestDevelopment' in c.group!)&&!('developmentCount' in c.group!)), 'news cards carry no event progress');

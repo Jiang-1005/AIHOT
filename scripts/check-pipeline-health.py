@@ -9,7 +9,8 @@
   issue    最新日报不早于昨天（有新稿却没出刊 = 失败）
   worker   worker 心跳（关着是已知状态，只提示）
   live     线上最新日报 = 本机最新日报，线上「数据截至」不落后本机同步时间
-  fresh    热帖、日报、周报、热点榜各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条只提示，附 candidates 数
+  fresh    热帖、日报、周报、热点榜、本机库备份各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条只提示，附 candidates 数
+  deps     宿主机 node_modules/@aihot/backend 在（sync-to-neon.sh 跑 migrate.ts 要用）
   checkout 运维目录 /workspace/edu-hot 没缺主线 jiang/main 上的运维脚本，本分支的运维脚本也已进主线
 
 全部只读：docker exec psql SELECT、读文件、curl 公网只读接口、git 本地对象。不写库、不 push、不打印任何密钥。
@@ -38,7 +39,9 @@ FRESHNESS = [
     ("daily",  "日报",   "本机 reports（kind=daily）max(generated_at)",  13,     25),
     ("weekly", "周报",   "本机 reports（kind=weekly）max(generated_at)", 8 * 24, 9 * 24),
     ("hot",    "热点榜", "线上 /api/site/hot 的 computedAt",             13,     25),
+    ("backup", "本机库备份", "/home/box/edu-hot-local/backups 里最新 local-*.dump 的修改时间", 13, 25),
 ]
+BACKUP_DIR = "/home/box/edu-hot-local/backups"
 OPS_SCRIPTS = ["scripts/sync-to-neon.sh", "scripts/export-to-neon.sh", "scripts/resolve-neon-urls.py",
                "scripts/reset-sequences.sql", "scripts/env-exports.py", "scripts/import-voices.py",
                "scripts/import-brief-items.ts", "scripts/score-and-compose.sh", "scripts/score-and-compose.ts",
@@ -214,6 +217,10 @@ def fresh_at(key, as_of, replay):
         if replay: return "SKIP", None
         hot = get_json("/api/site/hot")
         return dt.datetime.fromisoformat(hot["computedAt"].replace("Z", "+00:00")).astimezone(TZ), len(hot.get("entries") or [])
+    if key == "backup":
+        times = [dt.datetime.fromtimestamp(os.path.getmtime(f), TZ) for f in glob.glob(f"{BACKUP_DIR}/local-*.dump")]
+        times = [t for t in times if t <= as_of]
+        return (max(times) if times else None), None
     raise KeyError(key)
 
 def check_freshness(as_of, replay):
@@ -236,6 +243,13 @@ def check_freshness(as_of, replay):
             except Exception:
                 cand = "未查到"
             add("WARN", "hot", f"线上热点榜 0 条；本机最近一次 candidates={cand}（48 小时内够 2 个独立来源、含 1 个精选源的事件数）")
+
+def check_host_deps():
+    """sync-to-neon.sh 在宿主机跑 migrate.ts，要 node_modules/@aihot/backend；盒子重启可能把它清掉。"""
+    if os.path.exists(f"{REPO}/node_modules/@aihot/backend"):
+        add("OK", "deps", "宿主机 node_modules/@aihot/backend 在")
+    else:
+        add("FAIL", "deps", f"宿主机 {REPO}/node_modules/@aihot/backend 不在 → 在 {REPO} 跑 npm ci（sync-to-neon.sh、score-and-compose.sh 开头也会自动补装）")
 
 # ---------- checkout drift ----------
 def git(*a):
@@ -268,7 +282,7 @@ def check_checkout():
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--as-of"); ap.add_argument("--slot", choices=["am", "pm"])
-    ap.add_argument("--only", choices=["inputs", "db", "live", "fresh", "checkout"]); ap.add_argument("--json", action="store_true")
+    ap.add_argument("--only", choices=["inputs", "db", "live", "fresh", "deps", "checkout"]); ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
     now = dt.datetime.now(TZ)
     as_of = dt.datetime.fromisoformat(a.as_of).astimezone(TZ) if a.as_of else now
@@ -283,6 +297,7 @@ def main():
         if replay: add("SKIP", "live", "回放模式不查线上")
         elif latest is not False: check_live(latest)
     if run("fresh") and latest is not False: check_freshness(as_of, replay)
+    if run("deps") and not replay: check_host_deps()
     if run("checkout") and not replay: check_checkout()
     fails = [r for r in results if r[0] == "FAIL"]; warns = [r for r in results if r[0] == "WARN"]
     if a.json:

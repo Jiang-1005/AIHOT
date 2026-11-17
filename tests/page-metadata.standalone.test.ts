@@ -18,14 +18,13 @@
 //   for them, the first page and that report's own page, while their links stop being followed (2026-11-09);
 // - a daily whose lead was withdrawn is headed in search by a report its highlights were only filled with (2026-11-09).
 import assert from "node:assert/strict";
-import { createServer } from "node:http";
 import { after, before, test } from "node:test";
 import * as cheerio from "cheerio";
 import { reportDateLabel, type FeedItemSummary, type ReportCitation, type ReportDetail, type ReportKind, type SiteItemDetail, type StoryDetail } from "@aihot/contracts/site";
 import { SEO_TITLES, SITE, withSubject } from "@aihot/site";
 import { articleLd, readFilters, reportLd } from "../apps/web/app/lib/seo.ts";
 import { dateLine } from "../apps/web/app/features/report/format.ts";
-import { startWebServer, type WebServer } from "../apps/web/tests/web-server.ts";
+import { fakeApi, startWebServer, type WebServer } from "../apps/web/tests/web-server.ts";
 
 const at = "2026-10-04T08:00:00.000Z";
 const item: FeedItemSummary = { id: "metadata-fixture", title: "可核实的测试报道", summary: "报道摘要", reason: null, source: { name: "Fixture" }, publishedAt: at, timelineAt: at, category: "ai-models", tags: [], score: 80, selected: true, channel: "news", facets: null, x: null };
@@ -45,9 +44,11 @@ const report = (kind: ReportKind): ReportDetail => ({ kind, key: kind === "daily
 const story: StoryDetail = { publicId: "metadata-story", title: "测试事件的最新进展", status: "settled", reportCount: 1, sourceCount: 1, firstReportAt: at, latestAt: at, digest: "当前可核实的事件综述。", digestUpdatedAt: "2026-10-04T09:00:00.000Z", summary: null, excerpt: null, latest: null, latestReport: null, whyHot: { participants48h: 0, newParticipants6h: 0, recentReports24h: 0, observationComplete: true, rank: null }, developments: [], officialReports: [], timeline: [{ id: item.id, title: item.title, summary: item.summary, source: { name: item.source.name, firstParty: true }, publishedAt: at, selected: true }], heat: [], related: [], topics: [], mentions: [] };
 /** The same event once a second report joined it. */
 const severalReports: StoryDetail = { ...story, publicId: "metadata-story-several", reportCount: 2, sourceCount: 2 };
+/** This site is internal: every page asks every engine not to index it or follow its links (lib/seo.ts). */
+const INTERNAL = "noindex, nofollow";
 let web: WebServer;
-const api = createServer((req, res) => {
-  const url = new URL(req.url!, "http://local");
+// The shared fake API answers what this one leaves (the facets every feed page loads) and 404s the rest.
+const api = fakeApi((url, res) => {
   const path = url.pathname;
   res.setHeader("Content-Type", "application/json");
   const send = (value: unknown) => res.end(JSON.stringify(value));
@@ -67,8 +68,7 @@ const api = createServer((req, res) => {
     if (match[2] === r.key) return send(r);
     if (match[1] === "daily" && match[2] === leadless().key) return send(leadless());
   }
-  res.statusCode = 404;
-  send({ code: "not_found" });
+  return undefined;
 });
 before(async () => { web = await startWebServer(api); });
 after(async () => { await web?.stop(); });
@@ -84,39 +84,39 @@ function structured($: cheerio.CheerioAPI): Array<Record<string, unknown>> {
   return $("script[type='application/ld+json']").toArray().flatMap((node) => JSON.parse($(node).text()));
 }
 
-test("filtered feeds keep their exact content address but leave indexing to the public landing pages", async () => {
+test("filtered feeds keep their exact content address and stay out of search", async () => {
   for (const base of ["/", "/all"]) for (const query of ["channel=news", "category=ai-models", "tag=Agent", "channel=x&category=paper&tag=Agent"]) {
     const $ = await page(`${base}?${query}&utm_source=fixture&anchorAt=old&deep=1`);
-    assert.equal($("meta[name=robots]").attr("content"), "noindex, follow", `${base}?${query}`);
+    assert.equal($("meta[name=robots]").attr("content"), INTERNAL, `${base}?${query}`);
     assert.equal($("link[rel=canonical]").attr("href"), `${web.origin}${base}?${query}`);
     assert.ok($("main").text().includes(item.title));
   }
   const $ = await page("/all?q=Claude&tab=relevance&page=2&anchorAt=old");
-  assert.equal($("meta[name=robots]").attr("content"), "noindex, follow");
+  assert.equal($("meta[name=robots]").attr("content"), INTERNAL);
   assert.equal($("link[rel=canonical]").attr("href"), `${web.origin}/all?q=Claude&tab=relevance&page=2`);
 });
 
-test("ordinary feed pages remain indexable and normalize ignored parameters", async () => {
+test("ordinary feed pages normalize ignored parameters and stay out of search", async () => {
   for (const [requested, canonical] of [["/?channel=invalid&category=invalid&tag=%20&utm_source=fixture", "/"], ["/all?channel=all&tab=relevance&anchorAt=old&utm_source=fixture", "/all"]]) {
     const $ = await page(requested!);
-    assert.equal($("meta[name=robots]").attr("content"), "max-image-preview:large");
+    assert.equal($("meta[name=robots]").attr("content"), INTERNAL);
     assert.equal($("link[rel=canonical]").attr("href"), `${web.origin}${canonical}`);
   }
 });
 
-test("全部动态's later pages leave search to its first page and keep their links followed", async () => {
+test("全部动态's later pages keep their canonical address and stay out of search", async () => {
   const $ = await page("/all?channel=all&tab=relevance&anchorAt=old&page=2&utm_source=fixture");
-  assert.equal($("meta[name=robots]").attr("content"), "noindex, follow");
+  assert.equal($("meta[name=robots]").attr("content"), INTERNAL);
   assert.equal($("link[rel=canonical]").attr("href"), `${web.origin}/all?page=2`);
   assert.match($("title").text(), new RegExp(`^${SEO_TITLES.all} · 第 2 页`), "the title still names what the list is");
   assert.ok($("main").text().includes(item.title), "the page itself is unchanged");
 });
 
-test("an event page stands in search once it gathers more than one report", async () => {
+test("an event page stays out of search however many reports it gathers", async () => {
   const single = await page(`/story/${story.publicId}`);
-  assert.equal(single("meta[name=robots]").attr("content"), "noindex, follow", "one report: its own article page stands for it");
+  assert.equal(single("meta[name=robots]").attr("content"), INTERNAL, "one report");
   const several = await page(`/story/${severalReports.publicId}`);
-  assert.equal(several("meta[name=robots]").attr("content"), "max-image-preview:large");
+  assert.equal(several("meta[name=robots]").attr("content"), INTERNAL, "several reports");
   assert.equal(several("meta[name=googlebot]").length, 0);
 });
 
@@ -195,18 +195,18 @@ test("article metadata names its publisher, has a representative image and a dat
   assert.equal(articleLd({ path: "/items/test", headline: "更正", modifiedAt: modified }).dateModified, modified);
 });
 
-test("an article whose own text is a summary's worth asks only Google not to index it", async () => {
+test("article pages, short or hidden, stay out of search under the one robots tag", async () => {
   for (const path of ["/items/metadata-short", "/items/metadata-short/original"]) {
     const $ = await page(path);
-    assert.equal($("meta[name=googlebot]").attr("content"), "noindex", path);
-    assert.equal($("meta[name=robots]").attr("content"), "max-image-preview:large", `${path}: other engines keep indexing it`);
+    assert.equal($("meta[name=googlebot]").length, 0, path);
+    assert.equal($("meta[name=robots]").attr("content"), INTERNAL, path);
     assert.equal($("link[rel=canonical]").attr("href"), `${web.origin}/items/metadata-short`);
   }
   const ordinary = await page(`/items/${item.id}`);
   assert.equal(ordinary("meta[name=googlebot]").length, 0);
-  assert.equal(ordinary("meta[name=robots]").attr("content"), "max-image-preview:large");
+  assert.equal(ordinary("meta[name=robots]").attr("content"), INTERNAL);
   const hidden = await page("/items/metadata-hidden");
-  assert.equal(hidden("meta[name=robots]").attr("content"), "noindex, follow");
+  assert.equal(hidden("meta[name=robots]").attr("content"), INTERNAL);
   assert.equal(hidden("meta[name=googlebot]").length, 0, "robots already covers Google");
 });
 

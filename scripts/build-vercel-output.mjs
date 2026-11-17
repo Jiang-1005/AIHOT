@@ -197,7 +197,7 @@ import { attachPublicCdnCache } from "@aihot/contracts/attach-public-cdn-cache";
 import {
   ROBOTS_TAG, applyGateDecision, decideGate, gateMisconfigured, getCookieHeader,
   parseForm, requestIsSecure,
-} from "../packages/backend/src/public-gate.ts";
+} from "@aihot/contracts/public-gate";
 
 if (gateMisconfigured()) {
   throw new Error("EDU_HOT_GATE_ENABLED is true but EDU_HOT_GATE_PASSWORD is not set");

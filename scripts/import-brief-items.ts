@@ -13,6 +13,7 @@
 //   /workspace/ai-edu/briefs/daily-YYYY-MM-DD/items*.csv
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { beijingDate, beijingMidnight } from "@aihot/contracts/time";
 import { installModules } from "@aihot/backend/modules";
 import { closeDb, sql } from "@aihot/backend/db";
 import { stopBoss } from "@aihot/backend/jobs/queue";
@@ -65,12 +66,7 @@ function normalizeUrl(url: string): string {
 }
 
 function beijingToday(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Shanghai",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+  return beijingDate(new Date());
 }
 
 function parseArgs(argv: string[]): { date: string; files: string[] } {
@@ -221,7 +217,7 @@ const summary = {
 
 function slotOf(day: string | null): string {
   if (!day) return "undated";
-  const age = Math.round((Date.parse(`${today}T00:00:00+08:00`) - Date.parse(`${day}T00:00:00+08:00`)) / 86400000);
+  const age = Math.round((beijingMidnight(today).getTime() - beijingMidnight(day).getTime()) / 86400000);
   if (age <= 7) return "featured";
   if (age <= 30) return "archive";
   return "older";
@@ -259,7 +255,7 @@ for (const { row: r, url, norm } of byUrl.values()) {
       continue;
     }
     await ensureSource(src.id, src.name, src.existing);
-    const publishedAt = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00+08:00`) : null;
+    const publishedAt = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? beijingMidnight(day) : null;
     const ageMs = publishedAt ? Date.now() - publishedAt.getTime() : null;
     const briefTag = `brief-${today}`;
     const explicitBackfill = publishedAt && ageMs != null && ageMs > 48 * 3600 * 1000 ? briefTag : (!publishedAt ? `${briefTag}-undated` : null);

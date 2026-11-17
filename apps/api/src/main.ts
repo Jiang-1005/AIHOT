@@ -6,8 +6,8 @@ import { DEPLOYMENT } from "@aihot/site";
 import { feishuLoginConfigured } from "@aihot/backend/admin/auth";
 import { startHeartbeat } from "@aihot/backend/operations/heartbeat";
 import { startWorkerWatchdog } from "@aihot/backend/operations/watch";
-import { buildApp } from "./app.ts";
-import { gateMisconfigured } from "@aihot/backend/public-gate";
+import { buildApp, hydrateCatalogsAtBoot } from "./app.ts";
+import { gateMisconfigured } from "@aihot/contracts/public-gate";
 
 installModules(SERVER_MODULES);
 assertProductionSecrets([
@@ -23,6 +23,7 @@ if (config.environmentName === "production" && !(config.adminPassword && config.
 if (gateMisconfigured()) {
   throw new Error("EDU_HOT_GATE_ENABLED is true but EDU_HOT_GATE_PASSWORD is not set");
 }
+await hydrateCatalogsAtBoot();
 const app = await buildApp();
 await app.listen({ port: config.apiPort, host: process.env.API_HOST || "127.0.0.1" });
 if (!process.env.VERCEL) {

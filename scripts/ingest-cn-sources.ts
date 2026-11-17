@@ -1,6 +1,7 @@
 // One-off 30-day backfill for 中国教育在线 + 多知.
 // Usage: docker exec -w /app xintian-edu-hot-api-1 node /app/scripts/ingest-cn-sources.ts [/data/cn-ingest.json]
 import { readFileSync } from "node:fs";
+import { beijingMidnight } from "@aihot/contracts/time";
 import { installModules } from "@aihot/backend/modules";
 import { closeDb } from "@aihot/backend/db";
 import { stopBoss } from "@aihot/backend/jobs/queue";
@@ -36,7 +37,7 @@ for (const it of rows) {
     continue;
   }
   const body = (it.bodyText ?? "").trim();
-  const publishedAt = new Date(`${it.day}T00:00:00+08:00`);
+  const publishedAt = beijingMidnight(it.day);
   // Recent news (within 48h of now) is not an archive backfill, even on first import.
   const ageMs = Date.now() - publishedAt.getTime();
   const explicitBackfill = Number.isFinite(ageMs) && ageMs > 48 * 3600 * 1000 ? BACKFILL : null;
