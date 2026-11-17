@@ -113,5 +113,5 @@ printf '{"at":"%s","status":"%s","exitCode":%d}\n' "$(TZ=Asia/Shanghai date +%Y-
 if [[ "$purge_status" == "purged" ]]; then
   echo "sync-to-neon finished."
 else
-  echo "WARN: sync-to-neon finished, but the CDN cache was NOT purged ($purge_status). check-pipeline-health.py waits until 17 minutes after this sync (s-maxage 600 s + SWR 300 s + 120 s margin) and fails if the live site is still behind." >&2
+  echo "WARN: sync-to-neon finished, but the CDN cache was NOT purged ($purge_status). The live site may stay behind for up to 17 minutes (s-maxage 600 s + SWR 300 s + 120 s margin); check-pipeline-health.py reports HEALTH PENDING with a recheck time until then, and --only cdn after that time fails if it is still behind (docs/import-runbook.md, CDN 两步核对)." >&2
 fi

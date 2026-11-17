@@ -10,22 +10,26 @@
   worker   worker 心跳（关着是已知状态，只提示）
   live     线上最新日报 = 本机最新日报，线上「数据截至」不落后本机同步时间（带 ts，绕过 CDN，看的是源站）
   cdn      访客真正拿到的（不带 ts，走 CDN）：/api/site/voices、/voices 的「数据截至」= 本机同步时间，
-           /api/site/hot、/hot 的 computedAt = 源站。同步后 s-maxage+SWR+余量（17 分钟）内没对上只 WARN，过了还没对上 = FAIL；
-           上一轮同步没清 CDN（.data/cdn-purge.json 不是 purged，比如没有 VERCEL_TOKEN）时提示，并且自动等到界线之后
-           再判（最多 1100 秒），所以导入员同步完立刻跑也能在这一次就拿到 FAIL；清过了就不等。
+           /api/site/hot、/hot 的 computedAt = 源站。同步后 s-maxage+SWR+余量（17 分钟）内没对上 = PEND（不长等，
+           给出「复查时间 HH:MM」，最后一行 HEALTH PENDING、退出码 2），过了还没对上 = FAIL。
+           上一轮同步没清 CDN（.data/cdn-purge.json 不是 purged，比如没有 VERCEL_TOKEN）时另出一行 WARN。
+           到复查时间后跑 --only cdn 只会出 OK 或 FAIL；--wait-for-cdn 会自己等到复查时间（最长约 17.5 分钟，
+           每 60 秒往 stderr 打一行进度），超过前台 13 分钟上限，只能放后台跑（见 docs/import-runbook.md）。
            首页 / 不查：它没有「数据截至」可比，而且实测是 no-cache、CDN 不缓存（见 docs/import-runbook.md）
   fresh    热帖、日报、周报、热点榜、本机库备份各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条默认提示，附当前口径的 candidates；若候选≥1 且已过应刷新的一轮则升级为失败
   deps     宿主机 node_modules/@aihot/backend 在（sync-to-neon.sh 跑 migrate.ts 要用）
   checkout 运维目录 /workspace/edu-hot 没缺主线 jiang/main 上的运维脚本，本分支的运维脚本也已进主线
 
 全部只读：docker exec psql SELECT、读文件、curl 公网只读接口、git 本地对象。不写库、不 push、不打印任何密钥。
-退出码：0 = 没有 FAIL（可能有 WARN）；1 = 有 FAIL；最后一行是一句话结论。
+退出码：0 = HEALTH OK（可能有 WARN）；1 = HEALTH FAIL；2 = HEALTH PENDING（CDN 还在 17 分钟界线内没追上，
+到复查时间再跑 --only cdn）。最后一行总是 HEALTH OK / HEALTH FAIL / HEALTH PENDING 之一。
 
   python3 scripts/check-pipeline-health.py                 # 现在
   python3 scripts/check-pipeline-health.py --slot am       # 指定早轮/晚轮（默认按时间：<15:00 为 am）
   python3 scripts/check-pipeline-health.py --as-of 2026-11-17T09:45:00+08:00   # 回放：只用当时已存在的数据（live 自动跳过）
   python3 scripts/check-pipeline-health.py --only inputs   # 只校验输入文件（给雷达、行业观察写完文件后自查）
-  python3 scripts/check-pipeline-health.py --only cdn --cdn-wait 1100   # 同步后等 CDN 追上（最多等这么多秒，追上就停）
+  python3 scripts/check-pipeline-health.py --only cdn      # 复查时间到了以后复查 CDN：只出 OK / FAIL
+  python3 scripts/check-pipeline-health.py --only cdn --wait-for-cdn   # 等到复查时间再判（最长约 17.5 分钟，只能后台跑）
 """
 import argparse, csv, datetime as dt, glob, json, os, re, subprocess, sys, urllib.request
 
@@ -281,22 +285,20 @@ def unpurged_reason(purge, sync_at):
         return None
     return "没有 VERCEL_TOKEN" if purge.get("status") == "no-token" else f"清缓存接口失败（exit {purge.get('exitCode')}）"
 
-CDN_AUTO_WAIT_CAP = 1100
+def recheck_at(sync_at):
+    """CDN 的判定时间：同步后 17 分钟界线再加 30 秒，取整到下一分钟。过了这个点还旧 = FAIL。"""
+    t = sync_at + CDN_DEADLINE + dt.timedelta(seconds=30)
+    return t.replace(second=0, microsecond=0) + (dt.timedelta(minutes=1) if (t.second or t.microsecond) else dt.timedelta(0))
 
-def auto_cdn_wait(purge, sync_at, now):
-    """这一轮没清 CDN 时，自动等到 17 分钟界线之后再下结论（相当于 --cdn-wait，最多 1100 秒），
-    让旧缓存在同一次健康检查里就变成 FAIL；清过了或已过界线 = 0，不多等。"""
-    if not unpurged_reason(purge, sync_at):
-        return 0
-    left = (sync_at + CDN_DEADLINE - now).total_seconds() + 30
-    return int(min(CDN_AUTO_WAIT_CAP, max(0, left)))
+RECHECK_CMD = "python3 /workspace/edu-hot/scripts/check-pipeline-health.py --only cdn"
 
 def assess_cdn(probes, sync_at, now, purge=None):
-    """纯函数，方便测：返回 [(level, msg)]。"""
+    """纯函数，方便测：返回 [(level, msg)]。level 里的 PEND = 还在 17 分钟界线内没追上，要到复查时间再判。"""
     res = []
     behind = [p for p in probes if p[1] is None or p[1] < p[2]]
     ahead = [p for p in probes if p[1] is not None and p[1] > p[2]]
     deadline = sync_at + CDN_DEADLINE
+    when = recheck_at(sync_at)
     why = unpurged_reason(purge, sync_at)
     if why:
         res.append(("WARN", f"最近一次同步没清 CDN：{why}；线上最晚 {deadline:%H:%M} 才会追上"))
@@ -305,14 +307,18 @@ def assess_cdn(probes, sync_at, now, purge=None):
     else:
         detail = "；".join(f"{n} {'读不到' if v is None else f'{v:%m-%d %H:%M}'}，应为 {want:%m-%d %H:%M}（{c}）" for n, v, want, c in behind)
         if now <= deadline:
-            res.append(("WARN", f"CDN 还没追上本轮同步（{detail}）；{deadline:%H:%M} 前算正常（s-maxage {CDN_S_MAXAGE}s + SWR {CDN_SWR}s + 余量），到时再跑一次"))
+            res.append(("PEND", f"CDN 还没追上本轮同步，复查时间 {when:%H:%M}：到时跑 {RECHECK_CMD}，那一次还旧就是 FAIL（{detail}）"))
         else:
             res.append(("FAIL", f"CDN 旧缓存：同步 {sync_at:%H:%M} 后已过 {int((now - sync_at).total_seconds() // 60)} 分钟，访客还拿到旧数据（{detail}）"))
     for n, v, want, c in ahead:
         res.append(("WARN", f"{n} {v:%m-%d %H:%M} 比本机同步/源站 {want:%m-%d %H:%M} 还新：本机 .data/site-sync.json 可能不是最近一次同步写的"))
     return res
 
-def check_cdn(wait_s=0, retries=2, pause_s=20):
+def check_cdn(wait=False, retries=2, pause_s=20, progress_s=60, now=None, sleep=None):
+    """默认不长等：没追上先隔 20 秒重问两次（SWR 回源），还在界线内就记 PEND 并给出复查时间。
+    wait=True（--wait-for-cdn）：没追上就一直等到复查时间再判，结果只会是 OK 或 FAIL，期间每 60 秒往 stderr 打一行进度。"""
+    import time
+    now = now or (lambda: dt.datetime.now(TZ)); sleep = sleep or time.sleep
     try:
         sync_at = read_sync_iso()
     except Exception as e:
@@ -320,11 +326,7 @@ def check_cdn(wait_s=0, retries=2, pause_s=20):
     sync_min = sync_at.replace(second=0, microsecond=0)
     try: purge = json.load(open(CDN_PURGE_FILE))
     except Exception: purge = None
-    import time
-    auto = auto_cdn_wait(purge, sync_at, dt.datetime.now(TZ)) if wait_s == 0 else 0
-    if auto:
-        print(f"cdn: 这一轮同步没清 CDN（{unpurged_reason(purge, sync_at)}），没追上就最多再等 {auto} 秒，过 {(sync_at + CDN_DEADLINE):%H:%M} 再下结论…", file=sys.stderr, flush=True)
-    give_up = time.monotonic() + max(0, wait_s or auto)
+    until = recheck_at(sync_at) if wait else now()
     attempt = 0
     while True:
         try:
@@ -333,13 +335,17 @@ def check_cdn(wait_s=0, retries=2, pause_s=20):
             probes = cdn_probes(sync_min, origin_hot_min)
         except Exception as e:
             add("FAIL", "cdn", f"不带 ts 的线上地址读不到：{e}"); return
-        verdict = assess_cdn(probes, sync_at, dt.datetime.now(TZ), purge)
-        stale = any("追上本轮" in m or "CDN 旧缓存" in m for _, m in verdict)
+        verdict = assess_cdn(probes, sync_at, now(), purge)
+        behind = any(lv in ("PEND", "FAIL") for lv, _ in verdict)
         attempt += 1
-        # SWR：第一次可能吐 STALE 并触发回源，隔一会儿再问；--cdn-wait 则一直等到追上或时间用完。
-        if not stale or (attempt > retries and time.monotonic() >= give_up):
+        left = (until - now()).total_seconds()
+        if not behind or (attempt > retries and left <= 0):
             break
-        time.sleep(pause_s if attempt <= retries else max(1, min(60, give_up - time.monotonic())))
+        if attempt > retries:
+            print(f"cdn: {now():%H:%M:%S} 线上还没追上本轮同步，等到 {until:%H:%M} 再判（还剩约 {int(left)} 秒）", file=sys.stderr, flush=True)
+            sleep(max(1, min(progress_s, left)))
+        else:
+            sleep(pause_s)
     for lv, m in verdict: add(lv, "cdn", m)
 
 def fresh_at(key, as_of, replay):
@@ -516,11 +522,18 @@ def check_checkout():
     if not behind and not ahead:
         add("OK", "checkout", f"运维目录（{branch}）和 jiang/main 的运维脚本一致")
 
+def summary(results):
+    """最后一行和退出码：FAIL 优先，其次 PENDING（CDN 待复查），否则 OK。"""
+    fails = [r for r in results if r[0] == "FAIL"]; pends = [r for r in results if r[0] == "PEND"]
+    if fails: return f"HEALTH FAIL: {fails[0][2]}", 1
+    if pends: return f"HEALTH PENDING: {pends[0][2]}", 2
+    return f"HEALTH OK（{sum(r[0] == 'WARN' for r in results)} 条提示）", 0
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--as-of"); ap.add_argument("--slot", choices=["am", "pm"])
     ap.add_argument("--only", choices=["inputs", "db", "live", "cdn", "fresh", "deps", "checkout"]); ap.add_argument("--json", action="store_true")
-    ap.add_argument("--cdn-wait", type=int, default=0, metavar="SECONDS", help="CDN 没追上时最多再等这么多秒（每 60 秒问一次，追上就停）")
+    ap.add_argument("--wait-for-cdn", action="store_true", help="CDN 没追上就等到复查时间（同步后约 17.5 分钟）再判，只出 OK/FAIL；超过前台 13 分钟上限，要放后台跑，见 runbook")
     a = ap.parse_args()
     now = dt.datetime.now(TZ)
     as_of = dt.datetime.fromisoformat(a.as_of).astimezone(TZ) if a.as_of else now
@@ -536,18 +549,18 @@ def main():
         elif latest is not False: check_live(latest)
     if run("cdn"):
         if replay: add("SKIP", "cdn", "回放模式不查线上")
-        else: check_cdn(wait_s=a.cdn_wait)
+        else: check_cdn(wait=a.wait_for_cdn)
     if run("fresh") and latest is not False: check_freshness(as_of, replay)
     if run("deps") and not replay: check_host_deps()
     if run("checkout") and not replay: check_checkout()
-    fails = [r for r in results if r[0] == "FAIL"]; warns = [r for r in results if r[0] == "WARN"]
     if a.json:
         print(json.dumps({"as_of": as_of.isoformat(), "slot": slot, "results": results}, ensure_ascii=False))
     else:
         print(f"# 教育AIHOT 健康检查 as-of {as_of:%Y-%m-%d %H:%M} 北京时间 slot={slot}{' (回放)' if replay else ''}")
         for lv, ck, msg in results: print(f"{lv:<4} {ck:<8} {msg}")
-    print(f"HEALTH FAIL: {fails[0][2]}" if fails else f"HEALTH OK（{len(warns)} 条提示）")
-    sys.exit(1 if fails else 0)
+    line, code = summary(results)
+    print(line)
+    sys.exit(code)
 
 if __name__ == "__main__":
     main()

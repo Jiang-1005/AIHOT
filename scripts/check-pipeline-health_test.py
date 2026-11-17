@@ -227,10 +227,11 @@ class CdnStaleness(unittest.TestCase):
         v = h.assess_cdn(self.probes("2026-11-17T20:44:00", "2026-11-17T20:42:00"), self.SYNC, at("2026-11-17T20:46:00"))
         self.assertEqual(self.levels(v), ["OK"])
 
-    def test_behind_right_after_sync_only_warns(self):
+    def test_behind_right_after_sync_is_pending_with_recheck_time(self):
         v = h.assess_cdn(self.probes("2026-11-17T13:20:00", "2026-11-17T13:18:00"), self.SYNC, at("2026-11-17T20:50:00"))
-        self.assertEqual(self.levels(v), ["WARN"])
-        self.assertIn("21:01", v[0][1])  # 20:44 + 600 s + 300 s + 120 s
+        self.assertEqual(self.levels(v), ["PEND"])
+        self.assertIn("复查时间 21:02", v[0][1])  # 20:44 + 600 s + 300 s + 120 s + 30 s, rounded up
+        self.assertIn("--only cdn", v[0][1])
 
     def test_behind_after_deadline_fails(self):
         v = h.assess_cdn(self.probes("2026-11-17T13:20:00", "2026-11-17T20:42:00"), self.SYNC, at("2026-11-17T20:57:00") + dt.timedelta(minutes=5))
@@ -252,17 +253,57 @@ class CdnStaleness(unittest.TestCase):
         v = h.assess_cdn(self.probes("2026-11-17T20:44:00", "2026-11-17T20:42:00"), self.SYNC, at("2026-11-17T21:10:00"), purge)
         self.assertEqual(self.levels(v), ["OK"])
 
-    def test_unpurged_sync_waits_past_the_deadline(self):
-        purge = {"at": "2026-11-17T20:44:30+08:00", "status": "no-token", "exitCode": 3}
-        wait = h.auto_cdn_wait(purge, self.SYNC, at("2026-11-17T20:45:00"))
-        self.assertEqual(wait, 16 * 60 + 30)  # until 21:01 (sync + 17 min) plus 30 s
-        self.assertLessEqual(h.auto_cdn_wait(purge, self.SYNC, at("2026-11-17T20:30:00")), h.CDN_AUTO_WAIT_CAP)
-        self.assertEqual(h.auto_cdn_wait(purge, self.SYNC, at("2026-11-17T21:10:00")), 0)
+    def test_recheck_time_is_past_the_deadline(self):
+        self.assertEqual(h.recheck_at(self.SYNC), at("2026-11-17T21:02:00"))
+        self.assertEqual(h.recheck_at(at("2026-11-17T20:44:30")), at("2026-11-17T21:02:00"))
+        self.assertEqual(h.recheck_at(at("2026-11-17T20:44:31")), at("2026-11-17T21:03:00"))
 
-    def test_purged_or_older_record_does_not_wait(self):
-        self.assertEqual(h.auto_cdn_wait({"at": "2026-11-17T20:44:30+08:00", "status": "purged", "exitCode": 0}, self.SYNC, at("2026-11-17T20:45:00")), 0)
-        self.assertEqual(h.auto_cdn_wait({"at": "2026-11-16T20:44:30+08:00", "status": "no-token", "exitCode": 3}, self.SYNC, at("2026-11-17T20:45:00")), 0)
-        self.assertEqual(h.auto_cdn_wait(None, self.SYNC, at("2026-11-17T20:45:00")), 0)
+    def test_summary_line_and_exit_code(self):
+        self.assertEqual(h.summary([("WARN", "cdn", "x"), ("OK", "cdn", "y")]), ("HEALTH OK（1 条提示）", 0))
+        self.assertEqual(h.summary([("PEND", "cdn", "复查时间 21:02")]), ("HEALTH PENDING: 复查时间 21:02", 2))
+        self.assertEqual(h.summary([("PEND", "cdn", "p"), ("FAIL", "fresh", "f")]), ("HEALTH FAIL: f", 1))
+
+    def run_check_cdn(self, start, live_at, wait, voices="2026-11-17T13:20:00"):
+        """check_cdn against a fake clock: the live site serves `voices` until `live_at`, then the new sync."""
+        clock = {"t": start}; sleeps = []
+        def sleep(s): sleeps.append(s); clock["t"] += dt.timedelta(seconds=s)
+        def probes(sync_min, origin_min):
+            v = "2026-11-17T20:44:00" if live_at and clock["t"] >= live_at else voices
+            return self.probes(v, "2026-11-17T20:42:00")
+        saved = (h.read_sync_iso, h.get_json, h.cdn_probes, h.CDN_PURGE_FILE, list(h.results))
+        h.read_sync_iso = lambda: self.SYNC
+        h.get_json = lambda path: {"computedAt": "2026-11-17T20:42:00+08:00"}
+        h.cdn_probes = probes
+        h.CDN_PURGE_FILE = "/nonexistent/cdn-purge.json"
+        h.results.clear()
+        try:
+            h.check_cdn(wait=wait, now=lambda: clock["t"], sleep=sleep)
+            return list(h.results), sleeps, clock["t"]
+        finally:
+            h.read_sync_iso, h.get_json, h.cdn_probes, h.CDN_PURGE_FILE = saved[:4]
+            h.results[:] = saved[4]
+
+    def test_default_run_does_not_wait_long_and_is_pending(self):
+        res, sleeps, end = self.run_check_cdn(at("2026-11-17T20:45:00"), None, wait=False)
+        self.assertEqual(sleeps, [20, 20])  # two SWR retries only
+        self.assertEqual(h.summary(res)[1], 2)
+        self.assertIn("复查时间 21:02", h.summary(res)[0])
+
+    def test_default_run_after_recheck_time_fails_when_still_stale(self):
+        res, sleeps, _ = self.run_check_cdn(at("2026-11-17T21:02:00"), None, wait=False)
+        self.assertEqual(sleeps, [20, 20])
+        self.assertEqual(h.summary(res)[1], 1)
+
+    def test_wait_for_cdn_waits_to_recheck_time_with_minute_progress_then_fails(self):
+        res, sleeps, end = self.run_check_cdn(at("2026-11-17T20:45:00"), None, wait=True)
+        self.assertTrue(all(s <= 60 for s in sleeps))
+        self.assertGreaterEqual(end, at("2026-11-17T21:02:00"))
+        self.assertEqual(h.summary(res)[1], 1)  # never PENDING once it has waited
+
+    def test_wait_for_cdn_stops_as_soon_as_caught_up(self):
+        res, sleeps, end = self.run_check_cdn(at("2026-11-17T20:45:00"), at("2026-11-17T20:50:00"), wait=True)
+        self.assertLess(end, at("2026-11-17T20:52:00"))
+        self.assertEqual(h.summary(res)[1], 0)
 
     def test_parse_as_of_formats(self):
         self.assertEqual(h.parse_as_of("11 月 17 日 20:44 北京时间", 2026), at("2026-11-17T20:44:00"))

@@ -114,7 +114,7 @@ VERCEL_TOKEN=...
 # VERCEL_TEAM_ID=team_Zi76VbaJw6q9rWyQu7psA3pw
 ```
 
-没有令牌时，`purge-vercel-cdn.sh` 往 stderr 打两行 `WARN: CDN cache NOT purged`，退出码 3（两个接口都失败是 1）。`sync-to-neon.sh` 不因此失败：数据已经在 Neon 上，它把结果写进 `.data/cdn-purge.json`（`purged` / `no-token` / `failed`），打一行 WARN 后正常结束。之后由 `check-pipeline-health.py` 的 cdn 一组核对访客真正拿到的不带 ts 地址：这一轮没清 CDN 时，它会自己等到同步后 17 分钟的界线之后再判（最多 1100 秒），过了界线还旧就是 HEALTH FAIL；清过了则几秒跑完。最晚 `s-maxage + SWR`（15 分钟）后旧缓存自然过期；有令牌的按标签删除仍是让同步后马上生效的路径。
+没有令牌时，`purge-vercel-cdn.sh` 往 stderr 打两行 `WARN: CDN cache NOT purged`，退出码 3（两个接口都失败是 1）。`sync-to-neon.sh` 不因此失败：数据已经在 Neon 上，它把结果写进 `.data/cdn-purge.json`（`purged` / `no-token` / `failed`），打一行 WARN 后正常结束。之后由 `check-pipeline-health.py` 的 cdn 一组核对访客真正拿到的不带 ts 地址：同步后 17 分钟界线内还没追上，它不长等，出 `HEALTH PENDING`（退出码 2）并给出复查时间；过了复查时间再跑 `--only cdn`，还旧就是 HEALTH FAIL（两步跑法见 docs/import-runbook.md「CDN 两步核对」）。最晚 `s-maxage + SWR`（15 分钟）后旧缓存自然过期；有令牌的按标签删除仍是让同步后马上生效的路径。
 
 把这条接到每天约 9:30 和约 20:30（北京时间）两轮导入之后即可。本仓库不改 routine，由 C J 自行挂上。每轮 sync-to-neon.sh 会先在本地重写当天日报（可用 SKIP_DAILY_REFRESH=1 跳过），再把「数据截至」写成这一轮实际同步的北京时间。不要和仍在写库的导入同时跑。
 

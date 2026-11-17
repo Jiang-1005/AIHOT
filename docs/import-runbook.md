@@ -54,20 +54,48 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 
     python3 /workspace/edu-hot/scripts/check-pipeline-health.py
 
-- 最后一行是 HEALTH OK 才算这轮完成；报告里加一行「健康检查：OK」，或原样贴 HEALTH FAIL 那一行。FAIL 就不报完成。
+- 最后一行一定以 `HEALTH` 开头，只有三种：`HEALTH OK`、`HEALTH FAIL: …`、`HEALTH PENDING: …`（退出码 0 / 1 / 2）。几十秒内跑完，不会长等。
+- `HEALTH OK`：这轮完成，报告里加一行「健康检查：OK」。
+- `HEALTH FAIL`：原样贴那一行，不报完成，按下面各组的说明处理。
+- `HEALTH PENDING`：还不能报完成，只会因为 cdn 组（见下面「CDN 两步核对」），这一行里写着「复查时间 HH:MM」。必须做完第二步、拿到 `HEALTH OK` 或 `HEALTH FAIL` 才能报。没拿到这两行之一，就不算这轮完成。
 - FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
 - FAIL 在 inputs：只报告清单里该有、且已过截止时间仍缺的文件（雷达早 8:25 / 晚 19:20，脚本在 8:40 / 19:35 才升为 FAIL；行业早 8:50 / 晚 19:50，脚本在 9:05 / 20:05 才升为 FAIL）。目录里多出来的、名字不合约定的雷达文件只 WARN，不算缺件，不替别的 bot 改名或补抓。行业目录里的非正式 items 文件（如 items-noon.csv、items.dedup.csv）同样只 WARN，因为 import-brief-items.ts 不会自动读它们；只有「会被读进来、且含有不在正式 items 里的条目」才升为 FAIL。
 - FAIL 在 db：停，不同步，叫 Grok Bot。
 - FAIL 在 deps（宿主机 node_modules 不在，盒子重启后会出现）：在 /workspace/edu-hot 跑 `npm ci` 再查。sync-to-neon.sh 和 score-and-compose.sh 开头会自动补装，npm ci 失败就退出非 0，这轮停下叫 Grok Bot。
 - FAIL 在 fresh：某一项超过失败阈值没更新。热点榜：看 score-and-compose.sh 输出有没有 hot 字段、sync-to-neon.sh 有没有跑完，补跑这两条再查；热帖：查 import-voices.py 这轮跑没跑；日报、周报：再跑一次 score-and-compose.sh。还 FAIL 就在群里叫 Grok Bot。
-- cdn 一组看访客真正拿到的（不带 ts、走 CDN）：/api/site/voices、/voices 的「数据截至」要等于本机这轮同步时间，/api/site/hot、/hot 的更新时间要等于源站。界线是同步后 17 分钟（s-maxage 600 秒 + SWR 300 秒 + 2 分钟余量）。
-- 这轮同步清过 CDN（.data/cdn-purge.json 是 purged）：照常几秒跑完，不会多等。
-- 这轮同步没清 CDN（sync-to-neon.sh 最后打了 `WARN: ... CDN cache was NOT purged`，比如没有 VERCEL_TOKEN）：健康检查会自己等，stderr 先打一行「最多再等 N 秒」，最长约 18 分钟，追上就提前结束。不要中途打断，等它出最后一行再报。追上了出一行 WARN「最近一次同步没清 CDN：没有 VERCEL_TOKEN」，照常报完成。过了 17 分钟还没追上就是 HEALTH FAIL。
-- WARN 在 cdn「CDN 还没追上本轮同步」：只会出现在清过 CDN、却还没追上的少见情况，照常报，写上「CDN 最晚 HH:MM 追上」。想当场确认就跑 `python3 scripts/check-pipeline-health.py --only cdn --cdn-wait 1100`。
+- cdn 一组看访客真正拿到的（不带 ts、走 CDN）：/api/site/voices、/voices 的「数据截至」要等于本机这轮同步时间，/api/site/hot、/hot 的更新时间要等于源站。界线是同步后 17 分钟（s-maxage 600 秒 + SWR 300 秒 + 2 分钟余量）；复查时间 = 界线再加 30 秒、取到下一个整分钟。
+- 这轮同步没清 CDN（sync-to-neon.sh 最后打了 `WARN: ... CDN cache was NOT purged`，比如没有 VERCEL_TOKEN）：另出一行 WARN「最近一次同步没清 CDN：没有 VERCEL_TOKEN」，只是提示。现在 box 上没有令牌，每轮都会有这行，CDN 多半要等到复查时间才追上，所以多半会拿到 HEALTH PENDING，按下面「CDN 两步核对」做。
+- PEND 在 cdn「CDN 还没追上本轮同步…复查时间 HH:MM」：见下面「CDN 两步核对」。
+
+- WARN 在 cdn「… 比本机同步/源站还新」：本机 .data/site-sync.json 可能不是最近一次同步写的，照常报，写上这句。
 - FAIL 在 cdn：同步后已过 17 分钟，访客拿到的还是旧数据。不要重跑同步，不要自己部署，在群里叫 Grok Bot。
 - 首页 / 不在 cdn 组里。实测（11-17 生产 3 次、预览 1 次）首页回的都是 `cache-control: no-cache`、`x-vercel-cache: MISS`，没有 CDN 缓存头，每次都回源取新数据。原因是首页 loader 用 cachedPage 把页面寿命卡在上游接口（/api/site/timeline、/api/site/facets）给的截止时间上，截止时间一过整页就降成 no-cache。首页也没有「数据截至」可以比。代码上，上游截止时间还没过时，首页可能短暂拿到 CDN 缓存头，这时最坏同样是 17 分钟内追上，和其他页一样。
 - WARN 在 hot（热点榜 0 条）：默认只是提示，照常报，写上当前口径的 candidates（默认 heat：48 小时内至少 1 个精选源；`HOT_RANKING_MODE=threshold` 时才是至少 2 个独立来源且含 1 个精选源）。
 - FAIL 在 hot（线上 0 条但本机已有候选）：本机按当前口径已能排出 ≥1 个候选，且已经过了「下一轮同步本应写下新榜」的时间（每天 9:30 / 20:30 后再留 30 分钟，即 10:00 / 21:00；或者本机 `site-sync.json` 已经在那个同步点之后跑过）。先看 score-and-compose.sh 的 hot 字段和 sync-to-neon.sh 有没有跑完，补跑后再查；还 FAIL 就在群里叫 Grok Bot。生产还停在上一轮空记录、下一轮还没到的合理窗口内，保持 WARN，不要当成失败。
+
+### CDN 两步核对（拿到 HEALTH PENDING 时）
+第一步就是上面同步后马上跑的那次健康检查。CDN 已经追上（清过缓存，或者没清但碰巧已更新）就直接是 `HEALTH OK`，没有第二步。还没追上、又没过 17 分钟界线，cdn 一行是 `PEND`，最后一行是：
+
+    HEALTH PENDING: CDN 还没追上本轮同步，复查时间 HH:MM：到时跑 python3 /workspace/edu-hot/scripts/check-pipeline-health.py --only cdn，那一次还旧就是 FAIL（…）
+
+第二步：复查时间到了以后（最晚同步后约 18 分钟）再跑一次：
+
+    python3 /workspace/edu-hot/scripts/check-pipeline-health.py --only cdn
+
+过了复查时间再跑，它只会出 `HEALTH OK`（追上了）或 `HEALTH FAIL`（17 分钟后访客还拿到旧数据），一分钟内跑完。提前跑会再出一次 `HEALTH PENDING`，照样等到复查时间。
+
+导入员 bot 单次前台 Shell 最多约 13 分钟，在一轮回复里也不能干等 17 分钟，所以第二步只有两种做法，二选一：
+
+1. **放到下一个动作开头**：本轮回复先说「健康检查 PENDING，复查时间 HH:MM」，不说完成。下一次被叫起（或下一个动作开始时），如果已过复查时间，先跑上面的 `--only cdn`，拿到 `HEALTH OK` / `HEALTH FAIL` 再报这一轮的结果。
+2. **同一轮里后台跑、轮询结果**：用 `--wait-for-cdn`，它会自己等到复查时间再判（最长约 17.5 分钟，追上了就提前结束），期间每 60 秒往 stderr 打一行「cdn: HH:MM:SS 线上还没追上本轮同步，等到 HH:MM 再判（还剩约 N 秒）」，最后一行只会是 `HEALTH OK` 或 `HEALTH FAIL`。
+   - 用 Shell 启动，`block_until_ms: 0`（直接放后台），命令：
+
+         python3 /workspace/edu-hot/scripts/check-pipeline-health.py --only cdn --wait-for-cdn
+
+   - 然后用 AwaitShell 轮询这个 shell，`pattern: "^HEALTH (OK|FAIL)"`，`block_until_ms: 600000`。没匹配到（还在打进度行）就再 AwaitShell 一次，同样的参数；最多两次就够（17.5 分钟以内）。
+   - 匹配到以后按那一行报。不要因为一段时间没有新结论就杀掉它，进度行在就说明它还在等。
+
+不要用 `timeout` 包这条命令，也不要在前台直接跑 `--wait-for-cdn`：超过 13 分钟会被转后台或杀掉，拿不到最后一行。
 
 ### 新鲜度阈值（照 dbt source freshness：warn_after / error_after）
 脚本顶部的 FRESHNESS 表是唯一出处，改阈值两处一起改。一天两轮的项目漏一轮告警、漏两轮失败；周报按自己的周期。
