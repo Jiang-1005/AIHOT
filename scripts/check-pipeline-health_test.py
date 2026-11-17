@@ -252,6 +252,18 @@ class CdnStaleness(unittest.TestCase):
         v = h.assess_cdn(self.probes("2026-11-17T20:44:00", "2026-11-17T20:42:00"), self.SYNC, at("2026-11-17T21:10:00"), purge)
         self.assertEqual(self.levels(v), ["OK"])
 
+    def test_unpurged_sync_waits_past_the_deadline(self):
+        purge = {"at": "2026-11-17T20:44:30+08:00", "status": "no-token", "exitCode": 3}
+        wait = h.auto_cdn_wait(purge, self.SYNC, at("2026-11-17T20:45:00"))
+        self.assertEqual(wait, 16 * 60 + 30)  # until 21:01 (sync + 17 min) plus 30 s
+        self.assertLessEqual(h.auto_cdn_wait(purge, self.SYNC, at("2026-11-17T20:30:00")), h.CDN_AUTO_WAIT_CAP)
+        self.assertEqual(h.auto_cdn_wait(purge, self.SYNC, at("2026-11-17T21:10:00")), 0)
+
+    def test_purged_or_older_record_does_not_wait(self):
+        self.assertEqual(h.auto_cdn_wait({"at": "2026-11-17T20:44:30+08:00", "status": "purged", "exitCode": 0}, self.SYNC, at("2026-11-17T20:45:00")), 0)
+        self.assertEqual(h.auto_cdn_wait({"at": "2026-11-16T20:44:30+08:00", "status": "no-token", "exitCode": 3}, self.SYNC, at("2026-11-17T20:45:00")), 0)
+        self.assertEqual(h.auto_cdn_wait(None, self.SYNC, at("2026-11-17T20:45:00")), 0)
+
     def test_parse_as_of_formats(self):
         self.assertEqual(h.parse_as_of("11 月 17 日 20:44 北京时间", 2026), at("2026-11-17T20:44:00"))
         self.assertEqual(h.parse_as_of("11月17日 20:42", 2026), at("2026-11-17T20:42:00"))

@@ -11,7 +11,9 @@
   live     线上最新日报 = 本机最新日报，线上「数据截至」不落后本机同步时间（带 ts，绕过 CDN，看的是源站）
   cdn      访客真正拿到的（不带 ts，走 CDN）：/api/site/voices、/voices 的「数据截至」= 本机同步时间，
            /api/site/hot、/hot 的 computedAt = 源站。同步后 s-maxage+SWR+余量（17 分钟）内没对上只 WARN，过了还没对上 = FAIL；
-           上一轮同步没清 CDN（.data/cdn-purge.json 不是 purged，比如没有 VERCEL_TOKEN）也提示
+           上一轮同步没清 CDN（.data/cdn-purge.json 不是 purged，比如没有 VERCEL_TOKEN）时提示，并且自动等到界线之后
+           再判（最多 1100 秒），所以导入员同步完立刻跑也能在这一次就拿到 FAIL；清过了就不等。
+           首页 / 不查：它没有「数据截至」可比，而且实测是 no-cache、CDN 不缓存（见 docs/import-runbook.md）
   fresh    热帖、日报、周报、热点榜、本机库备份各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条默认提示，附当前口径的 candidates；若候选≥1 且已过应刷新的一轮则升级为失败
   deps     宿主机 node_modules/@aihot/backend 在（sync-to-neon.sh 跑 migrate.ts 要用）
   checkout 运维目录 /workspace/edu-hot 没缺主线 jiang/main 上的运维脚本，本分支的运维脚本也已进主线
@@ -269,19 +271,35 @@ def cdn_probes(sync_min, origin_hot_min):
     out.append(("/hot 更新时间", parse_as_of(m[1] if m else "", sync_min.year), origin_hot_min, f"{cache}/age {age}"))
     return out
 
+def unpurged_reason(purge, sync_at):
+    """这一轮同步没清 CDN 的原因；清过了、或记录属于更早的同步，返回 None。"""
+    if not purge or purge.get("status") == "purged":
+        return None
+    try: purge_at = dt.datetime.fromisoformat(purge.get("at", "")).astimezone(TZ)
+    except Exception: purge_at = None
+    if purge_at is not None and purge_at < sync_at - dt.timedelta(minutes=5):
+        return None
+    return "没有 VERCEL_TOKEN" if purge.get("status") == "no-token" else f"清缓存接口失败（exit {purge.get('exitCode')}）"
+
+CDN_AUTO_WAIT_CAP = 1100
+
+def auto_cdn_wait(purge, sync_at, now):
+    """这一轮没清 CDN 时，自动等到 17 分钟界线之后再下结论（相当于 --cdn-wait，最多 1100 秒），
+    让旧缓存在同一次健康检查里就变成 FAIL；清过了或已过界线 = 0，不多等。"""
+    if not unpurged_reason(purge, sync_at):
+        return 0
+    left = (sync_at + CDN_DEADLINE - now).total_seconds() + 30
+    return int(min(CDN_AUTO_WAIT_CAP, max(0, left)))
+
 def assess_cdn(probes, sync_at, now, purge=None):
     """纯函数，方便测：返回 [(level, msg)]。"""
     res = []
     behind = [p for p in probes if p[1] is None or p[1] < p[2]]
     ahead = [p for p in probes if p[1] is not None and p[1] > p[2]]
     deadline = sync_at + CDN_DEADLINE
-    if purge and purge.get("status") != "purged":
-        at = purge.get("at", "")
-        try: purge_at = dt.datetime.fromisoformat(at).astimezone(TZ)
-        except Exception: purge_at = None
-        if purge_at is None or purge_at >= sync_at - dt.timedelta(minutes=5):
-            why = "没有 VERCEL_TOKEN" if purge.get("status") == "no-token" else f"清缓存接口失败（exit {purge.get('exitCode')}）"
-            res.append(("WARN", f"最近一次同步没清 CDN：{why}；线上最晚 {deadline:%H:%M} 才会追上"))
+    why = unpurged_reason(purge, sync_at)
+    if why:
+        res.append(("WARN", f"最近一次同步没清 CDN：{why}；线上最晚 {deadline:%H:%M} 才会追上"))
     if not behind:
         res.append(("OK", "不带 ts 的线上地址都已是本轮数据：" + "；".join(f"{n} {v:%m-%d %H:%M}（{c}）" for n, v, _, c in probes)))
     else:
@@ -303,7 +321,10 @@ def check_cdn(wait_s=0, retries=2, pause_s=20):
     try: purge = json.load(open(CDN_PURGE_FILE))
     except Exception: purge = None
     import time
-    give_up = time.monotonic() + max(0, wait_s)
+    auto = auto_cdn_wait(purge, sync_at, dt.datetime.now(TZ)) if wait_s == 0 else 0
+    if auto:
+        print(f"cdn: 这一轮同步没清 CDN（{unpurged_reason(purge, sync_at)}），没追上就最多再等 {auto} 秒，过 {(sync_at + CDN_DEADLINE):%H:%M} 再下结论…", file=sys.stderr, flush=True)
+    give_up = time.monotonic() + max(0, wait_s or auto)
     attempt = 0
     while True:
         try:
@@ -318,7 +339,7 @@ def check_cdn(wait_s=0, retries=2, pause_s=20):
         # SWR：第一次可能吐 STALE 并触发回源，隔一会儿再问；--cdn-wait 则一直等到追上或时间用完。
         if not stale or (attempt > retries and time.monotonic() >= give_up):
             break
-        time.sleep(pause_s if attempt <= retries else 60)
+        time.sleep(pause_s if attempt <= retries else max(1, min(60, give_up - time.monotonic())))
     for lv, m in verdict: add(lv, "cdn", m)
 
 def fresh_at(key, as_of, replay):

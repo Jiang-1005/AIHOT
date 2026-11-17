@@ -44,7 +44,7 @@ TAG="${VERCEL_CACHE_TAG:-edu-hot-public}"
 
 if [[ -z "${VERCEL_TOKEN:-}" ]]; then
   echo "WARN: CDN cache NOT purged: no VERCEL_TOKEN (set it in $TOKEN_ENV)." >&2
-  echo "WARN: the live site may keep serving the pre-sync pages and /api/site/* for up to s-maxage + stale-while-revalidate (600 s + 300 s = 15 minutes)." >&2
+  echo "WARN: the live site may keep serving the pre-sync pages and /api/site/* for up to s-maxage + stale-while-revalidate (600 s + 300 s = 15 minutes; check-pipeline-health.py allows 17 minutes, then fails)." >&2
   exit 3
 fi
 
