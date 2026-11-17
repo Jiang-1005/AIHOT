@@ -45,6 +45,8 @@ export function fakeApi(route: (url: URL, res: ServerResponse, req: IncomingMess
     if (res.writableEnded) return;
     if (body !== undefined) return res.end(JSON.stringify(body));
     if (url.pathname === "/api/site/meta") return res.end(JSON.stringify({ changelogVersion: "fixture" }));
+    // Feed pages (home, all, archive, topics) load the five-dimension vocabulary on every render.
+    if (url.pathname === "/api/site/facets") return res.end(JSON.stringify({ vocab: { topic: [], subject: [], form: [], content_type: [] }, headCompanies: [], logos: { index: {} }, counts: {} }));
     if (url.pathname === "/api/site/track") { res.statusCode = 204; return res.end(); }
     if (url.pathname === "/api/health") return res.end("{}");
     res.statusCode = 404;
