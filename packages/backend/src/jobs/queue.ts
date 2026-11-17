@@ -6,6 +6,7 @@ import { PgBoss, type SendOptions, type WorkOptions } from "pg-boss";
 import { config } from "../config.ts";
 import { sql, type Db } from "../db.ts";
 import { shutdownSignal } from "../lib/shutdown.ts";
+import { failureKind } from "../providers/receipts.ts";
 import { logError } from "../lib/log-error.ts";
 import { serverModules, type ModuleQueue } from "../modules.ts";
 export { shutdownSignal } from "../lib/shutdown.ts";
@@ -189,7 +190,10 @@ export async function recordRun<T>(job: string, fn: () => Promise<T>): Promise<T
     await sql`UPDATE job_runs SET status = 'ok', finished_at = now(), detail = ${sql.json(detail as never)} WHERE id = ${row!.id}`;
     return result;
   } catch (error) {
-    await sql`UPDATE job_runs SET status = 'failed', finished_at = now(), error = ${String(error).slice(0, 4000)} WHERE id = ${row!.id}`;
+    // A paid-call budget is an expected pause, not a failure: record it as skipped so the runs page
+    // keeps its alarms for real failures. Other errors stay failures.
+    const skipped = failureKind(error) === "budget";
+    await sql`UPDATE job_runs SET status = ${skipped ? "skipped" : "failed"}, finished_at = now(), error = ${String(error).slice(0, 4000)} WHERE id = ${row!.id}`;
     throw error;
   }
 }

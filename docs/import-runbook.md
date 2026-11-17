@@ -37,6 +37,28 @@ C J 2026-11-13 10:40 确认：从今晚 20:30 那轮起导入由「教育AIHOT �
 5. 本地站：127.0.0.1:3080 无口令应返回 401；确认 gate-proxy 和隧道（deploy/tunnel.pid）还在。不要动这两个进程，只有断了才按 deploy/ 的方法重开；新链接只私下告诉 C J，口令绝不进群。
 6. 小红书表：/workspace/research/feishu-edu/xhs-inbox.csv 按原帖链接去重，只统计待写条数；写飞书要 C J 在场逐条确认，导入员不写。
 
+## 打分 + 出刊（2026-11-17 起，worker 关着）
+worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打分、归事件、出日报都要靠这一条命令补上。
+导入（第 1–3 步）全部写完之后、第 4 步 sync-to-neon.sh 之前跑一次：
+
+    /workspace/edu-hot/scripts/score-and-compose.sh
+
+- 它做三件事：给 processing_state=new 的稿子打分（会调 DeepSeek），把打过分的归进事件并刷新事件摘要，再写所有缺的日报/周报/月报并刷新当天日报。
+- 输出一行 JSON：counts 是各步数量，reports.generated 是新写或刷新的期数，ok=false 或退出码非 0 就停下，不同步，在群里叫 Grok Bot。
+- 可重复跑；不挑内容、不改打分规则和门槛（门槛在 docs/selection.md）。
+- 一天没跑会漏刊：稿子当天没打分，第二天补打分后不会自动进前一天的日报（按上线时间算窗口），需要 Grok Bot 手动补。所以早晚两轮都要跑。
+
+## 健康检查（2026-11-17 起，每轮同步后必跑）
+第 4 步 sync-to-neon.sh 跑完之后：
+
+    python3 /workspace/edu-hot/scripts/check-pipeline-health.py
+
+- 最后一行是 HEALTH OK 才算这轮完成；报告里加一行「健康检查：OK」，或原样贴 HEALTH FAIL 那一行。FAIL 就不报完成。
+- FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
+- FAIL 在 inputs：报告里写缺哪个文件、名字该是什么，不替别的 bot 改名或补抓。
+- FAIL 在 db：停，不同步，叫 Grok Bot。
+- WARN 只是提示，照常报，不算 FAIL。
+
 ## 红线
 - 不打印任何密钥、口令、连接串；不 pkill qodercli（只杀自己的 PID）。
 - 不写 /workspace/edu-radar/grok-posts.json（那是内容雷达的产物）。
