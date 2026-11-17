@@ -189,13 +189,15 @@ test("SIGKILL after responses are saved but before the business commit reuses al
   assert.deepEqual(calls.slice().sort(), ["prefilter", "score", "score", "structure", "understand"]);
   const receivedIds = (await sql`SELECT id FROM receipts WHERE subject=${subject} ORDER BY id`).map((r) => String(r.id));
   assert.equal((await finish(articleId)).result?.state, "pass");
-  assert.equal(calls.length, 5, "restart sent no additional model requests");
+  // The separate five-dimension call runs once, after the judgement commits; nothing paid is bought again.
+  assert.deepEqual(calls.filter((step) => step === "facets"), ["facets"]);
+  assert.equal(calls.filter((step) => step !== "facets").length, 5, "restart sent no additional model requests");
   const [analysis] = await sql`SELECT selected,score,receipt_ids FROM analyses WHERE article_id=${articleId}`;
   assert.equal(analysis?.selected, true);
   assert.equal(Number(analysis?.score), SELECTING_SCORE);
   assert.deepEqual(analysis!.receipt_ids.map(String).sort(), receivedIds.slice().sort());
-  assert.equal((await sql`SELECT 1 FROM receipts WHERE subject=${subject} AND status='completed'`).length, 5);
-  assert.equal((await sql`SELECT 1 FROM receipt_attempts a JOIN receipts r ON r.id=a.receipt_id WHERE r.subject=${subject}`).length, 5);
+  assert.equal((await sql`SELECT 1 FROM receipts WHERE subject=${subject} AND status='completed' AND purpose <> 'facets_article'`).length, 5);
+  assert.equal((await sql`SELECT 1 FROM receipt_attempts a JOIN receipts r ON r.id=a.receipt_id WHERE r.subject=${subject} AND r.purpose <> 'facets_article'`).length, 5);
   assert.deepEqual({ ...(await sql`SELECT selected, selection_candidate FROM publications WHERE article_id=${articleId}`)[0] },
     { selected: false, selection_candidate: true }, "saved analysis nominates a candidate while news identity is pending");
 });

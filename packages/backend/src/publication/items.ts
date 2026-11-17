@@ -2,6 +2,7 @@
 // items through these columns and views; which rows are public is decided by scope.ts.
 import { CATEGORY_KEYS, toPublicApiCategory, type CategoryKey, type ChannelKey, type PublicApiCategoryKey } from "@aihot/contracts/taxonomy";
 import { STORY_INDEX_MIN_REPORTS, type FeedItemSummary, type ItemSummary, type MediaView, type XPostView } from "@aihot/contracts/site";
+import { parseItemFacets, type ItemFacets } from "@aihot/contracts/facets";
 import { POLICY } from "@aihot/site";
 import { sql, type Db } from "../db.ts";
 import { isChineseText } from "../lib/text.ts";
@@ -48,6 +49,12 @@ export interface ItemRow {
   zh_text: string | null;
   /** Chinese translation of the post an X post quotes. */
   quoted_zh: string | null;
+  /** The five dimensions (article_facets); null before the analysis or the backfill tagged it. */
+  facet_topic: string | null;
+  facet_subject: string | null;
+  facet_form: string | null;
+  facet_content_type: string | null;
+  facet_companies: string[] | null;
 }
 
 /** Columns every item listing selects. Internal judgement details never leave this layer. */
@@ -58,7 +65,8 @@ export const ITEM_COLUMNS = sql`
   a.x_post, CASE WHEN p.body_mode = 'full' THEN a.x_article - 'html' END AS x_article, a.author, a.language,
   CASE WHEN s.kind = 'x_search' AND ${sourceOwnsPost(sql`s.config`, sql`a.x_post->>'handle'`)} THEN s.icon_url END AS author_avatar_url,
   st.public_id::text AS story_public_id, st.title AS story_title,
-  CASE WHEN p.channel = 'x' THEN tr.body_text END AS zh_text, qt.text_zh AS quoted_zh`;
+  CASE WHEN p.channel = 'x' THEN tr.body_text END AS zh_text, qt.text_zh AS quoted_zh,
+  af.topic AS facet_topic, af.subject AS facet_subject, af.form AS facet_form, af.content_type AS facet_content_type, af.companies AS facet_companies`;
 
 /** Public API listings never render article bodies, X media or story metadata. */
 export type ApiItemRow = Pick<ItemRow, "id" | "title" | "original_title" | "summary" | "source_name" | "url" | "published_at" | "discovered_at" | "category" | "score" | "selected" | "reason">;
@@ -75,7 +83,8 @@ export const ITEM_FROM = sql`
   JOIN articles a ON a.id = p.article_id
   LEFT JOIN stories st ON st.id = p.story_id AND st.merged_into IS NULL
   LEFT JOIN translations tr ON tr.article_id = p.article_id AND tr.lang = 'zh' AND tr.revision >= a.revision
-  LEFT JOIN quote_translations qt ON p.channel = 'x' AND qt.tweet_id = substring(a.x_post->'quoted'->>'url' from '/status/([0-9]+)')`;
+  LEFT JOIN quote_translations qt ON p.channel = 'x' AND qt.tweet_id = substring(a.x_post->'quoted'->>'url' from '/status/([0-9]+)')
+  LEFT JOIN article_facets af ON af.article_id = p.article_id`;
 
 export function channelCondition(channel: ChannelKey | null | undefined) {
   if (!channel || channel === "all") return sql``;
@@ -211,6 +220,12 @@ export function toItemSummary(row: ItemRow): ItemSummary {
   };
 }
 
+/** Exactly the five public dimensions, re-checked against the lists; nothing else of the row's judgement. */
+function itemFacets(row: Pick<ItemRow, "facet_topic" | "facet_subject" | "facet_form" | "facet_content_type" | "facet_companies">): ItemFacets | null {
+  if (row.facet_topic == null && row.facet_subject == null && row.facet_form == null && row.facet_content_type == null && !row.facet_companies?.length) return null;
+  return parseItemFacets({ topic: row.facet_topic, subject: row.facet_subject, form: row.facet_form, content_type: row.facet_content_type, companies: row.facet_companies ?? [] });
+}
+
 /** Project the shared public article into the exact fields a site card renders. */
 export function toFeedItemSummary(row: ItemRow): FeedItemSummary {
   const item = toItemSummary(row);
@@ -219,6 +234,7 @@ export function toFeedItemSummary(row: ItemRow): FeedItemSummary {
     id: item.id, title: item.title, summary: item.summary ?? (x?.text || null), reason: item.reason,
     source: item.source, publishedAt: item.publishedAt, timelineAt: item.timelineAt,
     category: item.category, tags: item.tags, score: item.score, selected: item.selected, channel: item.channel,
+    facets: itemFacets(row),
     x: x ? {
       authorName: x.authorName, handle: x.handle, avatarUrl: x.avatarUrl,
       ...(x.avatarSrcSet ? { avatarSrcSet: x.avatarSrcSet } : {}), media: x.media, article: x.article,

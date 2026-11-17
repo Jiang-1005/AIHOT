@@ -11,7 +11,8 @@ import {
   type ItemRow,
 } from "./items.ts";
 import { evidenceCondition, featuredSlotCondition, foldableSelectionCondition, listedCondition, ownFactEvidenceCondition, selectedCondition } from "./scope.ts";
-import { articleIdsMatchingFacets, type FacetQuery } from "./facets.ts";
+import { articleFacetCondition, type FacetQuery } from "./facets.ts";
+import { SINGLE_FACETS, type SingleFacet } from "@aihot/contracts/facets";
 
 export interface TimelineQuery extends TimelineFilters, FacetQuery {
   cursor?: string | null;
@@ -32,16 +33,13 @@ interface GroupRow {
   anchor_at: Date;
 }
 
-function facetCondition(q: TimelineQuery) {
-  const ids = articleIdsMatchingFacets(q);
-  if (ids == null) return sql``;
-  if (!ids.length) return sql`AND FALSE`;
-  return sql`AND p.article_id IN ${sql(ids)}`;
+function filterSql(q: TimelineQuery) {
+  return sql`${channelCondition(q.channel)} ${categoryCondition(q.category)} ${tagCondition(q.tag)} ${articleFacetCondition(q)}`;
 }
 
-function filterSql(q: TimelineQuery) {
-  return sql`${channelCondition(q.channel)} ${categoryCondition(q.category)} ${tagCondition(q.tag)} ${facetCondition(q)}`;
-}
+/** A timeline card: its fact when the report folds into one, else the report itself. */
+const groupKey = () => sql`CASE WHEN p.fact_id IS NOT NULL AND ${ownFactEvidenceCondition()} AND ${foldableSelectionCondition()}
+          THEN 'f' || p.fact_id::text ELSE 'a' || p.article_id END`;
 
 function binding(q: TimelineQuery): string {
   return queryBinding({ c: q.channel, k: q.category, t: q.tag, s: slotOf(q), topic: q.topic ?? [], subject: q.subject ?? [], form: q.form ?? [], content_type: q.content_type ?? [], company: q.company ?? [] });
@@ -71,8 +69,7 @@ async function queryGroupedAnchors(q: TimelineQuery, now: Date) {
   const rows = (
     await sql<{ gk: string; anchor_at: Date }[]>`
       WITH base AS MATERIALIZED (
-        SELECT p.sort_at, CASE WHEN p.fact_id IS NOT NULL AND ${ownFactEvidenceCondition()} AND ${foldableSelectionCondition()}
-          THEN 'f' || p.fact_id::text ELSE 'a' || p.article_id END AS gk
+        SELECT p.sort_at, ${groupKey()} AS gk
         FROM publications p
         WHERE ${timelineScope(now, q)} ${filterSql(q)}
       )
@@ -177,4 +174,31 @@ export async function loadTimeline(q: TimelineQuery): Promise<Omit<TimelineRespo
   const last = page[page.length - 1];
   const nextCursor = hasMore && last ? encodeCursor("tl2", { a: last.anchor_at.getTime(), g: last.gk, b: bind }) : null;
   return { filters: { channel: q.channel, category: q.category, tag: q.tag, slot: slotOf(q), topic: q.topic ?? [], subject: q.subject ?? [], form: q.form ?? [], content_type: q.content_type ?? [], company: q.company ?? [] }, cards, nextCursor, dayCounts };
+}
+
+export type FeaturedFacetCounts = Record<SingleFacet | "company", Record<string, number>>;
+
+/**
+ * For each value of the five dimensions, the 精选 cards the timeline shows when only it is chosen
+ * (a card counts once when any of its reports carries the value), so a chip's number is its result.
+ */
+const featuredFacetCounts = cachedByKey((key: string) => key, () => queryFeaturedFacetCounts(new Date()), { freshMs: 30_000, maxStaleMs: 30_000, maxKeys: 1 });
+export const loadFeaturedFacetCounts = () => featuredFacetCounts("featured");
+
+export async function queryFeaturedFacetCounts(now: Date): Promise<FeaturedFacetCounts> {
+  const rows = await sql<{ dim: SingleFacet | "company"; value: string; n: number }[]>`
+    WITH base AS MATERIALIZED (
+      SELECT p.article_id, ${groupKey()} AS gk FROM publications p WHERE ${selectedCondition(now)} AND ${featuredSlotCondition(now, "featured")}
+    )
+    SELECT d.dim, d.value, count(DISTINCT base.gk)::int AS n
+    FROM base JOIN article_facets af ON af.article_id = base.article_id
+    CROSS JOIN LATERAL (
+      SELECT 'topic' AS dim, af.topic AS value UNION ALL SELECT 'subject', af.subject UNION ALL SELECT 'form', af.form
+      UNION ALL SELECT 'content_type', af.content_type UNION ALL SELECT 'company', c FROM unnest(af.companies) c
+    ) d
+    WHERE d.value IS NOT NULL
+    GROUP BY d.dim, d.value`;
+  const counts = Object.fromEntries([...SINGLE_FACETS, "company"].map((k) => [k, {}])) as FeaturedFacetCounts;
+  for (const r of rows) counts[r.dim][r.value] = r.n;
+  return counts;
 }
