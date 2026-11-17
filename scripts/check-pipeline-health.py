@@ -9,6 +9,7 @@
   issue    最新日报不早于昨天（有新稿却没出刊 = 失败）
   worker   worker 心跳（关着是已知状态，只提示）
   live     线上最新日报 = 本机最新日报，线上「数据截至」不落后本机同步时间
+  hot      线上热点榜 24 小时内重算过（超过 = FAIL）；0 条只提示，附本机 candidates 数
   checkout 运维目录 /workspace/edu-hot 没缺主线 jiang/main 上的运维脚本，本分支的运维脚本也已进主线
 
 全部只读：docker exec psql SELECT、读文件、curl 公网只读接口、git 本地对象。不写库、不 push、不打印任何密钥。
@@ -190,6 +191,27 @@ def check_live(local_latest):
     except Exception as e:
         add("WARN", "live", f"数据截至没核上：{e}")
 
+def check_hot():
+    """线上热点榜：computedAt 超过 24 小时 = 没人重算（worker 关着时靠 score-and-compose.sh 第 4 步）。"""
+    try:
+        hot = get_json("/api/site/hot")
+        at = dt.datetime.fromisoformat(hot["computedAt"].replace("Z", "+00:00")).astimezone(TZ)
+    except Exception as e:
+        add("FAIL", "hot", f"线上热点榜接口读不到：{e}"); return
+    age_h = (dt.datetime.now(TZ) - at).total_seconds() / 3600
+    n = len(hot.get("entries") or [])
+    when = at.strftime("%m-%d %H:%M")
+    if age_h > 24:
+        add("FAIL", "hot", f"线上热点榜 {when} 算的（{age_h:.0f} 小时前，超过 24 小时）→ score-and-compose.sh 没重算或没同步"); return
+    if n == 0:
+        try:
+            cand = psql("SELECT coalesce(evidence->>'candidates','?') FROM hot_rankings ORDER BY computed_at DESC LIMIT 1")[0][0]
+        except Exception:
+            cand = "未查到"
+        add("WARN", "hot", f"线上热点榜 {when} 算的，0 条；本机最近一次 candidates={cand}（48 小时内够 2 个独立来源、含 1 个精选源的事件数）")
+        return
+    add("OK", "hot", f"线上热点榜 {when} 算的，{n} 条")
+
 # ---------- checkout drift ----------
 def git(*a):
     p = subprocess.run(["git", "-C", REPO, *a], capture_output=True, text=True)
@@ -234,7 +256,7 @@ def main():
         latest = check_db(as_of) if (run("db") or not replay) else None
     if run("live"):
         if replay: add("SKIP", "live", "回放模式不查线上")
-        elif latest is not False: check_live(latest)
+        elif latest is not False: check_live(latest); check_hot()
     if run("checkout") and not replay: check_checkout()
     fails = [r for r in results if r[0] == "FAIL"]; warns = [r for r in results if r[0] == "WARN"]
     if a.json:
