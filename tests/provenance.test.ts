@@ -150,7 +150,8 @@ test("a later verified publisher repairs source and author, preserving judgement
   const media = await source("T2");
   const scope = `https://${tag()}.example/news`;
   const url = `${scope}/release`;
-  const at = new Date("2026-09-20T00:00:00Z");
+  // Inside the 30-day archive window, where a selected report stays selected.
+  const at = new Date(Date.now() - 3 * 86_400_000);
   const { articleId } = await upsertMaterial({ sourceId: media, url, title: "Original release", author: "HN submitter", bodyText: "Release body", via: "fetch", discoveredAt: at, publishedAt: at });
   await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, title_zh, summary_zh, score, selected)
     VALUES (${articleId}, 1, 'replay', 'pass', '原始发布', '真实摘要', 85, true)`;
