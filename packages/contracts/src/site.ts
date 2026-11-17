@@ -286,6 +286,13 @@ export interface StoryFactView {
  */
 export const STORY_INDEX_MIN_REPORTS = 2;
 
+export interface StorySource {
+  name: string;
+  itemId: string;
+  publishedAt: string;
+  url?: string | null;
+}
+
 export interface StoryDetail {
   publicId: string;
   title: string;
@@ -319,8 +326,8 @@ export interface StoryDetail {
   topics: TopicLink[];
   /** The pages its overview names (mentions.ts). */
   mentions: MentionTarget[];
-  /** Distinct editorial sources on the event, each linking to one of its reports. */
-  sources?: Array<{ name: string; itemId: string; publishedAt: string }>;
+  /** Distinct editorial sources on the event, each with one of its reports and that report's original URL (null when missing). */
+  sources?: StorySource[];
   sourceNames?: string[];
 }
 

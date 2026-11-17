@@ -10,6 +10,7 @@ import { relatedEvidence, RELATED_MIN_REPORTS } from "../events/related.ts";
 import { pickRepresentative, REPRESENTATIVE_COLUMNS, type RepresentativeIdentity } from "./representative.ts";
 import { compositeCondition, evidenceCondition, listedCondition, storyReportCondition } from "./scope.ts";
 import { publicSourceName } from "./rules.ts";
+import { sourcesOf } from "./story-sources.ts";
 import { latestHotRanking, rankingExtras } from "./hot.ts";
 import { storyTexts } from "./story-text.ts";
 import { topicsOfStory } from "./topics.ts";
@@ -93,18 +94,6 @@ function reportView(r: ReportRow): StoryReportView {
     publishedAt: r.at.toISOString(),
     selected: r.selected,
   };
-}
-
-/** One row per source, latest (selected first) report as the link; not sliced. */
-function sourcesOf(reports: ReportRow[]): Array<{ name: string; itemId: string; publishedAt: string }> {
-  const ranked = [...reports].sort((a, b) => Number(b.selected) - Number(a.selected) || b.at.getTime() - a.at.getTime() || a.id.localeCompare(b.id));
-  const seen = new Map<string, { name: string; itemId: string; publishedAt: string }>();
-  for (const r of ranked) {
-    const key = r.source_id || r.source_name;
-    if (seen.has(key)) continue;
-    seen.set(key, { name: publicSourceName(r.source_name), itemId: r.id, publishedAt: r.at.toISOString() });
-  }
-  return [...seen.values()];
 }
 
 /** The story's reports newest first, its developments, and its latest and first non-mention reports. */
