@@ -5,15 +5,10 @@ import { useEntrance } from "../../lib/hydration";
 import { PillTabs } from "../../components/ui/Tabs";
 import { areaPath, curvePath, type Pt } from "../hot/curve";
 import { formatHeat } from "../hot/presentation";
+import { heatAxis } from "./heat-axis";
 
 const HOUR = 3600 * 1000;
 const BEIJING = 8 * HOUR;
-
-function niceStep(max: number): number {
-  const raw = max / 4;
-  const pow = 10 ** Math.floor(Math.log10(raw || 1));
-  return ([1, 2, 2.5, 5, 10].map((m) => m * pow).find((s) => s >= raw) ?? raw) || 1;
-}
 
 /**
  * Hourly heat of one story over its comparable range. Hours that were not fully observed leave a gap
@@ -96,9 +91,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
     const dayAgo = series.find((s) => s.t === last.t - 24 * HOUR)?.p;
     const change = dayAgo && dayAgo.heat > 0 ? Math.round(((last.p!.heat - dayAgo.heat) / dayAgo.heat) * 100) : null;
 
-    const step = niceStep(peak.p!.heat);
-    const top = Math.max(step, Math.ceil(peak.p!.heat / step) * step);
-    const ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
+    const { top, ticks } = heatAxis(peak.p!.heat);
     const t0 = series[0]!.t;
     const t1 = series[series.length - 1]!.t;
     const span = Math.max(HOUR, t1 - t0);
@@ -172,7 +165,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
       <div className="relative mt-6 h-[176px] pl-9 sm:h-[216px] lg:h-[236px]">
         {ticks.map((v) => (
           <span key={v} className="num absolute left-0 w-7 -translate-y-1/2 text-right text-[0.75rem] leading-none text-ink-4" style={{ top: `${y(v)}%` }} aria-hidden="true">
-            {v}
+            {formatHeat(v)}
           </span>
         ))}
         <div
