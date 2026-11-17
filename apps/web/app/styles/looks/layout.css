@@ -122,7 +122,7 @@
   :root[data-style="glass"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] { flex-direction: column; }
   :root[data-style="glass"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-title] { font-size: 1.25rem; font-weight: 600; -webkit-line-clamp: 2; line-clamp: 2; }
   :root[data-style="glass"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-meta] { order: 0; flex-basis: auto; justify-content: flex-start; }
-  :root[data-style="glass"] [data-home-rail] { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-overlay); }
+  :root[data-style="glass"] [data-home-rail] { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-panel); padding: 1rem; box-shadow: var(--shadow-overlay); }
 }
 @media (max-width: 1023.98px) {
   :root[data-style="glass"] [data-feed-card] { display: grid; grid-template-columns: minmax(0, 1fr); }
