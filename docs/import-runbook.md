@@ -60,6 +60,8 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 - FAIL 在 db：停，不同步，叫 Grok Bot。
 - FAIL 在 deps（宿主机 node_modules 不在，盒子重启后会出现）：在 /workspace/edu-hot 跑 `npm ci` 再查。sync-to-neon.sh 和 score-and-compose.sh 开头会自动补装，npm ci 失败就退出非 0，这轮停下叫 Grok Bot。
 - FAIL 在 fresh：某一项超过失败阈值没更新。热点榜：看 score-and-compose.sh 输出有没有 hot 字段、sync-to-neon.sh 有没有跑完，补跑这两条再查；热帖：查 import-voices.py 这轮跑没跑；日报、周报：再跑一次 score-and-compose.sh。还 FAIL 就在群里叫 Grok Bot。
+- WARN 在 cdn（CDN 还没追上本轮同步）：同步后 17 分钟内（s-maxage 600 秒 + SWR 300 秒 + 2 分钟余量）不带 ts 的线上地址还是旧数据，只是提示，照常报，写上「CDN 最晚 HH:MM 追上」。想当场确认就跑 `python3 scripts/check-pipeline-health.py --only cdn --cdn-wait 1100`（追上就停，最多等约 18 分钟）。另一种 WARN 是「最近一次同步没清 CDN：没有 VERCEL_TOKEN」：sync-to-neon.sh 已照常跑完，数据在 Neon 上，只是访客最多晚 15 分钟看到，照常报。
+- FAIL 在 cdn：同步后已过 17 分钟，访客拿到的 /api/site/voices、/voices 的「数据截至」或 /api/site/hot、/hot 的更新时间还是旧的。不要重跑同步、不要自己部署，在群里叫 Grok Bot。
 - WARN 在 hot（热点榜 0 条）：默认只是提示，照常报，写上当前口径的 candidates（默认 heat：48 小时内至少 1 个精选源；`HOT_RANKING_MODE=threshold` 时才是至少 2 个独立来源且含 1 个精选源）。
 - FAIL 在 hot（线上 0 条但本机已有候选）：本机按当前口径已能排出 ≥1 个候选，且已经过了「下一轮同步本应写下新榜」的时间（每天 9:30 / 20:30 后再留 30 分钟，即 10:00 / 21:00；或者本机 `site-sync.json` 已经在那个同步点之后跑过）。先看 score-and-compose.sh 的 hot 字段和 sync-to-neon.sh 有没有跑完，补跑后再查；还 FAIL 就在群里叫 Grok Bot。生产还停在上一轮空记录、下一轮还没到的合理窗口内，保持 WARN，不要当成失败。
 

@@ -90,7 +90,7 @@ set -a; . /workspace/edu-hot/.secrets/neon.env; set +a
 
 `sync-to-neon.sh` 会：用 DoH 解析真实 Neon IP（绕过盒子上的假 IP DNS）→ 把本地 Docker 库只读拷进 Neon 的 `hot_stage`，在一个短事务里与 `public` 换表（线上读不到半截数据；空的本地 `site_blobs` 不会覆盖线上目录）→ 在 direct 上跑迁移 → 把 `.data/voices.json` 和 `content-tags.json` upsert 进 `site_blobs`（`updated_at` 前进，Vercel 实例会在约 15 秒内刷新 `/tmp` 缓存）→ 按标签 `edu-hot-public` 删除生产环境的 Vercel CDN 缓存，让下一趟访问打到新数据。
 
-公开 SSR 页面和 `GET /api/site/*` 的 CDN 策略是 `Vercel-CDN-Cache-Control: public, s-maxage=600, stale-while-revalidate=86400`，并带 `Vercel-Cache-Tag: edu-hot-public`。带 `aihot_admin` / `edu_hot_gate` 等私有 cookie、`Set-Cookie`、`/admin` 或非 GET 的请求不会进公共缓存。`X-Robots-Tag: noindex, nofollow` 仍由路由头写上。哈希静态资源 `/assets/*` 为 `public, max-age=31536000, immutable`。
+公开 SSR 页面和 `GET /api/site/*` 的 CDN 策略是 `Vercel-CDN-Cache-Control: public, s-maxage=600, stale-while-revalidate=300`（2026-11-17 起 SWR 从一天缩到 5 分钟：没清缓存时，访客最晚在同步后 15 分钟拿到新数据），并带 `Vercel-Cache-Tag: edu-hot-public`。带 `aihot_admin` / `edu_hot_gate` 等私有 cookie、`Set-Cookie`、`/admin` 或非 GET 的请求不会进公共缓存。`X-Robots-Tag: noindex, nofollow` 仍由路由头写上。哈希静态资源 `/assets/*` 为 `public, max-age=31536000, immutable`。
 
 ### 同步后如何刷新 CDN（可靠做法）
 
@@ -114,7 +114,7 @@ VERCEL_TOKEN=...
 # VERCEL_TEAM_ID=team_Zi76VbaJw6q9rWyQu7psA3pw
 ```
 
-没有令牌时，脚本会提示并继续结束同步（不中断写库）。这时可以用一次新的生产部署清掉旧 CDN 缓存（新部署不会复用上一份 ISR/CDN 条目），或等待 `s-maxage=600`；注意 `stale-while-revalidate=86400` 仍可能在过期后继续送出旧正文，所以有令牌的按标签删除才是日常可靠路径。
+没有令牌时，`purge-vercel-cdn.sh` 往 stderr 打两行 `WARN: CDN cache NOT purged`，退出码 3（两个接口都失败是 1）。`sync-to-neon.sh` 不因此失败：数据已经在 Neon 上，它把结果写进 `.data/cdn-purge.json`（`purged` / `no-token` / `failed`），打一行 WARN 后正常结束。之后由 `check-pipeline-health.py` 的 cdn 一组核对访客真正拿到的不带 ts 地址：同步后 17 分钟内没追上只 WARN，过了还旧就 HEALTH FAIL。最晚 `s-maxage + SWR`（15 分钟）后旧缓存自然过期；有令牌的按标签删除仍是让同步后马上生效的路径。
 
 把这条接到每天约 9:30 和约 20:30（北京时间）两轮导入之后即可。本仓库不改 routine，由 C J 自行挂上。每轮 sync-to-neon.sh 会先在本地重写当天日报（可用 SKIP_DAILY_REFRESH=1 跳过），再把「数据截至」写成这一轮实际同步的北京时间。不要和仍在写库的导入同时跑。
 

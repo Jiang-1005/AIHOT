@@ -96,7 +96,22 @@ python3 "$ROOT/scripts/reset-dest-sequences.py"
 # 4) Drop the Vercel CDN entries tagged edu-hot-public so visitors do not
 # keep seeing pre-sync HTML / /api/site/* for up to s-maxage + SWR.
 # Requires VERCEL_TOKEN in .secrets/vercel-api.env (never printed).
+# The data is already on Neon at this point, so a missing token or a failed purge
+# does not fail the sync. It is recorded in .data/cdn-purge.json and printed as a
+# WARN; check-pipeline-health.py then checks the live non-ts URLs caught up and
+# fails once they are still behind after s-maxage + SWR.
 echo "Purging Vercel CDN cache…"
-"$ROOT/scripts/purge-vercel-cdn.sh"
+purge_rc=0
+"$ROOT/scripts/purge-vercel-cdn.sh" || purge_rc=$?
+case "$purge_rc" in
+  0) purge_status="purged" ;;
+  3) purge_status="no-token" ;;
+  *) purge_status="failed" ;;
+esac
+printf '{"at":"%s","status":"%s","exitCode":%d}\n' "$(TZ=Asia/Shanghai date +%Y-%m-%dT%H:%M:%S+08:00)" "$purge_status" "$purge_rc" > "$ROOT/.data/cdn-purge.json"
 
-echo "sync-to-neon finished."
+if [[ "$purge_status" == "purged" ]]; then
+  echo "sync-to-neon finished."
+else
+  echo "WARN: sync-to-neon finished, but the CDN cache was NOT purged ($purge_status). Run check-pipeline-health.py: it fails if the live site is still behind after 15 minutes." >&2
+fi

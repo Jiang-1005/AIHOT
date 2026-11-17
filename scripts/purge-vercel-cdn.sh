@@ -16,6 +16,12 @@
 #
 # Usage (from /workspace/edu-hot):
 #   ./scripts/purge-vercel-cdn.sh
+#
+# Exit codes (sync-to-neon.sh records them in .data/cdn-purge.json and keeps going;
+# check-pipeline-health.py then verifies the live, non-ts URLs caught up):
+#   0  purged (deleted or invalidated)
+#   1  token present but both Vercel calls failed
+#   3  no VERCEL_TOKEN: nothing was purged
 set -euo pipefail
 
 if [[ -n "${-:-}" && "${-}" == *x* ]]; then
@@ -37,9 +43,9 @@ TEAM_ID="${VERCEL_TEAM_ID:-team_Zi76VbaJw6q9rWyQu7psA3pw}"
 TAG="${VERCEL_CACHE_TAG:-edu-hot-public}"
 
 if [[ -z "${VERCEL_TOKEN:-}" ]]; then
-  echo "CDN cache not purged: no VERCEL_TOKEN (set it in $TOKEN_ENV)." >&2
-  echo "Until a token is set, a new production deploy also drops the old CDN cache, or wait for s-maxage (10 minutes) to expire — stale-while-revalidate may still serve the previous body for up to a day." >&2
-  exit 0
+  echo "WARN: CDN cache NOT purged: no VERCEL_TOKEN (set it in $TOKEN_ENV)." >&2
+  echo "WARN: the live site may keep serving the pre-sync pages and /api/site/* for up to s-maxage + stale-while-revalidate (600 s + 300 s = 15 minutes)." >&2
+  exit 3
 fi
 
 url="https://api.vercel.com/v1/edge-cache/dangerously-delete-by-tags?projectIdOrName=${PROJECT_ID}&teamId=${TEAM_ID}"

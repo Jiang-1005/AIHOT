@@ -8,7 +8,10 @@
   scoring  导进来的稿子 3 小时内打完分（worker 关着时靠 score-and-compose.sh）
   issue    最新日报不早于昨天（有新稿却没出刊 = 失败）
   worker   worker 心跳（关着是已知状态，只提示）
-  live     线上最新日报 = 本机最新日报，线上「数据截至」不落后本机同步时间
+  live     线上最新日报 = 本机最新日报，线上「数据截至」不落后本机同步时间（带 ts，绕过 CDN，看的是源站）
+  cdn      访客真正拿到的（不带 ts，走 CDN）：/api/site/voices、/voices 的「数据截至」= 本机同步时间，
+           /api/site/hot、/hot 的 computedAt = 源站。同步后 s-maxage+SWR+余量（17 分钟）内没对上只 WARN，过了还没对上 = FAIL；
+           上一轮同步没清 CDN（.data/cdn-purge.json 不是 purged，比如没有 VERCEL_TOKEN）也提示
   fresh    热帖、日报、周报、热点榜、本机库备份各自多久没更新，阈值见下面的 FRESHNESS 表；热点榜 0 条默认提示，附当前口径的 candidates；若候选≥1 且已过应刷新的一轮则升级为失败
   deps     宿主机 node_modules/@aihot/backend 在（sync-to-neon.sh 跑 migrate.ts 要用）
   checkout 运维目录 /workspace/edu-hot 没缺主线 jiang/main 上的运维脚本，本分支的运维脚本也已进主线
@@ -20,6 +23,7 @@
   python3 scripts/check-pipeline-health.py --slot am       # 指定早轮/晚轮（默认按时间：<15:00 为 am）
   python3 scripts/check-pipeline-health.py --as-of 2026-11-17T09:45:00+08:00   # 回放：只用当时已存在的数据（live 自动跳过）
   python3 scripts/check-pipeline-health.py --only inputs   # 只校验输入文件（给雷达、行业观察写完文件后自查）
+  python3 scripts/check-pipeline-health.py --only cdn --cdn-wait 1100   # 同步后等 CDN 追上（最多等这么多秒，追上就停）
 """
 import argparse, csv, datetime as dt, glob, json, os, re, subprocess, sys, urllib.request
 
@@ -193,6 +197,7 @@ def check_db(as_of):
 
 # ---------- live ----------
 def get_json(path):
+    """源站视角：带 ts 参数，CDN 必然 MISS。"""
     req = urllib.request.Request(f"{SITE}{path}{'&' if '?' in path else '?'}ts={int(dt.datetime.now().timestamp())}",
                                  headers={"User-Agent": "eduhot-health/1"})
     with urllib.request.urlopen(req, timeout=20) as r:
@@ -220,6 +225,101 @@ def check_live(local_latest):
             add("WARN" if lag > 15 else "OK", "live", f"线上数据截至 {as_of_txt}，本机最近同步 {sync}" + ("（线上落后，CDN 未刷新或同步没成功）" if lag > 15 else ""))
     except Exception as e:
         add("WARN", "live", f"数据截至没核上：{e}")
+
+# ---------- cdn（不带 ts：访客真正看到的） ----------
+# 和 packages/contracts/src/public-cache.ts 的 PUBLIC_CDN_S_MAXAGE / PUBLIC_CDN_SWR 保持一致。
+CDN_S_MAXAGE = 600
+CDN_SWR = 300
+CDN_MARGIN = 120
+CDN_DEADLINE = dt.timedelta(seconds=CDN_S_MAXAGE + CDN_SWR + CDN_MARGIN)
+CDN_PURGE_FILE = f"{REPO}/.data/cdn-purge.json"
+
+def get_public(path):
+    """访客视角：不带 ts，可能是 CDN HIT/STALE。返回 (正文, x-vercel-cache, age)。"""
+    req = urllib.request.Request(f"{SITE}{path}", headers={"User-Agent": "eduhot-health/1", "Accept": "application/json, text/html"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return r.read().decode("utf-8", "replace"), r.headers.get("x-vercel-cache") or "-", r.headers.get("age") or "-"
+
+def parse_as_of(text, year):
+    """「11 月 17 日 20:44」或「11月17日 20:42」→ 北京时间分钟。"""
+    m = re.search(r"(\d{1,2})\s*月\s*(\d{1,2})\s*日\s*(\d{1,2}):(\d{2})", text or "")
+    return dt.datetime(year, int(m[1]), int(m[2]), int(m[3]), int(m[4]), tzinfo=TZ) if m else None
+
+def iso_minute(iso):
+    return dt.datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(TZ).replace(second=0, microsecond=0)
+
+def read_sync_iso():
+    raw = json.load(open(f"{REPO}/.data/site-sync.json"))
+    if raw.get("syncedAtIso"): return dt.datetime.fromisoformat(raw["syncedAtIso"]).astimezone(TZ)
+    return dt.datetime.strptime(raw["syncedAt"], "%Y-%m-%d %H:%M").replace(tzinfo=TZ)
+
+def cdn_probes(sync_min, origin_hot_min):
+    """每个不带 ts 的地址：(名称, 线上值, 应当值, cache 状态)。线上值 None = 没解析出来。"""
+    out = []
+    body, cache, age = get_public("/api/site/voices")
+    out.append(("/api/site/voices 数据截至", parse_as_of(json.loads(body).get("dataAsOf", ""), sync_min.year), sync_min, f"{cache}/age {age}"))
+    body, cache, age = get_public("/voices")
+    m = re.search(r"数据截至\s*([^<\"]{0,40})", body)
+    out.append(("/voices 数据截至", parse_as_of(m[1] if m else "", sync_min.year), sync_min, f"{cache}/age {age}"))
+    body, cache, age = get_public("/api/site/hot")
+    ca = json.loads(body).get("computedAt")
+    out.append(("/api/site/hot computedAt", iso_minute(ca) if ca else None, origin_hot_min, f"{cache}/age {age}"))
+    body, cache, age = get_public("/hot")
+    m = re.search(r"(\d{1,2}月\d{1,2}日 \d{1,2}:\d{2}) 更新", body)
+    out.append(("/hot 更新时间", parse_as_of(m[1] if m else "", sync_min.year), origin_hot_min, f"{cache}/age {age}"))
+    return out
+
+def assess_cdn(probes, sync_at, now, purge=None):
+    """纯函数，方便测：返回 [(level, msg)]。"""
+    res = []
+    behind = [p for p in probes if p[1] is None or p[1] < p[2]]
+    ahead = [p for p in probes if p[1] is not None and p[1] > p[2]]
+    deadline = sync_at + CDN_DEADLINE
+    if purge and purge.get("status") != "purged":
+        at = purge.get("at", "")
+        try: purge_at = dt.datetime.fromisoformat(at).astimezone(TZ)
+        except Exception: purge_at = None
+        if purge_at is None or purge_at >= sync_at - dt.timedelta(minutes=5):
+            why = "没有 VERCEL_TOKEN" if purge.get("status") == "no-token" else f"清缓存接口失败（exit {purge.get('exitCode')}）"
+            res.append(("WARN", f"最近一次同步没清 CDN：{why}；线上最晚 {deadline:%H:%M} 才会追上"))
+    if not behind:
+        res.append(("OK", "不带 ts 的线上地址都已是本轮数据：" + "；".join(f"{n} {v:%m-%d %H:%M}（{c}）" for n, v, _, c in probes)))
+    else:
+        detail = "；".join(f"{n} {'读不到' if v is None else f'{v:%m-%d %H:%M}'}，应为 {want:%m-%d %H:%M}（{c}）" for n, v, want, c in behind)
+        if now <= deadline:
+            res.append(("WARN", f"CDN 还没追上本轮同步（{detail}）；{deadline:%H:%M} 前算正常（s-maxage {CDN_S_MAXAGE}s + SWR {CDN_SWR}s + 余量），到时再跑一次"))
+        else:
+            res.append(("FAIL", f"CDN 旧缓存：同步 {sync_at:%H:%M} 后已过 {int((now - sync_at).total_seconds() // 60)} 分钟，访客还拿到旧数据（{detail}）"))
+    for n, v, want, c in ahead:
+        res.append(("WARN", f"{n} {v:%m-%d %H:%M} 比本机同步/源站 {want:%m-%d %H:%M} 还新：本机 .data/site-sync.json 可能不是最近一次同步写的"))
+    return res
+
+def check_cdn(wait_s=0, retries=2, pause_s=20):
+    try:
+        sync_at = read_sync_iso()
+    except Exception as e:
+        add("WARN", "cdn", f"本机 .data/site-sync.json 读不到，跳过 CDN 核对：{e}"); return
+    sync_min = sync_at.replace(second=0, microsecond=0)
+    try: purge = json.load(open(CDN_PURGE_FILE))
+    except Exception: purge = None
+    import time
+    give_up = time.monotonic() + max(0, wait_s)
+    attempt = 0
+    while True:
+        try:
+            origin_hot = get_json("/api/site/hot").get("computedAt")
+            origin_hot_min = iso_minute(origin_hot) if origin_hot else sync_min
+            probes = cdn_probes(sync_min, origin_hot_min)
+        except Exception as e:
+            add("FAIL", "cdn", f"不带 ts 的线上地址读不到：{e}"); return
+        verdict = assess_cdn(probes, sync_at, dt.datetime.now(TZ), purge)
+        stale = any("追上本轮" in m or "CDN 旧缓存" in m for _, m in verdict)
+        attempt += 1
+        # SWR：第一次可能吐 STALE 并触发回源，隔一会儿再问；--cdn-wait 则一直等到追上或时间用完。
+        if not stale or (attempt > retries and time.monotonic() >= give_up):
+            break
+        time.sleep(pause_s if attempt <= retries else 60)
+    for lv, m in verdict: add(lv, "cdn", m)
 
 def fresh_at(key, as_of, replay):
     """(每项最近一次更新的时间, 热点榜条数)；时间 None = 当时还没有数据，"SKIP" = 回放时没法查。"""
@@ -398,7 +498,8 @@ def check_checkout():
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--as-of"); ap.add_argument("--slot", choices=["am", "pm"])
-    ap.add_argument("--only", choices=["inputs", "db", "live", "fresh", "deps", "checkout"]); ap.add_argument("--json", action="store_true")
+    ap.add_argument("--only", choices=["inputs", "db", "live", "cdn", "fresh", "deps", "checkout"]); ap.add_argument("--json", action="store_true")
+    ap.add_argument("--cdn-wait", type=int, default=0, metavar="SECONDS", help="CDN 没追上时最多再等这么多秒（每 60 秒问一次，追上就停）")
     a = ap.parse_args()
     now = dt.datetime.now(TZ)
     as_of = dt.datetime.fromisoformat(a.as_of).astimezone(TZ) if a.as_of else now
@@ -412,6 +513,9 @@ def main():
     if run("live"):
         if replay: add("SKIP", "live", "回放模式不查线上")
         elif latest is not False: check_live(latest)
+    if run("cdn"):
+        if replay: add("SKIP", "cdn", "回放模式不查线上")
+        else: check_cdn(wait_s=a.cdn_wait)
     if run("fresh") and latest is not False: check_freshness(as_of, replay)
     if run("deps") and not replay: check_host_deps()
     if run("checkout") and not replay: check_checkout()

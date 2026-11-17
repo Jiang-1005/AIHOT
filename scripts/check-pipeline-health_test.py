@@ -210,5 +210,53 @@ class IndustryInputs(unittest.TestCase):
         self.assertIn("不会读进来", msg)
 
 
+class CdnStaleness(unittest.TestCase):
+    """Visitors read non-ts URLs through the CDN: right after a sync they may lag; past s-maxage+SWR they must not."""
+    SYNC = at("2026-11-17T20:44:00")
+
+    def probes(self, voices, hot, origin_hot="2026-11-17T20:42:00"):
+        v = at(voices) if voices else None
+        hh = at(hot) if hot else None
+        return [("/api/site/voices 数据截至", v, self.SYNC, "HIT/age 1"),
+                ("/hot 更新时间", hh, at(origin_hot), "STALE/age 900")]
+
+    def levels(self, verdict):
+        return [lv for lv, _ in verdict]
+
+    def test_caught_up_is_ok(self):
+        v = h.assess_cdn(self.probes("2026-11-17T20:44:00", "2026-11-17T20:42:00"), self.SYNC, at("2026-11-17T20:46:00"))
+        self.assertEqual(self.levels(v), ["OK"])
+
+    def test_behind_right_after_sync_only_warns(self):
+        v = h.assess_cdn(self.probes("2026-11-17T13:20:00", "2026-11-17T13:18:00"), self.SYNC, at("2026-11-17T20:50:00"))
+        self.assertEqual(self.levels(v), ["WARN"])
+        self.assertIn("21:01", v[0][1])  # 20:44 + 600 s + 300 s + 120 s
+
+    def test_behind_after_deadline_fails(self):
+        v = h.assess_cdn(self.probes("2026-11-17T13:20:00", "2026-11-17T20:42:00"), self.SYNC, at("2026-11-17T20:57:00") + dt.timedelta(minutes=5))
+        self.assertEqual(self.levels(v), ["FAIL"])
+        self.assertIn("13:20", v[0][1])
+
+    def test_unparsable_live_value_counts_as_behind(self):
+        v = h.assess_cdn(self.probes(None, "2026-11-17T20:42:00"), self.SYNC, at("2026-11-17T22:00:00"))
+        self.assertEqual(self.levels(v), ["FAIL"])
+
+    def test_unpurged_sync_is_flagged_even_when_caught_up(self):
+        purge = {"at": "2026-11-17T20:44:30+08:00", "status": "no-token", "exitCode": 3}
+        v = h.assess_cdn(self.probes("2026-11-17T20:44:00", "2026-11-17T20:42:00"), self.SYNC, at("2026-11-17T21:10:00"), purge)
+        self.assertEqual(self.levels(v), ["WARN", "OK"])
+        self.assertIn("VERCEL_TOKEN", v[0][1])
+
+    def test_old_purge_record_is_ignored(self):
+        purge = {"at": "2026-11-16T20:44:30+08:00", "status": "no-token", "exitCode": 3}
+        v = h.assess_cdn(self.probes("2026-11-17T20:44:00", "2026-11-17T20:42:00"), self.SYNC, at("2026-11-17T21:10:00"), purge)
+        self.assertEqual(self.levels(v), ["OK"])
+
+    def test_parse_as_of_formats(self):
+        self.assertEqual(h.parse_as_of("11 月 17 日 20:44 北京时间", 2026), at("2026-11-17T20:44:00"))
+        self.assertEqual(h.parse_as_of("11月17日 20:42", 2026), at("2026-11-17T20:42:00"))
+        self.assertIsNone(h.parse_as_of("", 2026))
+
+
 if __name__ == "__main__":
     unittest.main()
