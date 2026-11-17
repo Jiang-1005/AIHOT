@@ -115,6 +115,11 @@ async def run(base: str, out_dir: str, schemes: list[str] | None = None) -> dict
                 await ctx.add_init_script(
                     "try{localStorage.setItem('aihot-theme', '%s')}catch(e){}" % scheme
                 )
+                # AIHOT_STYLE=paper|console|bento checks one look (风格); unset, the site's default.
+                if os.environ.get("AIHOT_STYLE"):
+                    await ctx.add_init_script(
+                        "try{localStorage.setItem('aihot-style', %s)}catch(e){}" % json.dumps(os.environ["AIHOT_STYLE"])
+                    )
                 pg = await ctx.new_page()
                 await pg.route(
                     "**/*",

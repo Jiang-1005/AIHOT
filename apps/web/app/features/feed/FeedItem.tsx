@@ -44,7 +44,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
   const lead = dates && [dates.day && `发布 ${dates.day}`, dates.clock].filter(Boolean).join(" ");
 
   return (
-    <article className="relative min-w-0 lg:border-t lg:border-line lg:py-6 lg:group-first/slot:border-t-0 lg:group-first/slot:pt-4 lg:[&:has(a:hover)_h3]:text-accent" data-item-id={item.id}>
+    <article className="relative min-w-0 lg:border-t lg:border-line lg:py-6 lg:group-first/slot:border-t-0 lg:group-first/slot:pt-4 lg:[&:has(a:hover)_h3]:text-accent" data-item-id={item.id} data-feed-card="">
       <header className="flex min-h-5 items-center gap-2 text-[0.75rem] leading-[1.5] text-ink-4 lg:min-h-5 lg:gap-2">
         <SourceLine item={item} className="text-ink-4" />
         {lead && (

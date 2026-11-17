@@ -21,6 +21,9 @@ import { apiGet } from "./lib/api.server";
 import { useHydratedFlag } from "./lib/hydration";
 import { titled } from "./lib/seo";
 import { webModules } from "./site-modules";
+import { STYLE_BOOT_SCRIPT } from "./lib/site-styles";
+import { StylePicker } from "./components/shell/StylePicker";
+import { StyleKeys } from "./components/shell/StyleKeys";
 
 export const headers: Route.HeadersFunction = () => ({ "X-Robots-Tag": "noindex, nofollow" });
 
@@ -63,6 +66,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="apple-mobile-web-app-title" content={SITE.name} />
         <meta name="robots" content="noindex, nofollow" />
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: STYLE_BOOT_SCRIPT }} />
         {webModules().map((m) => m.root?.bootScript && <script key={m.name} dangerouslySetInnerHTML={{ __html: m.root.bootScript }} />)}
         <Meta />
         <Links />
@@ -110,6 +114,8 @@ function SiteShell({ changelogVersion, children }: { changelogVersion: string | 
       {interactive && <SearchOverlay />}
       {interactive && <PullToRefresh />}
       <BackToTop />
+      <StylePicker />
+      <StyleKeys />
     </div>
   );
 }

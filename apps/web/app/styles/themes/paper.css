@@ -1,0 +1,104 @@
+/* 晨报 (paper, the default look): a newspaper. Neutral grey-white paper, ink black, one vermilion used for
+   the lead's label, the current issue and selected states. Serif headlines, 4px corners, ruled columns. */
+:root[data-style="paper"] {
+  --font-serif: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --bg: #f7f7f5;
+  --surface: #fcfcfa;
+  --sidebar: #f7f7f5;
+  --daybar: #f7f7f5;
+  --ink: #111111;
+  --ink-2: #3f3f3f;
+  --ink-3: #5f5f5c;
+  --ink-4: #5f5f5c;
+  --line: #d6d6d1;
+  --line-strong: #bdbdb7;
+  --line-soft: #e4e4e0;
+  --accent: #b42318;
+  --accent-ink: #9b1c13;
+  --accent-soft: rgba(180, 35, 24, 0.07);
+  --accent-contrast: #ffffff;
+  --warn: #9a4a00;
+  --warn-soft: rgba(154, 74, 0, 0.1);
+  --selection: rgba(180, 35, 24, 0.14);
+  --prose-ink: #1c1c1c;
+  --radius-control: 4px;
+  --radius-tile: 4px;
+  --radius-card: 4px;
+  --radius-panel: 4px;
+  --radius-sheet: 8px;
+}
+:root[data-style="paper"][data-theme="dark"] {
+  --bg: #121211;
+  --surface: #1b1b1a;
+  --sidebar: #121211;
+  --daybar: #121211;
+  --ink: #ededea;
+  --ink-2: #d4d4cf;
+  --ink-3: #a3a39c;
+  --ink-4: #a3a39c;
+  --line: rgba(255, 255, 255, 0.14);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --accent: #ff8a7a;
+  --accent-ink: #ffa496;
+  --accent-soft: rgba(255, 138, 122, 0.12);
+  --accent-contrast: #121211;
+  --warn: #f0a060;
+  --warn-soft: rgba(240, 160, 96, 0.14);
+  --selection: rgba(255, 138, 122, 0.22);
+  --prose-ink: #e2e2de;
+}
+[data-swatch="paper"] { --swatch-bg: #f7f7f5; --swatch-accent: #b42318; }
+
+/* Headlines: heavy serif; the masthead grows into a nameplate on desktop. */
+:root[data-style="paper"] [data-feed-card] h3 { font-weight: 700; }
+:root[data-style="paper"] [data-feed-card] h3 a {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size var(--duration-slow) var(--ease-enter);
+}
+:root[data-style="paper"] [data-feed-card]:has(a:hover) h3 a { background-size: 100% 1px; }
+@media (min-width: 700px) {
+  :root[data-style="paper"] [data-masthead-name] { font-size: 2.75rem; line-height: 1.15; font-weight: 900; letter-spacing: 0.08em; }
+}
+
+/* 精选 front page on wide screens: the newest report is the lead across the page, the rest in two ruled
+   columns per day. */
+@media (min-width: 1280px) {
+  :root[data-style="paper"] [data-page="featured"] [data-feed-list] {
+    columns: 2;
+    column-gap: 40px;
+    column-rule: 1px solid var(--line);
+  }
+  :root[data-style="paper"] [data-page="featured"] [data-feed-slot] { break-inside: avoid; }
+  :root[data-style="paper"] [data-page="featured"][data-front] [data-feed-days] > section:first-of-type [data-feed-slot]:first-child {
+    column-span: all;
+    padding-bottom: 16px;
+    border-bottom: 3px double var(--ink);
+    margin-bottom: 8px;
+  }
+  :root[data-style="paper"] [data-page="featured"][data-front] [data-feed-days] > section:first-of-type [data-feed-slot]:first-child h3 {
+    font-size: 1.75rem;
+    line-height: 1.35;
+    font-weight: 900;
+  }
+}
+
+/* 热帖 on wide screens: three ruled columns. */
+@media (min-width: 1440px) {
+  :root[data-style="paper"] .voices-grid[data-voices-view="cards"] { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 0; }
+  :root[data-style="paper"] .voices-grid[data-voices-view="cards"] > .voice-card { padding-inline: 20px; border-left: 1px solid var(--line); }
+  :root[data-style="paper"] .voices-grid[data-voices-view="cards"] > .voice-card:nth-child(3n + 1) { padding-left: 0; border-left: 0; }
+  :root[data-style="paper"] .voices-grid[data-voices-view="cards"] > .voice-card:nth-child(3n) { padding-right: 0; }
+  :root[data-style="paper"] .voices-grid[data-voices-view="cards"] > .voice-card:nth-child(3) { border-top: 0; }
+}
+:root[data-style="paper"] .voice-card-title { font-family: var(--font-serif); font-weight: 700; }
+
+/* Motion: the nameplate inks in, rows rise in once. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-style="paper"] [data-masthead-name] { animation: paper-ink 700ms var(--ease-enter) both; }
+  :root[data-style="paper"] [data-masthead] { animation: aihot-fade-in 500ms var(--ease-enter) 120ms both; }
+}
+@keyframes paper-ink {
+  from { opacity: 0; filter: blur(6px); letter-spacing: 0.12em; }
+  to { opacity: 1; filter: none; }
+}

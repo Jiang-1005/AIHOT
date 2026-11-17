@@ -404,6 +404,9 @@ export default function VoicesPage() {
   const [items, setItems] = useState(data.items);
   const [partial, setPartial] = useState(Boolean(data.itemsPartial));
   const [reading, setReading] = useState<string | null>(null);
+  // The full catalog failed after its retries; the page keeps the preview and offers a manual retry.
+  const [catalogFailed, setCatalogFailed] = useState(false);
+  const [catalogRetry, setCatalogRetry] = useState(0);
   const sentinel = useRef<HTMLDivElement>(null);
   const prefetchNow = useRef<(() => void) | null>(null);
   const filteredLen = useRef(0);
@@ -439,9 +442,11 @@ export default function VoicesPage() {
           if (!Array.isArray(full.items)) throw new Error("bad catalog");
           setItems(full.items);
           setPartial(false);
+          setCatalogFailed(false);
         })
         .catch((error: { name?: string } | undefined) => {
-          if (error?.name === "AbortError" || attempt >= 3) return;
+          if (error?.name === "AbortError") return;
+          if (attempt >= 3) { setCatalogFailed(true); return; }
           timer = setTimeout(() => load(attempt + 1), 800 * (attempt + 1));
         });
     };
@@ -457,7 +462,7 @@ export default function VoicesPage() {
       clearTimeout(timer);
       prefetchNow.current = null;
     };
-  }, [data.catalog?.generatedAt, data.catalogTotal, data.railCounts?.total, items.length]);
+  }, [data.catalog?.generatedAt, data.catalogTotal, data.railCounts?.total, items.length, catalogRetry]);
 
   const filtered = useMemo(
     () => filterVoices(items, sort, platform, source, facets, verify),
@@ -660,6 +665,18 @@ export default function VoicesPage() {
             />
           </div>
 
+          {partial && (
+            <div className="voices-status" role="status" aria-live="polite" data-voices-status={catalogFailed ? "error" : "loading"}>
+              {catalogFailed ? (
+                <>
+                  <span>完整列表暂时没加载出来，下面只显示先到的 <span className="num">{items.length}</span> 条。</span>
+                  <button type="button" className="text-accent hover:underline" onClick={() => { setCatalogFailed(false); setCatalogRetry((n) => n + 1); }}>重试</button>
+                </>
+              ) : (
+                <span>正在加载全部 <span className="num">{counts.total}</span> 条…</span>
+              )}
+            </div>
+          )}
           {filtered.length === 0 && ready ? (
             <div className="card">
               <EmptyState

@@ -25,6 +25,8 @@ export type FacetsMeta = {
   headCompanies: string[];
   logos: { index: LogoIndex; missing?: string[] };
   counts: Partial<Record<FacetKey, Record<string, number>>>;
+  /** 精选's own counts per value (the 精选 cards each choice lists), once the api tags 精选 reports. */
+  featuredCounts?: Partial<Record<FacetKey, Record<string, number>>>;
 };
 
 export function facetsFromRecord(f: { topic?: string[]; subject?: string[]; form?: string[]; content_type?: string[]; company?: string[] } | undefined): FacetState {

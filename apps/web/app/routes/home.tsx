@@ -5,10 +5,11 @@ import type { ReportIndexResponse, TimelineResponse } from "@aihot/contracts/sit
 import { beijingDate } from "@aihot/contracts/time";
 import { apiGet, cachedPage, loadOr404 } from "../lib/api.server";
 import { pageReuse } from "../lib/page-reuse";
-import { filterParams, hasFeedFilters, itemListLd, listPath, pageMeta, readFilters, siteLd, timelineApiParams } from "../lib/seo";
+import { facetsActive, filterParams, hasFeedFilters, itemListLd, listPath, pageMeta, readFilters, siteLd, timelineApiParams } from "../lib/seo";
 import { inNav } from "../components/shell/nav";
 import type { Screen } from "../components/shell/screens";
 import type { FacetsMeta } from "../components/facets/FacetChips";
+import { featuredFacetMeta } from "../lib/featured-facets";
 import { Timeline } from "../features/feed/Timeline";
 import { HotTopics } from "../features/feed/HotTopics";
 import { Masthead, type MastheadIssue } from "../features/feed/Masthead";
@@ -54,12 +55,13 @@ export default function Home() {
   const { data, filters, facets, issue, today } = useLoaderData<typeof loader>();
   const title = filters.tag ? `#${filters.tag}` : "精选";
   const front = !hasFeedFilters(filters);
+  const featuredFacets = featuredFacetMeta(facets, data.cards, facetsActive(filters));
   return (
-    <div className="pb-6">
-      <FeedBar base="/" category={filters.category} channel={filters.channel} meta={facets} />
+    <div className="pb-6" data-page="featured" data-front={front ? "" : undefined}>
+      <FeedBar base="/" category={filters.category} channel={filters.channel} meta={featuredFacets ?? facets} facets={!!featuredFacets} />
       <ActiveFilters base="/" category={filters.category} channel={filters.channel} tag={filters.tag} />
       {front && <Masthead today={today} issue={issue} todayCount={data.dayCounts[today] ?? 0} />}
-      <DesktopFacetBlock base="/" title={title} titleHidden={front} meta={facets} search={<SearchField keep={{ category: filters.category }} />} />
+      <DesktopFacetBlock base="/" title={title} titleHidden={front} meta={featuredFacets ?? facets} facets={!!featuredFacets} search={<SearchField keep={{ category: filters.category }} />} />
 
       {data.hot && inNav("/hot") && <HotTopics entries={data.hot} />}
 

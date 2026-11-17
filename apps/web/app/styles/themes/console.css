@@ -1,0 +1,107 @@
+/* 控制台 (console): a dense tool in the manner of Linear or Vercel. Zinc greys, one indigo accent, sans
+   headlines with tabular figures, single-line rows; j/k move between rows (StyleKeys.tsx), / searches. */
+:root[data-style="console"] {
+  --font-serif: var(--font-sans);
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --sidebar: #f4f4f5;
+  --daybar: #fafafa;
+  --ink: #18181b;
+  --ink-2: #3f3f46;
+  --ink-3: #52525b;
+  --ink-4: #5f5f68;
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --line-soft: #ececef;
+  --accent: #4f46e5;
+  --accent-ink: #4338ca;
+  --accent-soft: rgba(79, 70, 229, 0.08);
+  --accent-contrast: #ffffff;
+  --warn: #9a4a00;
+  --warn-soft: rgba(154, 74, 0, 0.1);
+  --selection: rgba(79, 70, 229, 0.16);
+  --radius-mark: 4px;
+  --radius-control: 8px;
+  --radius-tile: 8px;
+  --radius-card: 8px;
+  --radius-panel: 8px;
+  --radius-sheet: 12px;
+}
+:root[data-style="console"][data-theme="dark"] {
+  --bg: #09090b;
+  --surface: #111113;
+  --raised: #18181b;
+  --sidebar: #0c0c0e;
+  --daybar: #09090b;
+  --ink: #ededef;
+  --ink-2: #d4d4d8;
+  --ink-3: #a1a1aa;
+  --ink-4: #8e8e98;
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --line-soft: #1f1f23;
+  --accent: #8b8dff;
+  --accent-ink: #a5a6ff;
+  --accent-soft: rgba(139, 141, 255, 0.12);
+  --accent-contrast: #09090b;
+  --warn: #f5a524;
+  --warn-soft: rgba(245, 165, 36, 0.14);
+  --selection: rgba(139, 141, 255, 0.24);
+  --shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #27272a;
+}
+[data-swatch="console"] { --swatch-bg: #09090b; --swatch-accent: #8b8dff; }
+
+:root[data-style="console"] h1, :root[data-style="console"] h2, :root[data-style="console"] h3 { font-weight: 600; letter-spacing: -0.01em; }
+:root[data-style="console"] .num, :root[data-style="console"] time { font-family: var(--font-mono); }
+:root[data-style="console"] [data-masthead-name] { font-weight: 600; letter-spacing: -0.02em; }
+@media (min-width: 700px) {
+  :root[data-style="console"] [data-masthead-name] { font-size: 1.75rem; }
+  :root[data-style="console"] [data-masthead] { text-align: left; border-bottom-width: 1px; border-bottom-style: solid; border-color: var(--line); }
+  :root[data-style="console"] [data-masthead] > p { justify-content: flex-start; letter-spacing: 0.04em; }
+}
+
+/* Rows: tighter, one-line summary and reason, a soft highlight for the row under the pointer or in focus. */
+:root[data-style="console"] [data-feed-card] h3 { font-size: 1rem; line-height: 1.5; margin-top: 4px; }
+:root[data-style="console"] [data-feed-card] h3 + p { -webkit-line-clamp: 1; margin-top: 2px; }
+:root[data-style="console"] [data-feed-card] > div:last-of-type p { -webkit-line-clamp: 1; }
+@media (min-width: 700px) {
+  :root[data-style="console"] [data-feed-card] { padding-block: 12px; }
+  :root[data-style="console"] [data-feed-card] > div:has(> p) { margin-top: 4px; padding-top: 0; border-top: 0; }
+  :root[data-style="console"] [data-feed-slot] > div > time { padding-top: 12px; }
+}
+:root[data-style="console"] [data-feed-slot] { border-radius: var(--radius-control); transition: background-color var(--duration-fast) var(--ease-enter), box-shadow var(--duration-fast) var(--ease-enter); }
+@media (hover: hover) {
+  :root[data-style="console"] [data-feed-slot]:hover { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+}
+:root[data-style="console"] [data-feed-slot]:focus-within,
+:root[data-style="console"] [data-feed-slot][data-kb-current] {
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent), 0 0 24px -8px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* 热帖: one dense column of rows. */
+:root[data-style="console"] .voices-grid[data-voices-view="cards"] { grid-template-columns: minmax(0, 1fr); column-gap: 0; }
+:root[data-style="console"] .voices-grid[data-voices-view="cards"] > .voice-card { gap: 4px; padding: 12px; border-top: 1px solid var(--line-soft); border-radius: var(--radius-control); }
+:root[data-style="console"] .voices-grid[data-voices-view="cards"] > .voice-card:nth-child(2) { border-top: 1px solid var(--line-soft); }
+:root[data-style="console"] .voice-card-title { font-size: 1rem; }
+:root[data-style="console"] .voice-card-summary { -webkit-line-clamp: 2; }
+:root[data-style="console"] .voice-card:focus-within,
+:root[data-style="console"] .voice-card[data-kb-current] {
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+@media (hover: hover) {
+  :root[data-style="console"] .voice-card:hover { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+}
+@media (min-width: 1176px) {
+  :root[data-style="console"] .voices-layout { grid-template-columns: 240px minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-style="console"] [data-feed-list] > [data-feed-slot],
+  :root[data-style="console"] .voices-grid > .voice-card { animation: console-in 360ms cubic-bezier(0.34, 1.3, 0.64, 1) both; }
+}
+@keyframes console-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}

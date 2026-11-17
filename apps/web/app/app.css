@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Looks (风格): one file per look, listed in lib/site-styles.ts. Add a look: its file here and its entry there. */
+@import "./styles/themes/picker.css";
+@import "./styles/themes/paper.css";
+@import "./styles/themes/console.css";
+@import "./styles/themes/bento.css";
 /* Classes also live in the site's logo and changelog drawings (site/brand, site/changelog) and in the
    modules' web code (their other files are not scanned: words in backend code and data would become classes). */
 @source "../../../site/brand";

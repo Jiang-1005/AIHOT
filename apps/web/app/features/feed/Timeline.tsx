@@ -124,6 +124,7 @@ export function TimelineSlot({ at, publishedAt, children, fresh = false, delay =
   return (
     <li
       data-card-key={dataKey}
+      data-feed-slot=""
       className={`group/slot bleed touch:has-[a:active]:bg-bg-sunk/70 lg:mx-0 lg:px-0 lg:touch:has-[a:active]:bg-transparent ${fresh ? "animate-fade-up" : ""}`}
       style={fresh ? { animationDelay: `${delay}ms` } : undefined}
     >
@@ -314,7 +315,7 @@ export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnr
     </ToggleChip>
   );
   return (
-    <div className="relative">
+    <div className="relative" data-feed-days="">
       {/* Desktop puts it on the first date row; phones, and a list the filter left empty, keep its own row. */}
       {/* Phones reach it from the bar's filter sheet; a list the filter left empty keeps it here to turn it off. */}
       {!hidePhoneUnread && !days.length && (
@@ -343,7 +344,7 @@ export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnr
           <section key={day} aria-label={day} className="lg:mb-1">
             <DayHeader day={day} today={today} count={count} collapsed={collapsed} onToggle={() => toggleDay(day)} aside={dayIndex === 0 ? unreadToggle : undefined} asideOnPhone={false} />
             <Collapse open={!collapsed}>
-                <ol className="lg:pt-1">
+                <ol className="lg:pt-1" data-feed-list="">
                   {cards.map((c) => {
                     const fresh = freshKeys.has(c.key);
                     const delay = fresh ? Math.min(order++, 10) * 40 : 0;

@@ -15,11 +15,11 @@ export function DayList({ items, todayCount = null, headerAside }: { items: Feed
   const today = beijingDate(Date.now());
   const days = useMemo(() => byBeijingDay(items, (it) => it.timelineAt), [items]);
   return (
-    <div>
+    <div data-feed-days="">
       {days.map(({ day, entries: list }, i) => (
         <section key={day} aria-label={day}>
           <DayHeader day={day} today={today} count={day === today ? todayCount : null} aside={i === 0 ? headerAside : undefined} />
-          <ol className="lg:pt-1">
+          <ol className="lg:pt-1" data-feed-list="">
             {list.map((it) => (
               <TimelineSlot key={it.id} at={it.timelineAt} publishedAt={it.publishedAt}>
                 <FeedItem item={it} read={readSet.has(it.id)} onOpen={markRead} showTags at={it.timelineAt} />

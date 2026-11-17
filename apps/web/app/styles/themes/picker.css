@@ -1,0 +1,94 @@
+/* The look switch (components/shell/StylePicker.tsx) and the room it keeps free.
+   Phones: a 40px button in the top bar's right end; PhoneBar's row ends 44px short of it.
+   Desktop (≥ 700px): the same button 12px from the window's top-right corner; the main column ends
+   56px from the edge so sticky day heads and toolbars never sit under it. */
+.style-picker {
+  position: fixed;
+  transition: transform var(--duration-med) var(--ease-enter), opacity var(--duration-med) var(--ease-enter);
+  z-index: 45; /* over the top bar (40), under sheets and dialogs (50) */
+  top: calc(env(safe-area-inset-top) + 4px);
+  right: max(4px, env(safe-area-inset-right));
+}
+[data-phone-bar] > div { padding-right: 44px; }
+@media (min-width: 700px) {
+  .style-picker { top: 12px; right: max(12px, env(safe-area-inset-right)); }
+  #main { padding-right: max(56px, env(safe-area-inset-right)); }
+}
+/* Phones without a top bar, scrolling down: out of the way (focus brings it back). */
+.style-picker[data-tucked]:not(:focus-within) { transform: translateY(-56px); opacity: 0; pointer-events: none; }
+.style-picker-button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--ink-2);
+  backdrop-filter: blur(8px);
+  transition: color var(--duration-fast) var(--ease-enter), border-color var(--duration-fast) var(--ease-enter);
+}
+.style-picker-button:hover,
+.style-picker[data-open] .style-picker-button { color: var(--accent); border-color: var(--accent); }
+.style-picker-panel {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 248px;
+  max-width: calc(100vw - 8px);
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  box-shadow: var(--shadow-overlay);
+  animation: aihot-drop-in var(--duration-med) var(--ease-enter) both;
+}
+.style-picker-title {
+  padding: 4px 8px 8px;
+  font-size: 0.75rem;
+  line-height: 16px;
+  color: var(--ink-4);
+}
+.style-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px;
+  border-radius: var(--radius-control);
+  text-align: left;
+  color: var(--ink);
+}
+.style-picker-option b { display: block; font-size: 0.875rem; line-height: 20px; font-weight: 600; }
+.style-picker-option span > span { display: block; font-size: 0.75rem; line-height: 16px; color: var(--ink-4); }
+.style-picker-option:hover { background: var(--accent-soft); }
+.style-picker-option[aria-checked="true"] { background: var(--accent-soft); }
+.style-picker-option[aria-checked="true"] b::after { content: " · 使用中"; font-weight: 400; color: var(--accent); }
+.style-picker-option:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.style-picker-swatch {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  /* Each look's file sets --swatch-bg and --swatch-accent on [data-swatch="<id>"]. */
+  background: var(--swatch-bg, var(--bg));
+  box-shadow: inset -10px -10px 0 0 var(--swatch-accent, var(--accent));
+}
+
+/* 热帖: the full catalog loading, or failed after its retries. */
+.voices-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  font-size: 0.75rem;
+  line-height: 20px;
+  color: var(--ink-3);
+}
+.voices-status[data-voices-status="error"] { border-color: color-mix(in srgb, var(--warn) 45%, transparent); color: var(--ink-2); }

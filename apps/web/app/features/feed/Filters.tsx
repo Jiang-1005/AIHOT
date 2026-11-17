@@ -39,7 +39,7 @@ function patchFacets(base: string, params: URLSearchParams, next: FacetState): s
 
 /** Desktop: five-dimension chip rows, replacing the old 一手/能力/产品… tabs. */
 export function DesktopFacetBlock({
-  base, title, titleHidden = false, blurb, meta, search,
+  base, title, titleHidden = false, blurb, meta, search, facets = true,
 }: {
   base: string;
   title: ReactNode;
@@ -48,6 +48,9 @@ export function DesktopFacetBlock({
   blurb?: ReactNode;
   meta: FacetsMeta;
   search?: ReactNode;
+  /** The five-dimension chips. 精选 turns them off: its timeline carries none of those fields, so every
+   *  choice there would list nothing (the chips stay on 全部, where they filter). */
+  facets?: boolean;
 }) {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -72,7 +75,7 @@ export function DesktopFacetBlock({
       {/* Without a visible heading, the search sits at the end of the chip row instead of on a row of its own. */}
       <div className={titleHidden ? "mb-4 flex items-start justify-between gap-4" : "mb-4"}>
         <div className="min-w-0 flex-1">
-          <FacetChipRows
+          {facets && <FacetChipRows
             collapsible
             vocab={meta.vocab}
             value={value}
@@ -81,7 +84,7 @@ export function DesktopFacetBlock({
             counts={meta.counts}
             logos={meta.logos?.index}
             headCompanies={meta.headCompanies}
-          />
+          />}
         </div>
         {titleHidden && search}
       </div>
@@ -93,7 +96,7 @@ export function DesktopFacetBlock({
  * The phone bar of 精选, 往期 and 全部: the brand, the switch (a filter in use carries over), and
  * buttons for the filter sheet and search.
  */
-export function FeedBar({ base, category, channel, meta }: { base: "/" | "/archive" | "/all"; category: CategoryKey | null; channel: ChannelKey; meta?: FacetsMeta }) {
+export function FeedBar({ base, category, channel, meta, facets = true }: { base: "/" | "/archive" | "/all"; category: CategoryKey | null; channel: ChannelKey; meta?: FacetsMeta; facets?: boolean }) {
   const [params] = useSearchParams();
   const [sheet, setSheet] = useState(false);
   const scope = (to: string) => hrefWith(to, params, { q: null, tab: null, search: null, slot: null });
@@ -134,13 +137,13 @@ export function FeedBar({ base, category, channel, meta }: { base: "/" | "/archi
           </>
         }
       />
-      <FilterSheet open={sheet} onClose={() => setSheet(false)} base={base} meta={meta} unread={base !== "/all"} />
+      <FilterSheet open={sheet} onClose={() => setSheet(false)} base={base} meta={meta} unread={base !== "/all"} facets={facets} />
     </>
   );
 }
 
 /** Phones: the five-dimension filters in a sheet; 完成 applies them. */
-function FilterSheet({ open, onClose, base, meta, unread = false }: { open: boolean; onClose: () => void; base: string; meta?: FacetsMeta; unread?: boolean }) {
+function FilterSheet({ open, onClose, base, meta, unread = false, facets = true }: { open: boolean; onClose: () => void; base: string; meta?: FacetsMeta; unread?: boolean; facets?: boolean }) {
   const [params] = useSearchParams();
   const unreadOnly = useUnreadOnly();
   const navigate = useNavigate();
@@ -151,14 +154,14 @@ function FilterSheet({ open, onClose, base, meta, unread = false }: { open: bool
   }, [open, params]);
   useEffect(() => {
     if (meta) { setLoaded(meta); return; }
-    if (!open || loaded) return;
+    if (!open || loaded || !facets) return;
     let gone = false;
     fetch("/api/site/facets")
       .then((r) => r.json())
       .then((d) => { if (!gone) setLoaded(d); })
       .catch(() => undefined);
     return () => { gone = true; };
-  }, [open, meta, loaded]);
+  }, [open, meta, loaded, facets]);
   const apply = (next: FacetState) => {
     navigate(patchFacets(base, params, next), { preventScrollReset: true });
     onClose();
@@ -173,10 +176,10 @@ function FilterSheet({ open, onClose, base, meta, unread = false }: { open: bool
               <ToggleChip on={unreadOnly} onToggle={() => setUnreadOnly(!unreadOnly)}>只看未读</ToggleChip>
             </span>
           )}
-          <button type="button" className="text-[0.875rem] text-ink-3" onClick={() => setDraft(EMPTY_FACETS)}>清空</button>
-          <button type="button" className="text-[0.875rem] font-medium text-accent" onClick={() => apply(draft)}>完成</button>
+          {facets && <button type="button" className="text-[0.875rem] text-ink-3" onClick={() => setDraft(EMPTY_FACETS)}>清空</button>}
+          <button type="button" className="text-[0.875rem] font-medium text-accent" onClick={() => (facets ? apply(draft) : onClose())}>完成</button>
         </div>
-        {loaded ? (
+        {!facets ? null : loaded ? (
           <FacetChipRows
             vocab={loaded.vocab}
             value={draft}
