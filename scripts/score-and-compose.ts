@@ -1,9 +1,10 @@
 // Worker-less daily run: score every article still waiting, group and digest them, then write
-// every daily/weekly/monthly that is due (and refresh today's). Same code paths the worker uses;
+// every daily/weekly/monthly that is due (and refresh today's), and re-rank the hot board. Same code paths the worker uses;
 // safe to run again. Run through scripts/score-and-compose.sh, not by hand.
 import { closeDb, sql } from "@aihot/backend/db";
 import { groupArticle } from "@aihot/backend/events/group";
 import { composeStoryDigest } from "@aihot/backend/events/digest";
+import { computeHotRanking } from "@aihot/backend/events/hot";
 import { processArticle, settleNonEditorial } from "@aihot/backend/jobs/content";
 import { stopBoss } from "@aihot/backend/jobs/queue";
 import { installModules } from "@aihot/backend/modules";
@@ -41,8 +42,19 @@ try {
 
   // 3. Issues: every due one that is missing, plus today's refresh.
   const reports = await composeDueReports(new Date());
-  console.log(JSON.stringify({ ok: reports.failed.length === 0, counts, reports }));
-  if (reports.failed.length) process.exitCode = 1;
+
+  // 4. Hot board: the worker re-ranked it every five minutes; without it the stored ranking goes stale.
+  // computeHotRanking returns only id and entries; candidates (stories past the participant gate,
+  // before the top-10 cut) comes from the row it stored.
+  let hot: { id: number; entries: number; candidates: number } | { error: string };
+  try {
+    const { id, entries } = await computeHotRanking();
+    const [row] = await sql<{ candidates: number }[]>`SELECT (evidence->>'candidates')::int AS candidates FROM hot_rankings WHERE id = ${id}`;
+    hot = { id, entries, candidates: row?.candidates ?? 0 };
+  } catch (e) { hot = { error: e instanceof Error ? e.message : String(e) }; }
+  const ok = reports.failed.length === 0 && !("error" in hot);
+  console.log(JSON.stringify({ ok, counts, reports, hot }));
+  if (!ok) process.exitCode = 1;
 } finally {
   await stopBoss();
   await closeDb();

@@ -43,8 +43,9 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 
     /workspace/edu-hot/scripts/score-and-compose.sh
 
-- 它做三件事：给 processing_state=new 的稿子打分（会调 DeepSeek），把打过分的归进事件并刷新事件摘要，再写所有缺的日报/周报/月报并刷新当天日报。
-- 输出一行 JSON：counts 是各步数量，reports.generated 是新写或刷新的期数，ok=false 或退出码非 0 就停下，不同步，在群里叫 Grok Bot。
+- 它做四件事：给 processing_state=new 的稿子打分（会调 DeepSeek），把打过分的归进事件并刷新事件摘要，写所有缺的日报/周报/月报并刷新当天日报，最后重算热点榜（原来 worker 每 5 分钟算一次）。
+- 输出一行 JSON：counts 是各步数量，reports.generated 是新写或刷新的期数，hot.entries 是上榜条数，hot.candidates 是过了门槛（48 小时内至少 2 个独立来源、其中至少 1 个精选源）的事件数。ok=false 或退出码非 0 就停下，不同步，在群里叫 Grok Bot。
+- hot.entries=0 不算失败：门槛没变，是 48 小时内没有两家以上来源报道同一件事。照常同步，报告里写一句「热点榜 0 条（candidates=N）」。
 - 可重复跑；不挑内容、不改打分规则和门槛（门槛在 docs/selection.md）。
 - 一天没跑会漏刊：稿子当天没打分，第二天补打分后不会自动进前一天的日报（按上线时间算窗口），需要 Grok Bot 手动补。所以早晚两轮都要跑。
 
@@ -57,6 +58,20 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 - FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
 - FAIL 在 inputs：报告里写缺哪个文件、名字该是什么，不替别的 bot 改名或补抓。
 - FAIL 在 db：停，不同步，叫 Grok Bot。
+- FAIL 在 fresh：某一项超过失败阈值没更新。热点榜：看 score-and-compose.sh 输出有没有 hot 字段、sync-to-neon.sh 有没有跑完，补跑这两条再查；热帖：查 import-voices.py 这轮跑没跑；日报、周报：再跑一次 score-and-compose.sh。还 FAIL 就在群里叫 Grok Bot。
+- WARN 在 hot（热点榜 0 条）：只是提示，照常报，写上 candidates 数。
+
+### 新鲜度阈值（照 dbt source freshness：warn_after / error_after）
+脚本顶部的 FRESHNESS 表是唯一出处，改阈值两处一起改。一天两轮的项目漏一轮告警、漏两轮失败；周报按自己的周期。
+
+| 项 | 取值位置 | 告警 | HEALTH FAIL |
+|---|---|---|---|
+| 热帖 | 本机 .data/voices.json 的 generatedAt | 13 小时 | 25 小时 |
+| 日报 | 本机 reports（kind=daily）max(generated_at) | 13 小时 | 25 小时 |
+| 周报 | 本机 reports（kind=weekly）max(generated_at) | 8 天 | 9 天 |
+| 热点榜 | 线上 /api/site/hot 的 computedAt | 13 小时 | 25 小时 |
+
+热点榜 0 条不算失败，只出一行提示（附本机最近一次 candidates）。`--only fresh` 只跑这一组；`--as-of` 回放时热帖和热点榜跳过。
 - WARN 只是提示，照常报，不算 FAIL。
 
 ## 红线
