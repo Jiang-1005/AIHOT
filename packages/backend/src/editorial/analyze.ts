@@ -31,6 +31,8 @@ import {
 } from "./writing.ts";
 import { CATEGORY_GUIDE, CATEGORY_TAGS, ENTITIES, ENTITY_TAGS, ITEM_TYPES, normalizeTags, TOPIC_TAGS } from "./vocabulary.ts";
 import { promptText, promptVersion } from "./prompts.ts";
+import { FACET_PROMPT_VALUES, FacetsSchema, writeArticleFacets } from "./facets.ts";
+import { facetsEmpty, parseItemFacets } from "@aihot/contracts/facets";
 import { originalPostCopy } from "../content/posts.ts";
 import { wordingProblems } from "./wording.ts";
 
@@ -140,6 +142,7 @@ export const StructureSchema = z.object({
   tags: z.array(z.string()).max(12).catch([]),
   subjects: z.array(z.string()).max(6).catch([]),
   fact: FactSchema,
+  facets: FacetsSchema.optional(),
 });
 
 const UnderstandSchema = z.object({
@@ -164,6 +167,7 @@ export const STRUCTURE_SYSTEM = promptText("structure", {
   topicTags: TOPIC_TAGS.join("、"),
   entityTags: ENTITY_TAGS.join("、"),
   entities: Object.entries(ENTITIES).map(([id, e]) => `${id}（${e.aliases.slice(0, 3).join("/")}）`).join("，"),
+  ...FACET_PROMPT_VALUES,
 });
 
 /** Keep only quotes present both in the original material and in the text the structure model saw. */
@@ -191,6 +195,8 @@ export function normalizeStructure(data: z.infer<typeof StructureSchema>, a: Ana
     category: data.category, tags: normalizeTags(data.tags),
     subjects: [...new Set(data.subjects.map((s) => s.trim().toLowerCase()).filter((s) => s in ENTITIES))],
     scope, fact,
+    // null: the answer had no facets at all (nothing is written, the backfill can fill it in).
+    facets: data.facets ? parseItemFacets(data.facets) : null,
   };
 }
 
@@ -566,6 +572,7 @@ export function normalizeAnalysis(run: AnalysisRun) {
     reasonZh: run.writing?.reasonZh ?? null,
     scope: run.structure?.scope ?? "unknown",
     fact: run.structure?.fact ?? null,
+    facets: run.structure?.facets && !facetsEmpty(run.structure.facets) ? run.structure.facets : null,
   };
 }
 
@@ -613,6 +620,9 @@ export async function analyzeArticle(articleId: string, opts: StepOpts = {}): Pr
         ${out.score}, ${out.selected}, ${tx.json(detail as never)})
       RETURNING id`;
     for (const id of receiptIds) await completeReceipt(tx, id);
+    if (!stale && out.facets && run.structure) {
+      await writeArticleFacets(tx, { articleId, revision: input.revision, facets: out.facets, origin: "analysis", model: run.structure.model, promptVersion: PROMPT_VERSIONS.structure });
+    }
     if (!stale) {
       await tx`UPDATE articles SET processing_state = ${out.relevance === "block" ? "blocked" : "analyzed"}, processing_error = NULL WHERE id = ${articleId}`;
     }

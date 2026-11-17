@@ -27,7 +27,8 @@ export const sql = postgres(databaseUrl, {
   // Prepared statements keep PostgreSQL's plan cache: planning a detail read took longer than running
   // it. Searches plan every execution instead (withCustomPlans). JIT compilation costs more than
   // these short queries ever run.
-  connection: { jit: "off" },
+  // DATABASE_READ_ONLY=true (dry runs of maintenance scripts): the server refuses every write of this process.
+  connection: { jit: "off", ...(process.env.DATABASE_READ_ONLY === "true" ? { default_transaction_read_only: true } : {}) },
   types: {
     int8: numberType(20),
     numeric: numberType(1700),

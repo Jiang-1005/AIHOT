@@ -7,7 +7,7 @@ import { InvalidCursorError } from "@aihot/backend/lib/cursor";
 import { exportMarkdown, loadItemDetail } from "@aihot/backend/publication/detail";
 import { itemUrl } from "@aihot/backend/publication/links";
 import { loadPool, SearchBusyError } from "@aihot/backend/publication/pool";
-import { loadTimeline } from "@aihot/backend/publication/timeline";
+import { loadFeaturedFacetCounts, loadTimeline } from "@aihot/backend/publication/timeline";
 import { loadStoryFollowups } from "@aihot/backend/publication/followups";
 import { loadGroupReports } from "@aihot/backend/publication/groups";
 import { hotSearchLinks, loadHotStrip } from "@aihot/backend/publication/hot";
@@ -81,7 +81,7 @@ export function registerSite(app: FastifyInstance) {
   }));
 
   app.get("/api/site/facets", siteHandler(async (req, reply) => {
-    return sendJsonWithEtag(req, reply, loadFacetsMeta(), { etagPrefix: "facets", cacheControl: "public, max-age=60, s-maxage=60" });
+    return sendJsonWithEtag(req, reply, { ...loadFacetsMeta(), featuredCounts: await loadFeaturedFacetCounts() }, { etagPrefix: "facets", cacheControl: "public, max-age=60, s-maxage=60" });
   }));
 
 

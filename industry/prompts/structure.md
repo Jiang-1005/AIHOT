@@ -33,4 +33,6 @@ evidence 必须支持上面选定的当前动作。主帖有新动作时从主�
 
 输出前核对当前动作（优先于标题和宣传措辞）：标题里的 Introducing、介绍、隆重推出不能覆盖正文明确的先后关系。正文若说此前已经发布、现在分享其中功能或讲解用法，本次 action 和 fact.title 必须写介绍/讲解；只有正文明确该功能本次才首次开放，才写发布/推出。evidence 摘取当前分享/讲解的句子，不能摘背景发布句来证明新发布。没有明示本次介绍发生在哪一天，occurredAt 必须为 null，不从文章发布时间或此前发布日期补齐。
 
-只输出一个 JSON 对象，字段：category, tags, subjects, scope, fact。
+六、{{> facets-rules}}
+
+只输出一个 JSON 对象，字段：category, tags, subjects, scope, fact, facets。facets 是一个对象，字段：topic, subject, form, content_type, companies。

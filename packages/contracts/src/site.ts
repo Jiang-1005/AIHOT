@@ -1,5 +1,6 @@
 // First-party site API (/api/site/*). Not a public API: it may evolve with the website,
 // but it is served from the same public read layer as v1, RSS and MCP.
+import type { ItemFacets } from "./facets.ts";
 import type { MentionTarget } from "./mentions.ts";
 import type { CategoryKey, ChannelKey } from "./taxonomy.ts";
 import { isoWeekRange, monthDay } from "./time.ts";
@@ -85,6 +86,8 @@ export interface FeedItemSummary extends Pick<ItemSummary, "id" | "title" | "sum
   x: (Pick<XPostView, "authorName" | "handle" | "avatarUrl" | "avatarSrcSet" | "media" | "article"> & {
     quoted: Omit<NonNullable<XPostView["quoted"]>, "url"> | null;
   }) | null;
+  /** The five dimensions the 精选 filters use (topic, subject, form, content_type, companies); null until tagged. */
+  facets: ItemFacets | null;
   /**
    * A selected report whose fact is represented by another report (全部动态 and search): that report,
    * so the card can say "同一件事，精选收录的是《…》" instead of claiming a seat of its own.
