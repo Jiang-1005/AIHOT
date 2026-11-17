@@ -1,36 +1,39 @@
-// The five dimensions: the structure step's answer becomes one article_facets row (values outside the
-// lists dropped), the 精选 timeline filters by them, each chip's count is the number of cards its filter
-// returns, and a card carries exactly the five public fields. Failure cases: a value the model made up
-// reaching readers; an older answer replacing a newer revision's; a count that disagrees with its result;
-// an internal judgement field leaking into the public card.
-import { pointModels, stub, tag } from "./setup.ts";
+// The five dimensions: processing tags a report with its own facets call after the judgement is
+// committed (values outside the lists dropped), and a failing call changes nothing else; the 精选 timeline
+// filters by them, each chip's count is the number of cards its filter returns, and a card carries
+// exactly the five public fields. Failure cases: a value the model made up reaching readers; the facets
+// call deciding or blocking 精选; an older answer replacing a newer revision's; a count that disagrees
+// with its result; an internal judgement field leaking into the public card.
+import { pointModels, Reply, stub, tag } from "./setup.ts";
 import { analysisStep } from "./analysis-steps.ts";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { closeDb, sql } from "@aihot/backend/db";
 import { upsertMaterial } from "@aihot/backend/content/materials";
-import { analyzeArticle, selectionThreshold } from "@aihot/backend/editorial/analyze";
+import { selectionThreshold, STRUCTURE_SYSTEM } from "@aihot/backend/editorial/analyze";
 import { writeArticleFacets } from "@aihot/backend/editorial/facets";
+import { processArticle } from "@aihot/backend/jobs/content";
 import { stopBoss } from "@aihot/backend/jobs/queue";
 import { loadTimeline, queryFeaturedFacetCounts } from "@aihot/backend/publication/timeline";
 import { parseItemFacets, type ItemFacets } from "@aihot/contracts/facets";
 
 const T = tag();
 const T1 = selectionThreshold({ tier: "T1" })!;
+const steps: string[] = [];
 
 const provider = await stub((_hit, req) => {
   const body = JSON.parse(req.body) as { messages: Array<{ content: unknown }> };
   const user = String(body.messages.at(-1)!.content);
   const step = analysisStep(req.body);
+  steps.push(step);
   const answer = (content: unknown) => ({ id: `stub-${T}`, model: "stub", choices: [{ message: { content: typeof content === "string" ? content : JSON.stringify(content) } }], usage: {} });
   if (step === "prefilter") return answer({ label: "PASS", reason: "测试" });
   if (step === "score") return answer({ attentionScore: T1 });
   if (step === "understand") return answer({ itemType: "model_release", authorRole: "principal", tags: [], editorialJudgment: "理由", titleZh: "理解标题", summaryZh: "理解摘要。第二句补充。" });
-  if (step === "structure") {
-    const facets = user.includes("NOFACETS") ? {} : {
-      facets: { topic: "产品与功能", subject: "阅读写作｜推断", form: "编出来的形态", content_type: "官方发布", companies: ["好未来 › 学而思", "X", "网易有道", "skill-file-name"] },
-    };
-    return answer({ category: "ai-models", tags: ["模型发布"], subjects: [], scope: "single", fact: null, ...facets });
+  if (step === "structure") return answer({ category: "ai-models", tags: ["模型发布"], subjects: [], scope: "single", fact: null });
+  if (step === "facets") {
+    if (user.includes("FAILS")) return new Reply(400, { error: { message: "request refused", type: "invalid_request_error" } });
+    return answer({ topic: "产品与功能", subject: "阅读写作｜推断", form: "编出来的形态", content_type: "官方发布", companies: ["好未来 › 学而思", "X", "网易有道", "skill-file-name"] });
   }
   return answer(`title_zh: 翻译标题\nsummary_zh: 翻译摘要。第二句补充。`);
 });
@@ -46,7 +49,8 @@ const stored = async (id: string) =>
   (await sql<{ topic: string | null; subject: string | null; form: string | null; content_type: string | null; companies: string[]; origin: string; input_revision: number }[]>`
     SELECT topic, subject, form, content_type, companies, origin, input_revision FROM article_facets WHERE article_id = ${id}`)[0] ?? null;
 
-test("the structure step's facets are stored inside the list, and a missing answer stores nothing", async () => {
+test("processing tags a report by its own call, and a failing call leaves 精选 as it was", async () => {
+  assert.doesNotMatch(STRUCTURE_SYSTEM, /五维|facets/, "the structure step is not asked for the dimensions");
   const source = `facets-analyze-${T}`;
   await sql`INSERT INTO sources (id, name, kind, tier, participation_mode, next_fetch_at) VALUES (${source}, ${source}, 'rss', 'T1', 'editorial', '2100-01-01')`;
   const material = async (marker: string) => (await upsertMaterial({
@@ -54,16 +58,22 @@ test("the structure step's facets are stored inside the list, and a missing answ
     bodyText: `${marker}: ${"好未来旗下学而思发布了一款阅读写作产品，面向小学生。".repeat(6)} (${T})`,
     bodyStatus: "ok", via: "fetch", publishedAt: new Date("2026-11-16T01:02:03Z"),
   } as never)).articleId;
+  const judged = async (id: string) => (await sql<{ processing_state: string; selected: boolean }[]>`
+    SELECT a.processing_state, p.selected FROM articles a JOIN publications p ON p.article_id = a.id WHERE a.id = ${id}`)[0];
 
-  const tagged = await material("FACETS");
-  await analyzeArticle(tagged);
+  const tagged = await material("TAGS");
+  steps.length = 0;
+  assert.equal((await processArticle(tagged)).state, "pass");
+  assert.equal(steps.at(-1), "facets", "the facets call comes after the judgement's steps");
+  assert.equal(steps.filter((s) => s === "facets").length, 1);
   assert.deepEqual(await stored(tagged), {
     topic: "产品与功能", subject: "阅读写作", form: null, content_type: "官方发布", companies: ["好未来", "学而思", "有道"], origin: "analysis", input_revision: 1,
   });
 
-  const untagged = await material("NOFACETS");
-  await analyzeArticle(untagged);
-  assert.equal(await stored(untagged), null, "no facets in the answer: the backfill fills it in later");
+  const failing = await material("FAILS");
+  assert.equal((await processArticle(failing)).state, "pass");
+  assert.equal(await stored(failing), null, "the backfill fills it in later");
+  assert.deepEqual(await judged(failing), await judged(tagged), "the same judgement and publication with or without facets");
 });
 
 test("an older revision's facets never replace a newer one's, and a rerun converges", async () => {

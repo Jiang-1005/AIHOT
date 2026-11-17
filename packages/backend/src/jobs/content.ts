@@ -8,6 +8,7 @@ import type { PgBoss } from "pg-boss";
 import { sql, type Db } from "../db.ts";
 import { extractArticleBody, pageFetchable } from "../content/extract.ts";
 import { analyzeArticle } from "../editorial/analyze.ts";
+import { tagArticleFacets } from "../editorial/facets.ts";
 import { isHistorical } from "../content/materials.ts";
 import { publishArticle } from "../publication/publish.ts";
 import { BudgetExceededError, failedReceiptId, failureKind } from "../providers/receipts.ts";
@@ -156,6 +157,8 @@ async function processRevision(articleId: string, row: NonNullable<Awaited<Retur
     if (needsGrouping({ participationMode: row.participation_mode, historical: row.historical, relevance: result.output.relevance })) await enqueue(QUEUES.group, { articleId }, { singletonKey: articleId, priority: groupingPriority({ signal: false, historical: row.historical }) });
     await sql`UPDATE articles SET processing_attempts = 0, processing_retry_at = NULL, processing_queued_at = NULL
               WHERE id = ${articleId} AND revision = ${row.revision}`;
+    // The five dimensions: their own call, after everything the judgement decides is settled.
+    if (result.output.relevance !== "block") await tagArticleFacets(articleId, row.revision, opts.attemptTag);
     return { state: result.output.relevance };
   } catch (error) {
     if (shutdownSignal.signal.aborted) throw error;
