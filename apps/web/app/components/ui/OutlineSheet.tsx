@@ -39,7 +39,7 @@ export function OutlineSheet({ open, onClose, outline, title = "目录" }: { ope
               >
                 {top && <span className={`mono w-5 shrink-0 text-[0.875rem] ${on ? "font-bold" : "text-ink-4"}`}>{mark}</span>}
                 <span className={`min-w-0 flex-1 leading-[1.45] ${top ? "text-[0.875rem]" : "text-[0.875rem]"} ${on ? "font-semibold" : top ? "text-ink-2" : "text-ink-3"}`}>{o.text}</span>
-                {on ? <span className="shrink-0 text-[0.75rem] font-semibold">正在读</span> : o.note && <span className="num shrink-0 text-[0.75rem] text-ink-4">{o.note}</span>}
+                {on ? <span className="shrink-0 text-[0.8125rem] font-semibold">正在读</span> : o.note && <span className="num shrink-0 text-[0.8125rem] text-ink-4">{o.note}</span>}
               </a>
             </li>
           );

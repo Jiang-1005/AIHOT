@@ -35,7 +35,7 @@ function Masthead({ report, index, quiet }: { report: ReportDetail; index: Repor
   const mark = dateMark(report.kind, report.key);
   return (
     <header className="pt-5 lg:pt-0">
-      <div className="flex items-center justify-between gap-4 text-[0.75rem] text-ink-4">
+      <div className="flex items-center justify-between gap-4 text-[0.8125rem] text-ink-4">
         <span className="num">{dateLine(report.kind, report.key)}</span>
         <span className="hidden tracking-[0.3em] @[640px]:inline">{MOTTO[report.kind]}</span>
         <span>{EDITION[report.kind]}</span>
@@ -50,18 +50,18 @@ function Masthead({ report, index, quiet }: { report: ReportDetail; index: Repor
             </span>
             <Nameplate which={report.kind} className="block h-[44px] w-auto @[520px]:h-[58px] @[880px]:h-[74px] @[1040px]:h-[84px]" />
           </h1>
-          <p className="mt-3 text-[0.75rem] tracking-[0.36em] text-ink-4 @[880px]:mt-4 @[880px]:text-[0.875rem]">{REPORTS.imprint}</p>
+          <p className="mt-3 text-[0.8125rem] tracking-[0.36em] text-ink-4 @[880px]:mt-4 @[880px]:text-[0.875rem]">{REPORTS.imprint}</p>
         </div>
         {/* 报眼: the box beside the nameplate, as a Chinese daily sets it: the issue and the date in the
             nameplate's dots, and on wider paper the issue calendar beside them. */}
         <div className="flex shrink-0 items-stretch well rounded-panel">
           <div className="flex w-[112px] flex-col items-center justify-center px-2 py-3 text-center @[880px]:w-[150px] @[880px]:py-4">
-            <span className="text-[0.75rem] tracking-[0.2em] text-ink-4">第 {report.issueNumber} 期</span>
+            <span className="text-[0.8125rem] tracking-[0.2em] text-ink-4">第 {report.issueNumber} 期</span>
             <Halftone seed={`${report.kind}-${report.key}-date`} className="num mt-2 whitespace-nowrap text-[1.75rem] font-bold leading-[0.95] tracking-[-0.04em] text-ink @[880px]:text-[1.75rem]">
               {mark.figure}
             </Halftone>
-            <span className="mt-2 text-[0.75rem] text-ink-2">{mark.top}</span>
-            <span className="text-[0.75rem] text-ink-4">{mark.bottom}</span>
+            <span className="mt-2 text-[0.8125rem] text-ink-2">{mark.top}</span>
+            <span className="text-[0.8125rem] text-ink-4">{mark.bottom}</span>
           </div>
           <IssueDots kind={report.kind} reportKey={report.key} issueNumber={report.issueNumber} index={index} className="hidden w-[176px] border-l border-line px-4 py-4 @[760px]:block @[880px]:w-[196px]" />
         </div>
@@ -75,10 +75,10 @@ function Masthead({ report, index, quiet }: { report: ReportDetail; index: Repor
           {metricItems(report.metrics).map((m) => (
             <span key={m.unit} className="inline-flex items-baseline gap-2 whitespace-nowrap">
               <span className="num text-[1.25rem] font-bold leading-none tracking-[-0.02em] text-ink @[880px]:text-[1.75rem]">{m.value}</span>
-              <span className="text-[0.75rem] text-ink-4">{m.unit}</span>
+              <span className="text-[0.8125rem] text-ink-4">{m.unit}</span>
             </span>
           ))}
-          <span className="ml-auto whitespace-nowrap text-[0.75rem] text-ink-4">约 {report.readingMinutes} 分钟读完</span>
+          <span className="ml-auto whitespace-nowrap text-[0.8125rem] text-ink-4">约 {report.readingMinutes} 分钟读完</span>
         </div>
       )}
     </header>
@@ -126,7 +126,7 @@ function Related({ items, className = "" }: { items: ReportCitation[]; className
             ) : (
               <span title={WITHDRAWN_NOTE} className="text-ink-4 line-through">{r.title}</span>
             )}
-            {r.available && <span className="ml-2 text-[0.75rem] text-ink-4">{r.sourceName}</span>}
+            {r.available && <span className="ml-2 text-[0.8125rem] text-ink-4">{r.sourceName}</span>}
           </span>
         </li>
       ))}
@@ -150,7 +150,7 @@ function Coverage({ c }: { c: ReportCitation }) {
 function Story({ c, slot, dated, className = "" }: { c: ReportCitation; slot: string; dated: boolean; className?: string }) {
   return (
     <article id={anchorOf(c) ?? undefined} className={`flex min-w-0 scroll-mt-[calc(var(--bar-h)+1.5rem)] flex-col py-6 ${className}`}>
-      <div className="flex items-center gap-2 text-[0.75rem] text-ink-3">
+      <div className="flex items-center gap-2 text-[0.8125rem] text-ink-3">
         <Source c={c} />
         {c.available && <Coverage c={c} />}
         {dated && c.publishedAt && <span className="num ml-auto shrink-0 text-ink-4">{shortDay(c.publishedAt)}</span>}
@@ -347,7 +347,7 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
                       <span className="num w-6 shrink-0 text-[1.75rem] font-bold leading-[0.95] tracking-[-0.03em] text-ink-4">{i + 1}</span>
                       <span className="min-w-0 text-[0.875rem] leading-[1.55] text-ink-4">
                         <span className="line-through">{h.title}</span>
-                        <span className="mt-1 block text-[0.75rem]">{WITHDRAWN_NOTE}</span>
+                        <span className="mt-1 block text-[0.8125rem]">{WITHDRAWN_NOTE}</span>
                       </span>
                     </li>
                   );
@@ -358,7 +358,7 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
                       <span className="num w-6 shrink-0 text-[1.75rem] font-bold leading-[0.95] tracking-[-0.03em] text-accent">{i + 1}</span>
                       <span className="min-w-0">
                         <span className="block text-[0.875rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{h.title}</span>
-                        <span className="mt-2 block truncate text-[0.75rem] text-ink-4">{h.sourceName}</span>
+                        <span className="mt-2 block truncate text-[0.8125rem] text-ink-4">{h.sourceName}</span>
                       </span>
                     </Link>
                   </li>
@@ -376,7 +376,7 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
                   <a href={`#${p.id}`} className="group flex items-baseline gap-2 py-2 text-[0.875rem]">
                     <span className="num w-7 shrink-0 text-[0.875rem] font-bold text-ink">{pad(i + 1)}</span>
                     <span className="min-w-0 flex-1 truncate text-ink-2 transition-colors group-hover:text-accent">{p.label}</span>
-                    <span className="num shrink-0 text-[0.75rem] text-ink-4">{p.n}</span>
+                    <span className="num shrink-0 text-[0.8125rem] text-ink-4">{p.n}</span>
                   </a>
                 </li>
               ))}
@@ -430,7 +430,7 @@ function Neighbours({ report, index }: { report: ReportDetail; index: ReportNavi
     <nav aria-label={report.kind === "daily" ? "前后日报" : "前后各期"} className="mt-16 grid grid-cols-2 border-y border-line-strong">
       {report.prev ? (
         <Link to={reportPath(report.kind, report.prev)} className={`${cell} pr-5 @[880px]:pr-10`}>
-          <span className="inline-flex items-center gap-1 text-[0.75rem] text-ink-4">
+          <span className="inline-flex items-center gap-1 text-[0.8125rem] text-ink-4">
             <IconArrowLeft size={13} /> {neighbourLabel(report.kind, report.prev, "prev")}
           </span>
           <span className={title}>{titleOf(report.prev)}</span>
@@ -440,7 +440,7 @@ function Neighbours({ report, index }: { report: ReportDetail; index: ReportNavi
       )}
       {report.next ? (
         <Link to={reportPath(report.kind, report.next)} className={`${cell} items-end border-l border-line pl-5 text-right @[880px]:pl-10`}>
-          <span className="inline-flex items-center gap-1 text-[0.75rem] text-ink-4">
+          <span className="inline-flex items-center gap-1 text-[0.8125rem] text-ink-4">
             {neighbourLabel(report.kind, report.next, "next")} <IconArrowRight size={13} />
           </span>
           <span className={title}>{titleOf(report.next)}</span>
@@ -534,7 +534,7 @@ export function ReportPaper({ report, index }: { report: ReportDetail; index: Re
                   {!f.available ? (
                     <span className="text-ink-4">
                       <span className="line-through">{f.title}</span>
-                      <span className="ml-2 text-[0.75rem]">{WITHDRAWN_NOTE}</span>
+                      <span className="ml-2 text-[0.8125rem]">{WITHDRAWN_NOTE}</span>
                     </span>
                   ) : f.itemId ? (
                     <Link viewTransition to={`/items/${f.itemId}`} className="text-ink transition-colors hover:text-accent">
@@ -543,7 +543,7 @@ export function ReportPaper({ report, index }: { report: ReportDetail; index: Re
                   ) : (
                     <span className="text-ink">{f.title}</span>
                   )}
-                  {f.available && <span className="ml-2 text-[0.75rem] text-ink-4">{f.sourceName}</span>}
+                  {f.available && <span className="ml-2 text-[0.8125rem] text-ink-4">{f.sourceName}</span>}
                   {f.available && f.followUp && <Badge className="ml-2 align-[1px]" title={`${monthDay(f.followUp)}的日报报道过这件事，这里是新进展`}>跟进</Badge>}
                 </span>
               </li>
@@ -556,7 +556,7 @@ export function ReportPaper({ report, index }: { report: ReportDetail; index: Re
       {!daily && <History report={report} index={index} />}
       <footer className="py-10 text-center">
         <div className="text-[0.875rem] font-semibold tracking-[0.6em] text-ink-4">（本期完）</div>
-        <p className="mt-3 text-[0.75rem] text-ink-4">
+        <p className="mt-3 text-[0.8125rem] text-ink-4">
           {`${SITE.name} `}{REPORT_NAMES[report.kind]}根据公开报道自动{daily ? "整理" : "汇总"}，每条都附原文 ·{" "}
           <Link to={daily ? "/daily/archive" : "#report-history"} viewTransition={daily} className="font-medium text-ink-3 transition-colors hover:text-accent">
             {daily ? "日报合订本" : `往期${REPORT_NAMES[report.kind]}`}

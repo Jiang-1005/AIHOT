@@ -1,0 +1,70 @@
+/* 浮层玻璃 (glass). Tokens: Radix Colors slate 1–12 / slateDark, indigo-9 solid, indigo-11 text; Apple HIG
+   Materials for the one glass surface, the top bar. Linear / Raycast single-row restraint, 6/12/999 corners.
+   Prototype: research/.../styles-1117/themes/glass.css. */
+:root[data-style="glass"] {
+  --font-serif: var(--font-sans);
+  --bg: #f9f9fb;
+  --bg-sunk: #f0f0f3;
+  --surface: #ffffff;
+  --sidebar: #ffffff;
+  --daybar: #f9f9fb;
+  --ink: #1c2024;
+  --ink-2: #2f3337;
+  --ink-3: #60646c;
+  --ink-4: #60646c;
+  --line: #e0e1e6;
+  --line-strong: #80838d;
+  --line-soft: #e8e8ec;
+  --accent: #3e63dd;
+  --accent-ink: #3a5bc7;
+  --accent-soft: #edf2fe;
+  --accent-softer: #edf2fe;
+  --accent-contrast: #ffffff;
+  --warn: #ab6400;
+  --warn-soft: rgba(171, 100, 0, 0.1);
+  --selection: rgba(62, 99, 221, 0.16);
+  --prose-ink: #1c2024;
+  --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --glass: rgba(255, 255, 255, 0.8);
+  --radius-control: 6px;
+  --radius-tile: 12px;
+  --radius-card: 12px;
+  --radius-panel: 12px;
+  --radius-sheet: 12px;
+}
+:root[data-style="glass"][data-theme="dark"] {
+  --bg: #111113;
+  --bg-sunk: #212225;
+  --surface: #18191b;
+  --sidebar: #18191b;
+  --daybar: #111113;
+  --ink: #edeef0;
+  --ink-2: #d5d7da;
+  --ink-3: #b0b4ba;
+  --ink-4: #b0b4ba;
+  --line: #2e3135;
+  --line-strong: #777b84;
+  --line-soft: #26282b;
+  --accent: #9eb1ff;
+  --accent-ink: #9eb1ff;
+  --accent-soft: #182449;
+  --accent-softer: #182449;
+  --accent-contrast: #111113;
+  --warn: #ffca16;
+  --warn-soft: rgba(255, 202, 22, 0.12);
+  --selection: rgba(158, 177, 255, 0.24);
+  --prose-ink: #edeef0;
+  --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --glass: rgba(24, 25, 27, 0.8);
+}
+:root[data-style="glass"] [data-top-bar] {
+  background: var(--glass);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-style="glass"] [data-top-bar] { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+:root[data-style="glass"] [data-brand] { font-size: 1rem; font-weight: 600; }
+:root[data-style="glass"] [data-nav-link][aria-current="page"] { background: var(--bg-sunk); color: var(--ink); }
+:root[data-style="glass"] h1, :root[data-style="glass"] h2 { letter-spacing: -0.02em; }

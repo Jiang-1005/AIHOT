@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "./styles/looks/paper.css";
+@import "./styles/looks/press.css";
+@import "./styles/looks/clean.css";
+@import "./styles/looks/glass.css";
+@import "./styles/looks/common.css";
 /* Classes also live in the site's logo and changelog drawings (site/brand, site/changelog) and in the
    modules' web code (their other files are not scanned: words in backend code and data would become classes). */
 @source "../../../site/brand";
@@ -176,9 +181,16 @@
   --selection: rgba(23, 107, 117, 0.16);
 }
 
+/* The desktop top bar (TopBar): sections on a second row up to wide, one row from there. Sticky heads inside
+   pages sit below it. */
 @media (min-width: 700px) {
   :root {
-    --bar-h: 0px;
+    --bar-h: 97px;
+  }
+}
+@media (min-width: 941px) {
+  :root {
+    --bar-h: 57px;
   }
 }
 
@@ -292,7 +304,7 @@
 @layer components {
   /* A section head: small, widely spaced, over a hairline (the masthead's 期号 line, day heads). */
   .kicker {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     letter-spacing: 0.18em;
     font-weight: 600;
     color: var(--ink-3);
@@ -311,7 +323,7 @@
     height: 2rem;
     padding: 0 0.75rem;
     border-radius: 9999px;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--ink-4);
     background: var(--bg-sunk);
     border: 1px solid var(--line-soft);
@@ -589,8 +601,8 @@
 /* Code blocks in article bodies get a head with the language and a copy button (features/item/ArticleBody). */
 .prose .code-block { margin-top: 1.2em; border: 1px solid var(--line); border-radius: var(--radius-tile); overflow: hidden; background: var(--code-bg); }
 .prose .code-block pre { margin: 0; border: 0; border-radius: 0; }
-.prose .code-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 16px; border-bottom: 1px solid var(--line-soft); font-size: 0.75rem; line-height: 1.4; color: var(--ink-4); letter-spacing: 0; }
-.prose .code-block-copy { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-mark); background: var(--surface); color: var(--ink-3); font-size: 0.75rem; transition: color var(--duration-fast) var(--ease-enter), border-color var(--duration-fast) var(--ease-enter); }
+.prose .code-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 16px; border-bottom: 1px solid var(--line-soft); font-size: 0.8125rem; line-height: 1.4; color: var(--ink-4); letter-spacing: 0; }
+.prose .code-block-copy { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-mark); background: var(--surface); color: var(--ink-3); font-size: 0.8125rem; transition: color var(--duration-fast) var(--ease-enter), border-color var(--duration-fast) var(--ease-enter); }
 .prose .code-block-copy:hover { color: var(--ink); border-color: var(--line-strong); }
 .prose .code-block-copy[data-status="copied"] { color: var(--ok-ink); }
 .prose .hljs-comment, .prose .hljs-quote { color: var(--ink-4); font-style: italic; }
@@ -664,7 +676,7 @@
   align-items: center;
   border-radius: var(--radius-mark);
   padding: 0 8px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   line-height: 20px;
   background: var(--bg);
@@ -678,7 +690,7 @@
   align-items: center;
   border-radius: var(--radius-mark);
   padding: 0 8px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 20px;
   color: var(--warn);
@@ -739,7 +751,7 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 20px;
   color: var(--ink-4);
   white-space: nowrap;
@@ -792,7 +804,7 @@
   display: inline-flex;
   flex-shrink: 0;
   gap: 12px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--ink-4);
 }
 .voice-platform-mark {
@@ -805,7 +817,7 @@
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-mark);
   color: var(--ink-3);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1;
 }
@@ -817,7 +829,7 @@
   height: 32px;
   border-radius: 9999px;
   padding: 0 12px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1;
   background: var(--surface);
   color: var(--ink-2);

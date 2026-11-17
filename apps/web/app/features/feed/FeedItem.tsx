@@ -3,6 +3,7 @@
 // behind one button that opens a sheet. One markup, two presentations. The card is a link as a whole, so
 // addresses in its text read short as plain words.
 import { memo } from "react";
+import { WordTitle } from "../../components/ui/WordTitle";
 import { shortAddresses } from "@aihot/contracts/addresses";
 import { Link } from "react-router";
 import { IntentLink } from "../../components/ui/IntentLink";
@@ -44,11 +45,11 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
   const lead = dates && [dates.day && `发布 ${dates.day}`, dates.clock].filter(Boolean).join(" ");
 
   return (
-    <article className="relative min-w-0 lg:border-t lg:border-line lg:py-6 lg:group-first/slot:border-t-0 lg:group-first/slot:pt-4 lg:[&:has(a:hover)_h3]:text-accent" data-item-id={item.id}>
-      <header className="flex min-h-5 items-center gap-2 text-[0.75rem] leading-[1.5] text-ink-4 lg:min-h-5 lg:gap-2">
+    <article data-feed-card="" className="relative min-w-0 lg:border-t lg:border-line lg:py-6 lg:group-first/slot:border-t-0 lg:group-first/slot:pt-4 lg:[&:has(a:hover)_h3]:text-accent" data-item-id={item.id}>
+      <header className="flex min-h-5 items-center gap-2 text-[0.8125rem] leading-[1.5] text-ink-4 lg:min-h-5 lg:gap-2">
         <SourceLine item={item} className="text-ink-4" />
         {lead && (
-          <time dateTime={item.publishedAt ?? at} className="mono shrink-0 text-[0.75rem] lg:hidden">
+          <time dateTime={item.publishedAt ?? at} className="mono shrink-0 text-[0.8125rem] lg:hidden">
             · {lead}
           </time>
         )}
@@ -69,7 +70,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
           </span>
         </span>
       </header>
-      {dates?.collected && <p className="mono text-[0.75rem] leading-[16px] text-ink-4 lg:mt-1">{dates.collected}</p>}
+      {dates?.collected && <p className="mono text-[0.8125rem] leading-[16px] text-ink-4 lg:mt-1">{dates.collected}</p>}
 
       {isX ? (
         item.summary ? <p className={`mt-2 whitespace-pre-line text-[0.875rem] leading-[1.7] line-clamp-5 lg:mt-2 lg:line-clamp-4 ${readTone(read, "text-ink")}`}>
@@ -81,7 +82,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
         <>
           <h3 className={`mt-1.5 line-clamp-2 text-[1rem] font-semibold leading-[1.45] transition-colors duration-150 lg:mt-2.5 lg:line-clamp-none lg:text-[1.25rem] ${readTone(read, "text-ink")}`}>
             <IntentLink viewTransition to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
-              {item.title}
+              <WordTitle>{item.title}</WordTitle>
             </IntentLink>
           </h3>
           {item.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:mt-2 lg:line-clamp-3">{shortAddresses(item.summary)}</p>}
@@ -92,7 +93,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
       {isX && item.x!.quoted?.text && <QuotedLine quoted={item.x!.quoted} />}
 
       {(tags.length > 0 || (showTags && item.category)) && (
-        <div className="relative z-10 mt-2 hidden flex-wrap gap-x-3 gap-y-1 text-[0.75rem] text-ink-4 lg:flex">
+        <div className="relative z-10 mt-2 hidden flex-wrap gap-x-3 gap-y-1 text-[0.8125rem] text-ink-4 lg:flex">
           {showTags && item.category && (
             <Link to={`/all?category=${item.category}`} className="hover:text-accent">
               {CATEGORY_LABELS[item.category]}

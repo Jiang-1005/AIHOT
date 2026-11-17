@@ -40,7 +40,7 @@ export function ToggleChip({ on, onToggle, children, size = "md" }: { on: boolea
       type="button"
       aria-pressed={on}
       onClick={onToggle}
-      className={`inline-flex h-8 shrink-0 select-none items-center whitespace-nowrap rounded-full px-3 text-[0.75rem] font-medium transition-colors duration-150 ${
+      className={`inline-flex h-8 shrink-0 select-none items-center whitespace-nowrap rounded-full px-3 text-[0.8125rem] font-medium transition-colors duration-150 ${
         on ? "bg-accent text-accent-contrast" : "border border-line bg-surface text-ink-2 hover:text-ink"
       }`}
     >

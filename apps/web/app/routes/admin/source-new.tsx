@@ -98,7 +98,7 @@ export default function NewSource() {
           </div>
           <div className="mt-4">
             <Field label="采集配置（JSON）">
-              <Textarea className="font-mono !text-[0.75rem]" rows={10} value={config} onChange={(e) => setConfig(e.target.value)} spellCheck={false} />
+              <Textarea className="font-mono !text-[0.8125rem]" rows={10} value={config} onChange={(e) => setConfig(e.target.value)} spellCheck={false} />
             </Field>
             {error && <div className="mt-1 text-[0.875rem] text-hot">{error}</div>}
           </div>
@@ -149,7 +149,7 @@ export default function NewSource() {
               {preview.items.map((i) => (
                 <li key={i.url} className="text-[0.875rem]">
                   <a href={i.url} target="_blank" rel="noreferrer" className="font-medium text-ink hover:text-accent">{i.title}</a>
-                  <div className="text-[0.75rem] text-ink-4">{i.publishedAt ? bj(i.publishedAt, true) : "无发布时间"}</div>
+                  <div className="text-[0.8125rem] text-ink-4">{i.publishedAt ? bj(i.publishedAt, true) : "无发布时间"}</div>
                   {i.excerpt && <div className="mt-0.5 line-clamp-2 text-[0.875rem] text-ink-3">{i.excerpt}</div>}
                 </li>
               ))}

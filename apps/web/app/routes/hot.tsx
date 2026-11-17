@@ -1,4 +1,6 @@
+import { createContext, useContext } from "react";
 import { useLoaderData } from "react-router";
+import { WordTitle } from "../components/ui/WordTitle";
 import { Link } from "react-router";
 import type { Route } from "./+types/hot";
 import { IntentLink } from "../components/ui/IntentLink";
@@ -99,9 +101,14 @@ function formatHeat(heat: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
+/** True when every entry on the board has one source: the page says so once instead of on every row. */
+const AllSingleSource = createContext(false);
+const isSingleSource = (e: HotEntryView) => Math.max(e.sourceCount, e.sourceNames.filter(Boolean).length) <= 1;
+
 /** Names may wrap; the count never splits (「1 个来源」 stays on one line). */
 function SourceLine({ e }: { e: HotEntryView }) {
   const [names, count] = sourceLineParts(e.sourceCount, e.sourceNames);
+  if (useContext(AllSingleSource) && isSingleSource(e) && names) return names;
   return (
     <>
       {names}
@@ -138,7 +145,7 @@ function Badges({ e }: { e: HotEntryView }) {
 function StoryLink({ e, className }: { e: HotEntryView; className: string }) {
   return (
     <IntentLink viewTransition to={`/story/${e.story.publicId}`} className={`transition-colors after:absolute after:inset-0 after:content-[''] ${className}`}>
-      {e.story.title}
+      <WordTitle>{e.story.title}</WordTitle>
     </IntentLink>
   );
 }
@@ -153,7 +160,7 @@ function HeatPanel({ e }: { e: HotEntryView }) {
   const peakAt = e.spark.findIndex((v) => v === peak);
   return (
     <div className="order-first flex aspect-[2/1] flex-col rounded-panel bg-accent-softer p-4 ring-1 ring-inset ring-line-soft xl:order-none xl:aspect-[16/10] dark:bg-accent-soft">
-      <div className="flex items-baseline justify-between text-[0.75rem] text-ink-4">
+      <div className="flex items-baseline justify-between text-[0.8125rem] text-ink-4">
         <span className="font-semibold text-ink-3">24 小时热度</span>
         <span>
           峰值 <span className="mono text-ink-2">{formatHeat(peak)}</span>
@@ -161,7 +168,7 @@ function HeatPanel({ e }: { e: HotEntryView }) {
         </span>
       </div>
       <Sparkline values={e.spark} className="mt-3 min-h-0 w-full flex-1" />
-      <div className="mt-2 flex justify-between text-[0.75rem] text-ink-4">
+      <div className="mt-2 flex justify-between text-[0.8125rem] text-ink-4">
         <span>24 小时前</span>
         <span>现在</span>
       </div>
@@ -187,7 +194,7 @@ function Lead({ e, hasMore }: { e: HotEntryView; hasMore: boolean }) {
   return (
     <article className="card card-hover card-press group relative flex flex-col overflow-hidden p-5 sm:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <span className={`mono text-[0.75rem] font-bold tracking-[0.16em] ${rankColor(e.rank)}`}>NO.{pad(e.rank)}</span>
+        <span className={`mono text-[0.8125rem] font-bold tracking-[0.16em] ${rankColor(e.rank)}`}>NO.{pad(e.rank)}</span>
         <Badges e={e} />
         <Delta trend={e.trend} pct={e.trendPct} className="ml-auto" />
       </div>
@@ -212,7 +219,7 @@ function Lead({ e, hasMore }: { e: HotEntryView; hasMore: boolean }) {
         <div className="min-w-0 flex-[1_1_18rem] space-y-3">
           {e.latest && (
             <p className="line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-2">
-              <span className="mr-2 text-[0.75rem] font-semibold text-accent">最新进展</span>
+              <span className="mr-2 text-[0.8125rem] font-semibold text-accent">最新进展</span>
               {e.latest}
             </p>
           )}
@@ -224,7 +231,7 @@ function Lead({ e, hasMore }: { e: HotEntryView; hasMore: boolean }) {
           {!panel && <Sparkline values={e.spark} className="h-10 w-[140px]" />}
           <div className="text-right">
             <div className="mono text-[1.75rem] font-semibold leading-none tracking-[-0.03em] text-ink">{formatHeat(e.heat)}</div>
-            <div className="mt-1 text-[0.75rem] text-ink-4">热度指数</div>
+            <div className="mt-1 text-[0.8125rem] text-ink-4">热度指数</div>
           </div>
         </div>
       </div>
@@ -242,7 +249,7 @@ function Runner({ e }: { e: HotEntryView }) {
   return (
     <article className="card card-hover card-press group relative flex flex-col px-5 py-4">
       <div className="flex flex-wrap items-center gap-3">
-        <span className={`mono text-[0.75rem] font-bold tracking-[0.16em] ${rankColor(e.rank)}`}>NO.{pad(e.rank)}</span>
+        <span className={`mono text-[0.8125rem] font-bold tracking-[0.16em] ${rankColor(e.rank)}`}>NO.{pad(e.rank)}</span>
         <Badges e={e} />
         <Delta trend={e.trend} pct={e.trendPct} className="ml-auto" />
       </div>
@@ -252,7 +259,7 @@ function Runner({ e }: { e: HotEntryView }) {
       {e.summary && <p className="mt-2 line-clamp-2 text-[0.875rem] leading-[1.7] text-ink-3 lg:line-clamp-1">{shortAddresses(e.summary)}</p>}
       <div className="mt-auto flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pt-3">
         <div className="flex min-w-0 flex-col gap-2">
-          <span className="text-[0.75rem] leading-snug text-ink-4">
+          <span className="text-[0.8125rem] leading-snug text-ink-4">
             <span className="text-ink-3"><SourceLine e={e} /></span>
             {e.latestAt && (
               <>
@@ -291,9 +298,9 @@ function Row({ e }: { e: HotEntryView }) {
         </h3>
         {e.summary && <p className="mt-1 line-clamp-2 text-[0.875rem] leading-[1.65] text-ink-4 wide:line-clamp-1">{shortAddresses(e.summary)}</p>}
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 wide:hidden">
-          <span className="min-w-0 text-[0.75rem] text-ink-4"><SourceLine e={e} /></span>
+          <span className="min-w-0 text-[0.8125rem] text-ink-4"><SourceLine e={e} /></span>
           {e.latestAt && (
-            <time className="whitespace-nowrap text-[0.75rem] text-ink-4 num" dateTime={e.latestAt} suppressHydrationWarning>
+            <time className="whitespace-nowrap text-[0.8125rem] text-ink-4 num" dateTime={e.latestAt} suppressHydrationWarning>
               {relativeTime(e.latestAt)}
             </time>
           )}
@@ -303,7 +310,7 @@ function Row({ e }: { e: HotEntryView }) {
           </span>
         </div>
       </div>
-      <div className="hidden min-w-0 flex-col items-start gap-0.5 text-[0.75rem] text-ink-4 wide:flex">
+      <div className="hidden min-w-0 flex-col items-start gap-0.5 text-[0.8125rem] text-ink-4 wide:flex">
         <span><SourceLine e={e} /></span>
         {e.latestAt && (
           <time className="whitespace-nowrap num" dateTime={e.latestAt} suppressHydrationWarning>
@@ -357,8 +364,8 @@ function FallbackList({ fallback }: { fallback: NonNullable<Fallback> }) {
         {fallback.items.map((item) => (
           <li key={item.id}>
             <Link viewTransition to={`/items/${item.id}`} className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-bg-sunk/70 sm:px-5 dark:hover:bg-bg-muted/40">
-              <span className="text-[0.875rem] font-semibold leading-[1.55] text-ink">{item.title}</span>
-              <span className="flex flex-wrap items-center gap-x-2 text-[0.75rem] text-ink-4">
+              <span className="text-[0.875rem] font-semibold leading-[1.55] text-ink"><WordTitle>{item.title}</WordTitle></span>
+              <span className="flex flex-wrap items-center gap-x-2 text-[0.8125rem] text-ink-4">
                 <span>{item.sourceName}</span>
                 {item.selected && <span>精选</span>}
                 <time className="num" dateTime={item.at} suppressHydrationWarning>
@@ -381,6 +388,7 @@ export default function HotPage() {
   const phoneRows = hot.entries.slice(1);
   const desktopRows = hot.entries.slice(3);
   const kind = !lead ? emptyKind(hot.computedAt) : null;
+  const allSingle = hot.entries.length > 0 && hot.entries.every(isSingleSource);
 
   const freshSub = (
     <>
@@ -406,6 +414,7 @@ export default function HotPage() {
   );
 
   return (
+    <AllSingleSource.Provider value={allSingle}>
     <div className="pb-10">
       <PhoneBar
         title="热点"
@@ -420,9 +429,9 @@ export default function HotPage() {
       <header className="hidden flex-wrap items-end justify-between gap-x-6 gap-y-2 pb-5 pt-1 lg:flex">
         <div>
           {stale ? (
-            <div className="text-[0.75rem] font-semibold tracking-[0.08em] text-ink-3">榜单已过期</div>
+            <div className="text-[0.8125rem] font-semibold tracking-[0.08em] text-ink-3">榜单已过期</div>
           ) : (
-            <div className="flex items-center gap-2 text-[0.75rem] font-semibold tracking-[0.08em] text-hot">
+            <div className="flex items-center gap-2 text-[0.8125rem] font-semibold tracking-[0.08em] text-hot">
               <span className="relative flex size-2" aria-hidden="true">
                 <span className="relative inline-flex size-2 rounded-full bg-hot" />
               </span>
@@ -443,15 +452,19 @@ export default function HotPage() {
           )}
         </div>
         {hot.computedAt && !stale && (
-          <p className="text-[0.75rem] text-ink-4">
+          <p className="text-[0.8125rem] text-ink-4">
             <span className="num">{updatedAtLabel(hot.computedAt)}</span>
             {" · 按讨论热度排序"}
           </p>
         )}
       </header>
 
+      {allSingle && (
+        <p data-single-note="" className="mb-4 text-[0.8125rem] leading-relaxed text-ink-3">本期 {hot.entries.length} 条都只有一个来源报道，出现交叉报道后会标出来源数。</p>
+      )}
+
       {demo && (
-        <p className="mb-4 text-[0.75rem] leading-relaxed text-ink-4">预览演示状态（?state={demo}）：{demo === "stale" ? "榜单内容取自接口，只把更新时间往前推了 14 小时" : "榜单按空榜演示"}，不是接口原样。去掉参数即为接口当前结果。</p>
+        <p className="mb-4 text-[0.8125rem] leading-relaxed text-ink-4">预览演示状态（?state={demo}）：{demo === "stale" ? "榜单内容取自接口，只把更新时间往前推了 14 小时" : "榜单按空榜演示"}，不是接口原样。去掉参数即为接口当前结果。</p>
       )}
 
       {!lead ? (
@@ -494,7 +507,7 @@ export default function HotPage() {
                     {desktopRows.length > 0 ? `No.${pad(desktopRows[0]!.rank)}–${pad(desktopRows[desktopRows.length - 1]!.rank)}` : ""}
                   </span>
                 </h2>
-                <span className="hidden text-[0.75rem] text-ink-4 wide:block">来源 · 更新时间 · 24 小时走势 · 热度指数</span>
+                <span className="hidden text-[0.8125rem] text-ink-4 wide:block">来源 · 更新时间 · 24 小时走势 · 热度指数</span>
               </div>
               <ol className="card divide-y divide-line-soft overflow-hidden lg:hidden">
                 {phoneRows.map((e) => (
@@ -515,7 +528,7 @@ export default function HotPage() {
 
       {fallback && <FallbackList fallback={fallback} />}
 
-      <details id="hot-method" className="disclosure group/method mt-8 scroll-mt-[calc(var(--bar-h)+16px)] text-[0.75rem] text-ink-4">
+      <details id="hot-method" className="disclosure group/method mt-8 scroll-mt-[calc(var(--bar-h)+16px)] text-[0.8125rem] text-ink-4">
         <summary className="flex items-center gap-2 py-1 transition-colors hover:text-ink-2">
           <IconInfo size={15} />
           热度是怎么算的？
@@ -526,7 +539,7 @@ export default function HotPage() {
           </span>
         </summary>
         <div className="max-w-[760px] space-y-2 pb-2 pl-[20px] pt-2 leading-[1.75] text-ink-3">
-          <p>热度先看有多少家独立报道在讨论同一件事，再计入公开互动的对数，越近的讨论分量越重，每过 24 小时减半（Hacker News 式衰减）。它反映讨论有多热闹，不代表报道质量。只有一家来源时也会上榜，并标明「1 个来源」。</p>
+          <p>热度先看有多少家独立报道在讨论同一件事，再计入公开互动的对数，越近的讨论分量越重，每过 24 小时减半（Hacker News 式衰减）。它反映讨论有多热闹，不代表报道质量。只有一家来源时也会上榜，并标明「1 个来源」；整期都只有一个来源时，只在榜单上方说明一次。</p>
           <p>榜单只看过去 48 小时。走势只拿同一批一直在看的来源比较，反映的是我们看得到的范围，不代表全网人数；没有可比的历史时，不画走势线。</p>
           <p>
             来源名单只列能公开阅读的报道；参与讨论的还有一些不在名单里展示的账号和机构。同一家机构在不同平台发帖合并算一家，所以参与者可能比来源还少。点进事件，可以看各方的报道和观点。
@@ -544,5 +557,6 @@ export default function HotPage() {
         </div>
       </details>
     </div>
+    </AllSingleSource.Provider>
   );
 }

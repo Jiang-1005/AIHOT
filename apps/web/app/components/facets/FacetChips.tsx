@@ -61,7 +61,7 @@ function toggle(list: string[], value: string): string[] {
 
 /** A filter chip: 32px tall (the smallest target the site uses), pressed and selected states told apart. */
 function chipClass(on: boolean): string {
-  return `inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-[0.75rem] leading-none transition-[color,background-color,scale] duration-150 active:scale-[0.97] ${
+  return `inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-[0.8125rem] leading-none transition-[color,background-color,scale] duration-150 active:scale-[0.97] ${
     on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-2 ring-1 ring-inset ring-line-soft hover:text-ink hover:ring-line-strong"
   }`;
 }
@@ -70,7 +70,7 @@ export function LogoMark({ name, src }: { name: string; src?: string }) {
   const [broken, setBroken] = useState(false);
   const ch = name.trim().charAt(0) || "?";
   const fallback = (
-    <span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center rounded-mark bg-bg-muted text-[0.75rem] font-semibold text-ink-3">
+    <span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center rounded-mark bg-bg-muted text-[0.8125rem] font-semibold text-ink-3">
       {ch}
     </span>
   );
@@ -143,7 +143,7 @@ export function buildCompanyRow(counts: Record<string, number>, head: string[], 
 function FilterRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex gap-2">
-      <div className="flex h-8 w-16 shrink-0 items-center text-[0.75rem] font-medium text-ink-4">{label}</div>
+      <div className="flex h-8 w-16 shrink-0 items-center text-[0.8125rem] font-medium text-ink-4">{label}</div>
       <div className="flex min-w-0 flex-wrap gap-2">{children}</div>
     </div>
   );
@@ -173,12 +173,12 @@ export function SelectedFacetBars({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {pills.map((p) => (
-        <button key={p.key} type="button" onClick={p.onRemove} className="inline-flex h-8 items-center gap-1 rounded-full bg-accent px-3 text-[0.75rem] text-accent-contrast active:scale-[0.97]">
+        <button key={p.key} type="button" onClick={p.onRemove} className="inline-flex h-8 items-center gap-1 rounded-full bg-accent px-3 text-[0.8125rem] text-accent-contrast active:scale-[0.97]">
           {p.label}
-          <span aria-hidden="true" className="text-[0.75rem] opacity-70">×</span>
+          <span aria-hidden="true" className="text-[0.8125rem] opacity-70">×</span>
         </button>
       ))}
-      <button type="button" onClick={onClearAll} className="inline-flex h-8 items-center px-2 text-[0.75rem] text-accent hover:underline">
+      <button type="button" onClick={onClearAll} className="inline-flex h-8 items-center px-2 text-[0.8125rem] text-accent hover:underline">
         清空
       </button>
     </div>
@@ -264,7 +264,7 @@ export function FacetChipRows({
                 type="button"
                 aria-expanded={opened}
                 onClick={() => setOpenKey(opened ? null : key)}
-                className={`inline-flex h-8 items-center gap-1 rounded-full px-3 text-[0.75rem] transition-[color,background-color,scale] duration-150 active:scale-[0.97] ${
+                className={`inline-flex h-8 items-center gap-1 rounded-full px-3 text-[0.8125rem] transition-[color,background-color,scale] duration-150 active:scale-[0.97] ${
                   opened ? "bg-accent-soft text-accent ring-1 ring-inset ring-accent" : n ? "bg-accent-soft text-accent" : "bg-surface text-ink-2 ring-1 ring-inset ring-line hover:ring-line-strong"
                 }`}
               >
@@ -284,7 +284,7 @@ export function FacetChipRows({
   if (onlyCompany) {
     return (
       <section>
-        <h3 className="mb-2 text-[0.75rem] font-medium text-ink-4">{FACET_LABELS.company}</h3>
+        <h3 className="mb-2 text-[0.8125rem] font-medium text-ink-4">{FACET_LABELS.company}</h3>
         <div className="flex flex-wrap gap-2">{chipsOf("company")}</div>
       </section>
     );

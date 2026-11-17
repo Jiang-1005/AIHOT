@@ -18,7 +18,7 @@ function subjectLink(subject: string | null) {
   const [kind, id] = [subject.slice(0, subject.indexOf(":")), subject.slice(subject.indexOf(":") + 1)];
   if (kind === "content") return <Link className="text-accent" to={`/admin/content/${id}`}>{subject}</Link>;
   if (kind === "source") return <Link className="text-accent" to={`/admin/sources/${encodeURIComponent(id)}`}>{subject}</Link>;
-  return <span className="font-mono text-[0.75rem]">{subject}</span>;
+  return <span className="font-mono text-[0.8125rem]">{subject}</span>;
 }
 
 export default function Audit({ loaderData }: Route.ComponentProps) {

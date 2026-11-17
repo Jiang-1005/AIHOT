@@ -63,7 +63,7 @@ function timeTicks(t0: number, t1: number): Array<{ t: number; label: string; wi
 function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[0.75rem] text-ink-4">{label}</dt>
+      <dt className="text-[0.8125rem] text-ink-4">{label}</dt>
       <dd className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">{children}</dd>
     </div>
   );
@@ -144,7 +144,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
           </Stat>
           <Stat label="可比范围峰值">
             <span className="mono text-[1.25rem] font-semibold leading-none tracking-[-0.02em] text-ink">{Math.round(peak.p!.heat)}</span>
-            <span className="num text-[0.75rem] text-ink-4">{monthDayTime(new Date(peak.t).toISOString())}</span>
+            <span className="num text-[0.8125rem] text-ink-4">{monthDayTime(new Date(peak.t).toISOString())}</span>
           </Stat>
           <Stat label="近 24 小时变化">
             <span className={`mono text-[1.25rem] font-semibold leading-none tracking-[-0.02em] ${change === null ? "text-ink-4" : change > 0 ? "text-hot" : "text-ink"}`}>
@@ -170,7 +170,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
 
       <div className="relative mt-6 h-[176px] pl-9 sm:h-[216px] lg:h-[236px]">
         {ticks.map((v) => (
-          <span key={v} className="num absolute left-0 w-7 -translate-y-1/2 text-right text-[0.75rem] leading-none text-ink-4" style={{ top: `${y(v)}%` }} aria-hidden="true">
+          <span key={v} className="num absolute left-0 w-7 -translate-y-1/2 text-right text-[0.8125rem] leading-none text-ink-4" style={{ top: `${y(v)}%` }} aria-hidden="true">
             {v}
           </span>
         ))}
@@ -218,7 +218,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
           )}
           {cur && (
             <div
-              className="pointer-events-none absolute top-0 z-10 whitespace-nowrap rounded-control border border-line bg-raised px-3 py-2 text-[0.75rem] shadow-[var(--shadow-pop)]"
+              className="pointer-events-none absolute top-0 z-10 whitespace-nowrap rounded-control border border-line bg-raised px-3 py-2 text-[0.8125rem] shadow-[var(--shadow-pop)]"
               style={x(cur.t) > 55 ? { right: `calc(${100 - x(cur.t)}% + 10px)` } : { left: `calc(${x(cur.t)}% + 10px)` }}
             >
               <div className="num text-ink-4">{monthDayTime(new Date(cur.t).toISOString())}</div>
@@ -237,7 +237,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
           return (
             <span
               key={t}
-              className={`num absolute whitespace-nowrap text-[0.75rem] leading-none text-ink-4 ${left < 6 ? "" : left > 94 ? "-translate-x-full" : "-translate-x-1/2"} ${wide ? "max-sm:hidden" : ""}`}
+              className={`num absolute whitespace-nowrap text-[0.8125rem] leading-none text-ink-4 ${left < 6 ? "" : left > 94 ? "-translate-x-full" : "-translate-x-1/2"} ${wide ? "max-sm:hidden" : ""}`}
               style={{ left: `${left}%` }}
             >
               {label}
@@ -245,7 +245,7 @@ export function HeatChart({ points: all }: { points: HeatPoint[] }) {
           );
         })}
       </div>
-      <p className="mt-4 text-[0.75rem] leading-relaxed text-ink-4">
+      <p className="mt-4 text-[0.8125rem] leading-relaxed text-ink-4">
         趋势仅比较持续完整观测到的相同主体，范围可能小于当前热度统计。移动指针或点击图表查看每小时热度；键盘可用左右方向键切换。
       </p>
     </div>

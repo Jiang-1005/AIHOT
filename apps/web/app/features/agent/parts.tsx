@@ -8,7 +8,7 @@ import { IconChevronDown } from "../../components/icons";
 export function PanelHead({ label, title, children }: { label: string; title: string; children?: ReactNode }) {
   return (
     <header>
-      <div className="mono text-[0.75rem] uppercase tracking-[0.14em] text-ink-4">{label}</div>
+      <div className="mono text-[0.8125rem] uppercase tracking-[0.14em] text-ink-4">{label}</div>
       <h2 className="mt-2 text-[1.25rem] font-semibold leading-[1.35] text-ink">{title}</h2>
       {children && <p className="mt-2 text-[0.875rem] leading-[1.8] text-ink-3">{children}</p>}
     </header>
@@ -68,7 +68,7 @@ export function Tips({ items }: { items: Array<{ title: string; text: ReactNode 
     <ol className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {items.map((t, i) => (
         <li key={t.title} className="well rounded-panel p-4">
-          <div className="mono text-[0.75rem] text-ink-4">0{i + 1}</div>
+          <div className="mono text-[0.8125rem] text-ink-4">0{i + 1}</div>
           <div className="mt-1 text-[0.875rem] font-semibold text-ink">{t.title}</div>
           <p className="mt-1 text-[0.875rem] leading-[1.7] text-ink-3">{t.text}</p>
         </li>
@@ -143,7 +143,7 @@ export function Table({ head, rows, minWidth = 560 }: { head: string[]; rows: Ar
           {rows.map((r, i) =>
             "group" in r ? (
               <tr key={`g${i}`} className="border-t border-line">
-                <td colSpan={head.length} className="bg-bg-sunk/40 px-4 pb-2 pt-3 text-[0.75rem] font-semibold text-ink-3">{r.group}</td>
+                <td colSpan={head.length} className="bg-bg-sunk/40 px-4 pb-2 pt-3 text-[0.8125rem] font-semibold text-ink-3">{r.group}</td>
               </tr>
             ) : (
               <tr key={i} className="border-t border-line-soft align-top">

@@ -1,0 +1,71 @@
+/* 编辑部 (press). Tokens: FT Origami o-colors (paper, black-N, white-40, wheat; teal the one accent, claret
+   never a ground). Layout: NYT / Economist ruled columns, serif headlines, no cards, 0–2px corners.
+   Prototype: research/.../styles-1117/themes/press.css. */
+:root[data-style="press"] {
+  --font-serif: Georgia, "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", "SimSun", "NSimSun", serif;
+  --bg: #fff1e5;
+  --bg-sunk: #f2dfce;
+  --surface: #fff7ef;
+  --sidebar: #fff1e5;
+  --daybar: #fff1e5;
+  --ink: #33302e;
+  --ink-2: #33302e;
+  --ink-3: #66605c;
+  --ink-4: #66605c;
+  --line: #ccc1b7;
+  --line-strong: #807973;
+  --line-soft: #e3d6ca;
+  --rule: #33302e;
+  --accent: #0d7680;
+  --accent-ink: #0a5e66;
+  --accent-soft: rgba(13, 118, 128, 0.09);
+  --accent-softer: rgba(13, 118, 128, 0.09);
+  --accent-contrast: #ffffff;
+  --warn: #9a4a00;
+  --warn-soft: rgba(154, 74, 0, 0.1);
+  --selection: rgba(13, 118, 128, 0.16);
+  --prose-ink: #33302e;
+  --shadow-overlay: 0 12px 32px rgba(51, 48, 46, 0.18);
+  --radius-mark: 2px;
+  --radius-control: 2px;
+  --radius-tile: 0px;
+  --radius-card: 0px;
+  --radius-panel: 0px;
+  --radius-sheet: 2px;
+}
+:root[data-style="press"][data-theme="dark"] {
+  --bg: #1a1817;
+  --bg-sunk: #33302e;
+  --surface: #262321;
+  --sidebar: #1a1817;
+  --daybar: #1a1817;
+  --ink: #fff1e5;
+  --ink-2: #f2e4d7;
+  --ink-3: #b3a9a0;
+  --ink-4: #b3a9a0;
+  --line: #4d4845;
+  --line-strong: #999189;
+  --line-soft: #3a3633;
+  --rule: #e6d9ce;
+  --accent: #14bdcc;
+  --accent-ink: #17d4e6;
+  --accent-soft: rgba(20, 189, 204, 0.12);
+  --accent-softer: rgba(20, 189, 204, 0.12);
+  --accent-contrast: #1a1817;
+  --warn: #ffb070;
+  --warn-soft: rgba(255, 176, 112, 0.14);
+  --selection: rgba(20, 189, 204, 0.22);
+  --prose-ink: #fff1e5;
+  --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+:root[data-style="press"] [data-top-bar] { background: var(--bg); border-bottom: 3px double var(--rule); }
+:root[data-style="press"] [data-brand] { font-size: 1.5rem; }
+:root[data-style="press"] [data-nav-link] { color: var(--ink); border-radius: 0; }
+:root[data-style="press"] [data-nav-link]:hover { background: none; color: var(--accent); }
+:root[data-style="press"] [data-nav-link][aria-current="page"] { box-shadow: inset 0 -2px 0 var(--rule); }
+:root[data-style="press"] [data-feed-card] h3 { font-family: var(--font-serif); font-weight: 700; }
+/* No cards: lists are ruled, 2px over a section, 1px between rows. */
+:root[data-style="press"] .card { border-color: transparent; border-top: 2px solid var(--rule); background: transparent; }
+@media (min-width: 700px) {
+  :root[data-style="press"] [data-feed-card] { border-color: var(--line); }
+}

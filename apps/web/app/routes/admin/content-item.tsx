@@ -25,7 +25,7 @@ function Step({ title, meta, children, tone = "accent", last }: { title: ReactNo
       <span className={`absolute left-[3px] top-[7px] size-[9px] rounded-full ring-4 ring-bg ${dot}`} aria-hidden />
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h3 className="text-[0.875rem] font-semibold text-ink">{title}</h3>
-        {meta && <div className="text-[0.75rem] text-ink-4">{meta}</div>}
+        {meta && <div className="text-[0.8125rem] text-ink-4">{meta}</div>}
       </div>
       <div className="mt-2 pb-6 text-[0.875rem] text-ink-2">{children}</div>
     </li>
@@ -70,7 +70,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
       title={<span className="line-clamp-2">{title}</span>}
       subtitle={
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="font-mono text-[0.75rem]">{a.id}</span>
+          <span className="font-mono text-[0.8125rem]">{a.id}</span>
           <span>·</span>
           <Link className="hover:text-accent" to={`/admin/sources/${encodeURIComponent(a.source_id)}`}>{a.source_name}</Link>
           <span>·</span>
@@ -120,7 +120,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
                   </li>
                 ))}
               </ul>
-              <div className="mt-1.5 text-[0.75rem] text-ink-4">
+              <div className="mt-1.5 text-[0.8125rem] text-ink-4">
                 原文时间 {a.published_at ? bj(a.published_at, true) : "未知"}{a.published_at_claim && !a.published_at ? `（声称 ${a.published_at_claim}，未采信）` : ""} · 时间轴 {bj(a.timeline_at, true)}
               </div>
             </Step>
@@ -147,7 +147,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
                 <div className="space-y-3">
                   {c.analyses.map((an) => (
                     <div key={an.id} className="rounded-control bg-bg-sunk/60 p-3 ring-1 ring-line">
-                      <div className="flex flex-wrap items-center gap-1.5 text-[0.75rem]">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[0.8125rem]">
                         <Badge tone={an.relevance === "pass" ? "ok" : "muted"}>{an.relevance}</Badge>
                         {an.selected && <Badge tone="accent">入选</Badge>}
                         <Badge tone="info">分数 {an.score}</Badge>
@@ -157,7 +157,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
                       {an.title_zh && <div className="mt-2 font-medium text-ink">{an.title_zh}</div>}
                       {an.reason_zh && <div className="mt-1 text-[0.875rem] leading-relaxed text-ink-3">{an.reason_zh}</div>}
                       {an.receipts.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5 text-[0.75rem]">
+                        <div className="mt-2 flex flex-wrap gap-1.5 text-[0.8125rem]">
                           {an.receipts.map((r) => (
                             <span key={r.id} className="num rounded-mark bg-surface px-1.5 py-0.5 text-ink-3 ring-1 ring-line">
                               回执 #{r.id} · {r.status} · {r.model ?? r.service}{r.cost !== null ? ` · ${money(r.cost)}` : ""}
@@ -195,7 +195,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
               )}
               {c.override && (
                 <div className="mt-3 rounded-control bg-accent-softer p-3 ring-1 ring-accent/15">
-                  <div className="text-[0.75rem] text-ink-3">人工设置 v{c.override.version} · {c.override.updated_by} · {bj(c.override.updated_at, true)}{c.override.reason ? ` · ${c.override.reason}` : ""}</div>
+                  <div className="text-[0.8125rem] text-ink-3">人工设置 v{c.override.version} · {c.override.updated_by} · {bj(c.override.updated_at, true)}{c.override.reason ? ` · ${c.override.reason}` : ""}</div>
                   <Json value={{ visibility: c.override.visibility, ...c.override.fields }} label="覆盖字段" collapsed={false} />
                 </div>
               )}
@@ -219,11 +219,11 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
               {c.membership.map((m) => (
                 <div key={m.fact_id} className="mb-2">
                   <div>
-                    事实 <span className="font-mono text-[0.75rem]">#{m.fact_id}</span> {m.fact_title} <Badge>{m.role}</Badge> {m.manual && <Badge tone="info">人工</Badge>}
+                    事实 <span className="font-mono text-[0.8125rem]">#{m.fact_id}</span> {m.fact_title} <Badge>{m.role}</Badge> {m.manual && <Badge tone="info">人工</Badge>}
                   </div>
                   {m.story_public_id && (
                     <div className="mt-0.5">
-                      事件 <a className="text-accent" href={`/story/${m.story_public_id}`} target="_blank" rel="noreferrer">{m.story_title}</a> <span className="font-mono text-[0.75rem] text-ink-4">#{m.story_id}</span>
+                      事件 <a className="text-accent" href={`/story/${m.story_public_id}`} target="_blank" rel="noreferrer">{m.story_title}</a> <span className="font-mono text-[0.8125rem] text-ink-4">#{m.story_id}</span>
                     </div>
                   )}
                 </div>
@@ -271,7 +271,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
                 ["原标题", a.title],
                 ["作者", a.author],
                 ["语言", a.language],
-                ["身份键", <span className="break-all font-mono text-[0.75rem]">{a.identity_key}</span>],
+                ["身份键", <span className="break-all font-mono text-[0.8125rem]">{a.identity_key}</span>],
               ]}
             />
           </Card>
@@ -325,7 +325,7 @@ export default function ContentItem({ loaderData }: Route.ComponentProps) {
             <label key={v} className={`cursor-pointer rounded-card p-3 ring-1 transition-colors ${visibility === v ? "bg-accent-soft ring-accent" : "ring-line-strong hover:bg-bg-sunk"}`}>
               <input type="radio" name="visibility" className="sr-only" checked={visibility === v} onChange={() => setVisibility(v)} />
               <div className="text-[0.875rem] font-medium text-ink">{label}</div>
-              <div className="mt-0.5 text-[0.75rem] text-ink-3">{hint}</div>
+              <div className="mt-0.5 text-[0.8125rem] text-ink-3">{hint}</div>
             </label>
           ))}
         </div>

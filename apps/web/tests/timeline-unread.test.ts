@@ -158,7 +158,8 @@ for (const phone of [false, true]) test(`a kept group is not greyed and its ${ph
   await page.setViewportSize(phone ? { width: 390, height: 844 } : { width: 1280, height: 900 });
   // The title text itself is drawn in the read grey (the source line beside it always is).
   const greyed = (name: string) => page.evaluate((text) => {
-    const node = [...document.querySelectorAll("a, a *")].find((e) => e.childElementCount === 0 && e.textContent === text && (e as HTMLElement).offsetParent)!;
+    // The innermost element holding the whole title (headlines wrap their words in spans, WordTitle).
+    const node = [...document.querySelectorAll("a, a *")].find((e) => e.textContent === text && ![...e.children].some((c) => c.textContent === text) && (e as HTMLElement).offsetParent)!;
     const probe = document.body.appendChild(Object.assign(document.createElement("span"), { className: "text-ink-4" }));
     const grey = getComputedStyle(probe).color;
     probe.remove();

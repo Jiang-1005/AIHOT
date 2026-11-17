@@ -66,7 +66,7 @@ export default function AdminLogin() {
             </a>
           )}
         </form>
-        <p className="mt-6 text-center text-[0.75rem] text-ink-4">
+        <p className="mt-6 text-center text-[0.8125rem] text-ink-4">
           <a href="/" className="hover:text-ink-2">
             回到 {SITE.name}
           </a>

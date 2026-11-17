@@ -118,7 +118,7 @@ export default function AgentPage() {
   };
   const track = TRACKS.find((t) => t.key === tab);
 
-  const chip = "inline-flex h-7 items-center gap-2 rounded-full border border-line bg-surface px-3 text-[0.75rem] text-ink-3";
+  const chip = "inline-flex h-7 items-center gap-2 rounded-full border border-line bg-surface px-3 text-[0.8125rem] text-ink-3";
   const aside = (
     <>
       <AsideCard title="接入方式" className="hidden side:block">
@@ -151,7 +151,7 @@ export default function AgentPage() {
             <a key={h} href={h} target={h.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="group flex items-start gap-2 rounded-control px-2 py-2 transition-colors hover:bg-bg-sunk">
               <span className="min-w-0 flex-1">
                 <span className="block text-[0.875rem] text-ink-2 group-hover:text-ink">{l}</span>
-                <span className="mt-1 block text-[0.75rem] text-ink-4">{note}</span>
+                <span className="mt-1 block text-[0.8125rem] text-ink-4">{note}</span>
               </span>
               <IconArrowUpRight size={13} className="mt-1 shrink-0 text-ink-4" />
             </a>
@@ -208,11 +208,11 @@ export default function AgentPage() {
                 <span className={`grid size-9 place-items-center rounded-control transition-colors ${on ? "bg-accent text-accent-contrast" : "bg-bg-sunk text-ink-3 group-hover:text-ink"}`}>
                   <t.icon size={18} />
                 </span>
-                {t.badge && <span className="inline-flex h-[18px] items-center rounded-full bg-accent-soft px-2 text-[0.75rem] font-medium text-accent">{t.badge}</span>}
+                {t.badge && <span className="inline-flex h-[18px] items-center rounded-full bg-accent-soft px-2 text-[0.8125rem] font-medium text-accent">{t.badge}</span>}
               </span>
               <span className="mt-3 text-[0.875rem] font-semibold text-ink">{t.name}</span>
               <span className="mt-1 text-[0.875rem] leading-snug text-ink-2">{t.pitch}</span>
-              <span className="mt-2 hidden text-[0.75rem] leading-snug text-ink-4 sm:block">{t.fit}</span>
+              <span className="mt-2 hidden text-[0.8125rem] leading-snug text-ink-4 sm:block">{t.fit}</span>
             </a>
           );
         })}

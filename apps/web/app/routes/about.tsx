@@ -124,7 +124,7 @@ function QrCard({ src, kind, title, note }: { src: string; kind: string; title: 
     <figure className="card flex items-center gap-5 p-5">
       <img src={src} alt={`${kind}二维码`} width={112} height={112} loading="lazy" className="size-[104px] shrink-0 rounded-tile border border-line bg-white object-contain p-2 sm:size-[112px]" />
       <figcaption className="min-w-0">
-        <div className="text-[0.75rem] text-ink-4">{kind}</div>
+        <div className="text-[0.8125rem] text-ink-4">{kind}</div>
         <div className="mt-1 text-[1rem] font-semibold leading-snug text-ink">{title}</div>
         <p className="mt-2 text-[0.875rem] leading-[1.7] text-ink-3">{note}</p>
       </figcaption>
@@ -183,10 +183,10 @@ function Latest({ item, className = "" }: { item: SiteStats["latest"][number] | 
   if (!item) return null;
   return (
     <IntentLink viewTransition to={`/items/${item.id}`} className={`group block ${className}`}>
-      <span className="text-[0.75rem] font-semibold tracking-[0.2em] text-accent">最近精选</span>
+      <span className="text-[0.8125rem] font-semibold tracking-[0.2em] text-accent">最近精选</span>
       <span key={item.id} className="animate-fade-up mt-2 block">
         <span className="line-clamp-2 text-[0.875rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span>
-        <span className="mt-1 block truncate text-[0.75rem] text-ink-4">{item.source}</span>
+        <span className="mt-1 block truncate text-[0.8125rem] text-ink-4">{item.source}</span>
       </span>
     </IntentLink>
   );
@@ -259,12 +259,12 @@ export default function AboutPage() {
               className={`border-line py-6 outline-none transition-colors ${STAGE_CELL[i]} ${focus === i ? "bg-accent-softer" : ""}`}
             >
               <div className="flex items-baseline gap-3">
-                <span className="num text-[0.75rem] font-bold tracking-[0.12em] text-accent">{s.no}</span>
+                <span className="num text-[0.8125rem] font-bold tracking-[0.12em] text-accent">{s.no}</span>
                 <h3 className="text-[1rem] font-semibold text-ink">{s.title}</h3>
               </div>
               {s.figure && <div className="mt-4">{s.figure}</div>}
               <p className="mt-3 text-[0.875rem] leading-[1.8] text-ink-3">{s.text}</p>
-              {s.note && <p className="mt-3 text-[0.75rem] text-ink-4">{s.note}</p>}
+              {s.note && <p className="mt-3 text-[0.8125rem] text-ink-4">{s.note}</p>}
             </li>
           ))}
         </ol>

@@ -76,7 +76,7 @@ function FeedbackAside({ tips }: { tips: string[] }) {
         <ol className="space-y-3">
           {tips.map((t, i) => (
             <li key={t} className="flex gap-3 text-[0.875rem] leading-[1.6] text-ink-3">
-              <span className="mono mt-px text-[0.75rem] font-bold text-accent">{String(i + 1).padStart(2, "0")}</span>
+              <span className="mono mt-px text-[0.8125rem] font-bold text-accent">{String(i + 1).padStart(2, "0")}</span>
               {t}
             </li>
           ))}
@@ -250,7 +250,7 @@ export default function FeedbackPage() {
                 placeholder={guide?.example ?? SITE.feedbackExample}
                 className={`${field} block resize-y px-4 pb-8 pt-4 text-[1rem] leading-relaxed sm:text-[0.875rem]`}
               />
-              <span className="mono pointer-events-none absolute bottom-3 right-4 text-[0.75rem] text-ink-4">
+              <span className="mono pointer-events-none absolute bottom-3 right-4 text-[0.8125rem] text-ink-4">
                 {draft.content.length} / {MAX_TEXT}
               </span>
             </div>
@@ -272,7 +272,7 @@ export default function FeedbackPage() {
                 <img src={shot.url} alt="截图预览" className="h-16 w-24 shrink-0 rounded-control border border-line bg-surface object-cover" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[0.875rem] font-medium text-ink-2">{shot.file.name}</div>
-                  <div className="mono mt-1 text-[0.75rem] text-ink-4">{(shot.file.size / 1024 / 1024).toFixed(2)} MB</div>
+                  <div className="mono mt-1 text-[0.8125rem] text-ink-4">{(shot.file.size / 1024 / 1024).toFixed(2)} MB</div>
                 </div>
                 <button type="button" aria-label="移除截图" onClick={() => setShot(null)} className="grid size-8 shrink-0 place-items-center rounded-full text-ink-4 transition-colors hover:bg-surface hover:text-ink">
                   <IconClose size={15} />
@@ -289,7 +289,7 @@ export default function FeedbackPage() {
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[0.875rem] font-semibold text-ink-2">添加一张问题截图</span>
-                  <span className="mt-1 block text-[0.75rem] leading-relaxed text-ink-4">粘贴或拖到这里也可以 · 请先遮盖敏感信息；PNG、JPEG 或 WebP，原图不超过 5 MB</span>
+                  <span className="mt-1 block text-[0.8125rem] leading-relaxed text-ink-4">粘贴或拖到这里也可以 · 请先遮盖敏感信息；PNG、JPEG 或 WebP，原图不超过 5 MB</span>
                 </span>
               </button>
             )}
@@ -304,7 +304,7 @@ export default function FeedbackPage() {
         </div>
 
         <div className="flex flex-col-reverse gap-4 border-t border-line-soft bg-bg-sunk/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:bg-bg-muted/30">
-          <p className="text-[0.75rem] leading-relaxed text-ink-4 sm:max-w-[400px]">
+          <p className="text-[0.8125rem] leading-relaxed text-ink-4 sm:max-w-[400px]">
             请勿提交密钥、身份证件或与问题无关的敏感信息。提交即表示你知悉反馈内容、选填邮箱、页面信息和截图将按
             <Link viewTransition to="/privacy" className="text-accent hover:underline">
               隐私说明

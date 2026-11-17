@@ -60,7 +60,7 @@ export default function SelectBench({ loaderData }: Route.ComponentProps) {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[900px] text-[0.875rem]">
                     <thead>
-                      <tr className="border-b border-line text-left text-[0.75rem] text-ink-3">
+                      <tr className="border-b border-line text-left text-[0.8125rem] text-ink-3">
                         {["模型", "有效输出准确率", "覆盖率", "完整准确率", "精确率", "召回率", "F1", "入选比例", "金标入选", "失败", "平均耗时", "输入/输出 tokens"].map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}
                       </tr>
                     </thead>

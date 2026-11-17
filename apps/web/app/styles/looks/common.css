@@ -1,0 +1,5 @@
+/* Shared by every look (the 11-17 prototypes' fixes). */
+/* Headlines break between words: WordTitle wraps 2–6 character words and short bracketed phrases. */
+.title-word { white-space: nowrap; }
+h1 { text-wrap: balance; }
+h2, h3 { text-wrap: pretty; }

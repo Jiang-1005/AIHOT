@@ -29,11 +29,11 @@ export function ReportArchive({ kind, index, current }: { kind: ReportKind; inde
   const groups = archiveGroups(kind, index);
   const openId = groups.find((g) => g.entries.some((e) => e.key === current))?.id ?? groups[0]?.id;
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[280px] shrink-0 flex-col border-r border-line bg-[color-mix(in_srgb,var(--sidebar)_50%,var(--surface))] pl-5 pr-3 side:flex dark:bg-[color-mix(in_srgb,var(--sidebar)_50%,var(--bg))]">
+    <aside className="sticky top-[var(--bar-h)] hidden h-[calc(100dvh-var(--bar-h))] w-[280px] shrink-0 flex-col border-r border-line bg-[color-mix(in_srgb,var(--sidebar)_50%,var(--surface))] pl-5 pr-3 side:flex dark:bg-[color-mix(in_srgb,var(--sidebar)_50%,var(--bg))]">
       <div className="pb-4 pt-8">
         <KindSwitch kind={kind} />
       </div>
-      <div className="border-b border-line-strong pb-2 pl-1 text-[0.75rem] font-semibold tracking-[0.3em] text-ink">往期</div>
+      <div className="border-b border-line-strong pb-2 pl-1 text-[0.8125rem] font-semibold tracking-[0.3em] text-ink">往期</div>
       <nav aria-label={`${REPORT_NAMES[kind]}历史`} className="scrollbar-thin -mr-3 flex-1 overflow-y-auto pb-6 pr-3">
         {groups.map((g) => (
           <ArchiveGroup key={g.id} g={g} kind={kind} current={current} initiallyOpen={g.id === openId} />
@@ -71,7 +71,7 @@ function ArchiveGroup({ g, kind, current, initiallyOpen }: {
       <summary className="flex h-11 items-center gap-2 pl-1 pr-2 text-[0.875rem] text-ink transition-colors hover:text-accent">
         <IconChevronRight size={14} className="text-ink-4 transition-transform duration-200 group-open/month:rotate-90" />
         <span className="flex-1 font-semibold">{g.label}</span>
-        <span className="num text-[0.75rem] text-ink-4">{g.entries.length}</span>
+        <span className="num text-[0.8125rem] text-ink-4">{g.entries.length}</span>
       </summary>
       {(kind !== "daily" || open) && <ul className="space-y-1 pb-3">
         {entries.map((e) => {
@@ -87,7 +87,7 @@ function ArchiveGroup({ g, kind, current, initiallyOpen }: {
               >
                 <span className="flex w-8 shrink-0 flex-col items-center">
                   <span className={`num text-[1.25rem] font-bold leading-none tracking-[-0.03em] ${on ? "text-accent" : "text-ink"}`}>{mark(e.key).big}</span>
-                  {mark(e.key).small && <span className="mt-1 whitespace-nowrap text-[0.75rem] leading-none text-ink-4">{mark(e.key).small}</span>}
+                  {mark(e.key).small && <span className="mt-1 whitespace-nowrap text-[0.8125rem] leading-none text-ink-4">{mark(e.key).small}</span>}
                 </span>
                 <span className={`line-clamp-2 min-w-0 text-[0.875rem] leading-[18px] transition-colors ${on ? "font-semibold text-ink" : "text-ink-2 group-hover:text-ink"}`}>{e.title ?? `${REPORT_NAMES[kind]} ${e.key}`}</span>
               </IntentLink>

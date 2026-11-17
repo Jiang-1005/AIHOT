@@ -89,7 +89,7 @@ export default function PolicyUpdatesPage() {
         <p className="mt-2 text-[0.875rem] leading-[1.7] text-ink-3">
           以近 90 天政策补录为准，已核对原文（或标明「未查到原文」），按文章自己的日期倒序。征求意见稿会标明「征求意见稿，未施行」。不走精选 7 天和往期 30 天新鲜度规则，也不会把老条目送进首页精选。
         </p>
-        <p className="mt-1 text-[0.75rem] text-ink-4">
+        <p className="mt-1 text-[0.8125rem] text-ink-4">
           {data.asOf} 北京时间 · 共 {data.items.length} 条
         </p>
       </header>

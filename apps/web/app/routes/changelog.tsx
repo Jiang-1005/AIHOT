@@ -76,7 +76,7 @@ function Day({ date, releases, id }: { date: string; releases: Release[]; id?: s
         <time dateTime={date} className="text-[1.25rem] font-bold text-ink">
           {h.label}
         </time>
-        <span className="text-[0.75rem] text-ink-4">{h.weekday}</span>
+        <span className="text-[0.8125rem] text-ink-4">{h.weekday}</span>
       </h2>
       <ol>
         {releases.map((r) => (
@@ -86,13 +86,13 @@ function Day({ date, releases, id }: { date: string; releases: Release[]; id?: s
           >
             <div className="flex items-center gap-3 sm:block">
               <span className="mono block text-[0.875rem] text-ink-3">{r.time}</span>
-              <span className="inline-flex items-center gap-2 text-[0.75rem] text-ink-4 sm:mt-2">
+              <span className="inline-flex items-center gap-2 text-[0.8125rem] text-ink-4 sm:mt-2">
                 <span className={`size-1.5 rounded-full ${r.urgent ? "bg-hot" : KIND_DOT[r.kind]}`} aria-hidden="true" />
                 {r.kind}
               </span>
             </div>
             <article className={`min-w-0 sm:border-l sm:pl-8 ${r.urgent ? "sm:border-hot/40" : "sm:border-line"}`}>
-              {r.urgent && <span className="mb-2 inline-flex rounded-full bg-hot px-3 py-1 text-[0.75rem] font-semibold text-white">重要</span>}
+              {r.urgent && <span className="mb-2 inline-flex rounded-full bg-hot px-3 py-1 text-[0.8125rem] font-semibold text-white">重要</span>}
               <h3 className={`text-[0.875rem] font-semibold leading-snug ${r.urgent ? "text-hot" : "text-ink"}`}>{r.title}</h3>
               <ReleaseBody lines={r.body} />
             </article>
@@ -155,7 +155,7 @@ export default function ChangelogPage() {
             >
               <span className={`size-1.5 rounded-full ${k ? KIND_DOT[k] : "bg-ink-2"}`} aria-hidden="true" />
               <span className="flex-1">{k ?? "全部"}</span>
-              <span className="num text-[0.75rem] text-ink-4">{k ? data.releases.filter((r) => r.kind === k).length : data.releases.length}</span>
+              <span className="num text-[0.8125rem] text-ink-4">{k ? data.releases.filter((r) => r.kind === k).length : data.releases.length}</span>
             </button>
           ))}
         </div>
@@ -166,7 +166,7 @@ export default function ChangelogPage() {
             const [y, mo] = month.split("-").map(Number) as [number, number];
             return (
               <a key={month} href={`#d-${m.first}`} className="flex items-center justify-between rounded-control px-2 py-2 text-[0.875rem] text-ink-2 transition-colors hover:bg-bg-sunk hover:text-ink">
-                {y} 年 {mo} 月<span className="num text-[0.75rem] text-ink-4">{m.count} 条</span>
+                {y} 年 {mo} 月<span className="num text-[0.8125rem] text-ink-4">{m.count} 条</span>
               </a>
             );
           })}

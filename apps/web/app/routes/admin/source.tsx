@@ -100,7 +100,7 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
           {s.uses.map((u) => <Badge key={u} tone="info">{useLabels[u] ?? u}</Badge>)}
         </span>
       }
-      subtitle={<span className="font-mono text-[0.75rem]">{s.id}</span>}
+      subtitle={<span className="font-mono text-[0.8125rem]">{s.id}</span>}
       actions={
         <>
           <Button
@@ -149,7 +149,7 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
               {preview.items.map((i) => (
                 <li key={i.url} className="text-[0.875rem]">
                   <a href={i.url} target="_blank" rel="noreferrer" className="font-medium text-ink hover:text-accent">{i.title}</a>
-                  <div className="text-[0.75rem] text-ink-4">{i.publishedAt ? bj(i.publishedAt, true) : "无发布时间"} · {i.url}</div>
+                  <div className="text-[0.8125rem] text-ink-4">{i.publishedAt ? bj(i.publishedAt, true) : "无发布时间"} · {i.url}</div>
                   {i.excerpt && <div className="mt-0.5 line-clamp-2 text-[0.875rem] text-ink-3">{i.excerpt}</div>}
                 </li>
               ))}
@@ -233,7 +233,7 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
             </div>
             <div className="mt-4">
               <Field label="采集配置（JSON）">
-                <Textarea className="font-mono !text-[0.75rem]" rows={Math.min(18, draft.config.split("\n").length + 1)} value={draft.config} onChange={(e) => setDraft({ ...draft, config: e.target.value })} spellCheck={false} />
+                <Textarea className="font-mono !text-[0.8125rem]" rows={Math.min(18, draft.config.split("\n").length + 1)} value={draft.config} onChange={(e) => setDraft({ ...draft, config: e.target.value })} spellCheck={false} />
               </Field>
               {configError && <div className="mt-1 text-[0.875rem] text-hot">{configError}</div>}
             </div>
