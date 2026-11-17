@@ -22,7 +22,7 @@ import { hydrateSiteBlobsFromDb } from "@aihot/backend/publication/site-blobs";
 import {
   ROBOTS_TAG, decideGate, gateEnabled, gateLoginPage, getCookieHeader,
   hasValidGateCookie, isGateExemptPath, parseForm, requestIsSecure, safeNextPath,
-} from "@aihot/backend/public-gate";
+} from "@aihot/contracts/public-gate";
 
 /** Quiet ordinary access logs, while keeping errors that happen after the route has returned. */
 class RequestLogs extends LogController {
@@ -34,13 +34,20 @@ class RequestLogs extends LogController {
   }
 }
 
-export async function buildApp(): Promise<FastifyInstance> {
+/**
+ * Copies the site catalogs (site_blobs) into the data folder before the API serves. The entry points
+ * (main.ts, the Vercel api/index.ts) call it; buildApp does not, so building the app touches no database.
+ */
+export async function hydrateCatalogsAtBoot(): Promise<void> {
   try {
     await hydrateSiteBlobsFromDb();
   } catch (error) {
     // Keep the process up so /api/health can still answer; routes that need a catalog will 503.
     console.error("hydrateSiteBlobsFromDb failed at boot", error);
   }
+}
+
+export async function buildApp(): Promise<FastifyInstance> {
   const logs = new RequestLogs();
   const app = Fastify({
     // Access logs never record query strings (tokens).

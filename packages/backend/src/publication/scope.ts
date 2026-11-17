@@ -5,6 +5,7 @@
 // derived once, at publish time, by publish.ts and rules.ts.
 import { beijingCalendarDay, SELECTION } from "@aihot/industry/selection";
 import { sql } from "../db.ts";
+import { BEIJING_TIMEZONE } from "@aihot/contracts/time";
 import { independentSelectedSources } from './rules.ts';
 
 /** These reports share their fact's display slot; independent sources keep their own selected card. */
@@ -109,7 +110,7 @@ export function publicationDatelineDaySql() {
       WHEN a.publication_time ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(a.publication_time, 10)
       ELSE NULL
     END FROM articles a WHERE a.id = p.article_id),
-    CASE WHEN p.published_at IS NOT NULL THEN to_char(p.published_at AT TIME ZONE 'Asia/Shanghai', 'YYYY-MM-DD') ELSE NULL END
+    CASE WHEN p.published_at IS NOT NULL THEN to_char(p.published_at AT TIME ZONE ${BEIJING_TIMEZONE}, 'YYYY-MM-DD') ELSE NULL END
   )`;
 }
 

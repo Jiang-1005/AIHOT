@@ -22,6 +22,7 @@ import { stopBoss } from "@aihot/backend/jobs/queue";
 import { publishArticle } from "@aihot/backend/publication/publish";
 import { featuredDatelineDay, featuredSlot, SELECTION } from "@aihot/industry/selection";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { beijingDate, beijingTime as beijingClock } from "@aihot/contracts/time";
 import { parse } from "node:path";
 
 const APPLY = process.argv.includes("--apply");
@@ -32,21 +33,12 @@ const DEEPSEEK_URL = (process.env.DEEPSEEK_BASE_URL || process.env.LLM_BASE_URL 
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || process.env.LLM_API_KEY || "";
 const DEEPSEEK_MODEL = process.env.VERIFY_MODEL || "deepseek-chat";
 
-const BEIJING = new Intl.DateTimeFormat("sv-SE", {
-  timeZone: "Asia/Shanghai",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
 
 function beijingTime(d: Date | string | null | undefined): string {
   if (!d) return "未标明";
   const date = d instanceof Date ? d : new Date(d);
   if (Number.isNaN(date.getTime())) return "未标明";
-  return `${BEIJING.format(date).replace("T", " ").replace(" ", " ")}（北京时间）`;
+  return `${beijingDate(date)} ${beijingClock(date)}（北京时间）`;
 }
 
 function loadZhixinOriginals(path: string): Map<string, { original: string; source: string }> {

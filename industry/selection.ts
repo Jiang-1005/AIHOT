@@ -3,6 +3,7 @@
 // 确认新闻身份与新增价值后，由发布规则决定展示（见 docs/selection.md），卡片上显示两次的平均分。
 // 所有信源共用一个门槛；不再按分级或类别分档。
 // 改了门槛或评分提示词，用 scripts/eval-selection.ts 在你自己标注的样本上重跑一遍，再决定上线（见 docs/selection.md）。
+import { beijingDate } from "@aihot/contracts/time";
 
 export const SELECTION = {
   /**
@@ -80,11 +81,9 @@ export function featuredFinalScore(base: number, bonus: number): number {
 }
 
 
-const BEIJING_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" });
-
 /** 北京日历日，YYYY-MM-DD。 */
 export function beijingCalendarDay(at: Date): string {
-  return BEIJING_DAY.format(at);
+  return beijingDate(at);
 }
 
 /**

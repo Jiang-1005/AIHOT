@@ -22,7 +22,8 @@ export const sql = postgres(databaseUrl, {
   connect_timeout: 10,
   // Neon transaction poolers cannot use prepared statements.
   prepare: !pooled,
-  ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+  // Neon presents a publicly trusted certificate: verify it and the host name, like any other outbound TLS.
+  ssl: useSsl ? "verify-full" : undefined,
   onnotice: () => {},
   // Prepared statements keep PostgreSQL's plan cache: planning a detail read took longer than running
   // it. Searches plan every execution instead (withCustomPlans). JIT compilation costs more than

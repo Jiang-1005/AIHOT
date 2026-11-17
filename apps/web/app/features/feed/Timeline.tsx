@@ -11,7 +11,7 @@ import { FeedItem } from "./FeedItem";
 import { IconChevronDown } from "../../components/icons";
 import { RingMark } from "@aihot/site/brand/Logo.tsx";
 import { EmptyState } from "../../components/ui/Page";
-import { beijingDate, beijingTime, beijingWeekday, monthDay } from "@aihot/contracts/time";
+import { beijingDate, beijingMidnight, beijingTime, beijingWeekday, monthDay } from "@aihot/contracts/time";
 import { byBeijingDay, rowDates, weekdayShort } from "../../lib/format";
 import { isHydrated } from "../../lib/hydration";
 import { markRead, setUnreadOnly, useReadSet, useUnreadOnly } from "../../lib/local-state";
@@ -114,7 +114,7 @@ export function slotClock(at: string | null | undefined): string | null {
   // A report known only by its date is stored at Beijing midnight to the second (T00:00:00+08:00):
   // it shows no clock rather than a made-up 00:00. Real times (an X post at 00:06:16) still show.
   const t = Date.parse(at);
-  if (Number.isFinite(t) && (t + 8 * 3600_000) % 86_400_000 === 0) return null;
+  if (Number.isFinite(t) && beijingMidnight(beijingDate(t)).getTime() === t) return null;
   return beijingTime(at);
 }
 
