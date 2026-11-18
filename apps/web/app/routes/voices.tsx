@@ -9,6 +9,7 @@ import { pageMeta } from "../lib/seo";
 import { beijingToday, formatWhen } from "../lib/voice-time";
 import type { Screen } from "../components/shell/screens";
 import { PhoneBar } from "../components/shell/PhoneBar";
+import { buttonClass } from "../components/ui/Controls";
 import { EmptyState } from "../components/ui/Page";
 import { PillTabs } from "../components/ui/Tabs";
 import { useModal } from "../components/ui/modal";
@@ -22,9 +23,12 @@ import {
   type FacetVocab,
 } from "../components/facets/FacetChips";
 import {
+  inVoicesHotWindow,
   knownCatalogTotal,
   mergeVoiceItems,
   voicesCatalogReady,
+  voicesClearFiltersLabel,
+  voicesHotWindowEmpty,
   voicesMatchCount,
   voicesSearchOnlyRevalidate,
 } from "../features/voices/catalog-state";
@@ -139,7 +143,7 @@ function filterVoices(items: VoiceCard[], sort: SortKey, platform: PlatformKey, 
     if (!matchesPlatform(item, platform)) return false;
     if (!matchesVerify(item, verify)) return false;
     if (source !== "all" && (item.source || item.poster) !== source) return false;
-    if (sort === "hot" && (item.age_days ?? 99) > 7) return false;
+    if (sort === "hot" && !inVoicesHotWindow(item.age_days)) return false;
     return itemMatches(item, facets);
   });
   return sortVoices(rows, sort);
@@ -224,7 +228,7 @@ function railCounts(items: VoiceCard[]): RailCounts {
     bag[key] = (bag[key] ?? 0) + 1;
   };
   for (const item of items) {
-    if ((item.age_days ?? 99) <= 7) out.last7++;
+    if (inVoicesHotWindow(item.age_days)) out.last7++;
     if (!isUnverified(item)) out.verified++;
     bump(out.platform, isCnCommunity(item.platform) ? "中文社区" : item.platform);
     for (const k of ["topic", "subject", "form", "content_type"] as const) bump(out.facet[k], baseLabel(item.tags?.[k]) || undefined);
@@ -468,6 +472,10 @@ export default function VoicesPage() {
     () => filterVoices(items, sort, platform, source, facets, verify),
     [items, sort, platform, source, facets, verify],
   );
+  const allTimeCount = useMemo(
+    () => (sort === "hot" ? filterVoices(items, "latest", platform, source, facets, verify).length : filtered.length),
+    [items, sort, platform, source, facets, verify, filtered.length],
+  );
   filteredLen.current = filtered.length;
   partialRef.current = partial;
 
@@ -528,7 +536,12 @@ export default function VoicesPage() {
   const shownCount = Math.min(visible, maxVisible);
   const shown = filtered.slice(0, shownCount);
   const skeletonCount = Math.max(0, Math.min(shownCount - filtered.length, 4));
-  const scoped = !facetsEqualEmpty(facets) || source !== "all" || verify !== "all" || platform !== "all";
+  const narrowed = source !== "all" || verify !== "all" || !facetsEqualEmpty(facets);
+  const scoped = narrowed || platform !== "all";
+  const clearLabel = sort === "hot" ? voicesClearFiltersLabel(sort) : "清空";
+  const hotEmpty = ready
+    ? voicesHotWindowEmpty({ sort, platform, narrowed, windowCount: filtered.length, allTimeCount })
+    : null;
   const matchCount = voicesMatchCount({
     ready,
     filteredLength: filtered.length,
@@ -649,6 +662,7 @@ export default function VoicesPage() {
                 ].filter(Boolean).length ? { label: [platform !== "all" ? platform : null, verify !== "all" ? (verify === "verified" ? "已核实原文" : "未核实") : null, source !== "all" ? source : null].filter(Boolean).join(" · "), onClear: () => { setPlatform("all"); setVerify("all"); setSource("all"); } } : null}
                 onToggle={(key, name) => setFacets({ ...facets, [key]: facets[key].filter((v) => v !== name) })}
                 onClearAll={clearAll}
+                clearLabel={clearLabel}
               />
             ) : null}
             <PillTabs
@@ -667,12 +681,32 @@ export default function VoicesPage() {
 
           {filtered.length === 0 && ready ? (
             <div className="card">
-              <EmptyState
-                title="没有符合筛选的帖子"
-                action={scoped ? <button type="button" className="text-[0.875rem] text-accent hover:underline" onClick={clearAll}>清空筛选</button> : undefined}
-              >
-                试试去掉部分条件，或换个平台、来源看看。
-              </EmptyState>
+              {hotEmpty ? (
+                <EmptyState
+                  title={hotEmpty.title}
+                  action={
+                    <div className="flex flex-col items-center gap-3">
+                      <button type="button" className={buttonClass("primary", "md")} onClick={() => setSort("latest")}>
+                        查看全部时间<span className="num">{hotEmpty.count}</span>条
+                      </button>
+                      {scoped ? (
+                        <button type="button" className="text-[0.875rem] text-accent hover:underline" onClick={clearAll}>
+                          {voicesClearFiltersLabel(sort)}
+                        </button>
+                      ) : null}
+                    </div>
+                  }
+                >
+                  近 7 天最热只看最近 7 天，更早的帖不会算进这个排序。
+                </EmptyState>
+              ) : (
+                <EmptyState
+                  title="没有符合筛选的帖子"
+                  action={scoped ? <button type="button" className="text-[0.875rem] text-accent hover:underline" onClick={clearAll}>{voicesClearFiltersLabel(sort)}</button> : undefined}
+                >
+                  试试去掉部分条件，或换个平台、来源看看。
+                </EmptyState>
+              )}
             </div>
           ) : view === "compact" ? (
             <ol className="divide-y divide-line-soft border-y border-line" data-voices-view="compact">
@@ -704,7 +738,7 @@ export default function VoicesPage() {
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line-soft bg-surface px-4 py-3">
               <h2 className="text-[1rem] font-semibold text-ink">筛选</h2>
               <div className="flex items-center gap-2">
-                {scoped ? <button type="button" className="h-8 px-2 text-[0.875rem] text-ink-3" onClick={clearAll}>清空</button> : null}
+                {scoped ? <button type="button" className="h-8 px-2 text-[0.875rem] text-ink-3" onClick={clearAll}>{clearLabel}</button> : null}
                 <button type="button" className="h-8 px-2 text-[0.875rem] font-medium text-accent" onClick={() => setSheet(false)}>完成</button>
               </div>
             </div>
