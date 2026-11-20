@@ -8,6 +8,7 @@ import { openSearch } from "../../features/search/SearchOverlay";
 import { activeSidebarItem, inNav, sidebar, sidebarIsActive, type NavItem } from "./nav";
 import { useChangelogDot } from "./Sidebar";
 import { StyleSelect } from "./Appearance";
+import { PalettePicker } from "./PalettePicker";
 import { ThemeSwitch } from "./ThemeSwitch";
 
 interface PrimaryLink extends Pick<NavItem, "to" | "label" | "end" | "covers"> {
@@ -199,6 +200,14 @@ export function TopDeck({ changelogVersion }: { changelogVersion: string | null 
                     )}
                   </div>
                 )}
+
+                <div className="mt-2.5 border-t border-line-soft pt-2.5">
+                  <div className="mb-1.5 flex items-center justify-between px-1 text-[0.6875rem] font-semibold tracking-[0.06em] text-ink-4">
+                    <span>刊物色板</span>
+                    <span className="font-normal">一键切换</span>
+                  </div>
+                  <PalettePicker />
+                </div>
 
                 <div className="mt-2.5 border-t border-line-soft pt-2.5">
                   <StyleSelect compact />

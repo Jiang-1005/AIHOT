@@ -9,6 +9,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { STYLE_BOOT_SCRIPT } from "./lib/site-styles";
+import { PALETTE_BOOT_SCRIPT } from "./lib/journal-palette";
 import { Sidebar } from "./components/shell/Sidebar";
 import { TopDeck } from "./components/shell/TopDeck";
 import { Filings } from "./components/shell/Filings";
@@ -63,12 +64,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {documentRelease && <meta name="aihot-release" content={documentRelease} />}
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="color-scheme" content="light dark" />
-        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f3ec" />
-        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141311" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf6f0" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#110f0e" />
         <meta name="apple-mobile-web-app-title" content={SITE.name} />
         <meta name="robots" content="noindex, nofollow" />
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: STYLE_BOOT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: PALETTE_BOOT_SCRIPT }} />
         {webModules().map((m) => m.root?.bootScript && <script key={m.name} dangerouslySetInnerHTML={{ __html: m.root.bootScript }} />)}
         <Meta />
         <Links />

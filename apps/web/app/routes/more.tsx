@@ -13,6 +13,7 @@ import { setFontPreference, useFontPreference, useStarred } from "../lib/local-s
 import { Select } from "../components/ui/Controls";
 import { ThemeSwitch } from "../components/shell/ThemeSwitch";
 import { StyleSelect } from "../components/shell/Appearance";
+import { PalettePicker } from "../components/shell/PalettePicker";
 import { Filings } from "../components/shell/Filings";
 import { IconBookmark, IconBuilding, IconChevronRight, IconGrid, IconHeart, IconLandmark, IconMessage, IconMoon, IconPlug, IconSend, IconSparkles } from "../components/icons";
 
@@ -96,6 +97,13 @@ export default function MorePage() {
             <span className="w-5 text-center text-ink-3" aria-hidden="true">◐</span>
             <span className="flex-1">风格</span>
             <StyleSelect className="w-[148px]" />
+          </li>
+          <li data-journal-palette-row="" className="hidden min-h-[56px] flex-col justify-center gap-2 px-4 py-3 text-[1rem] font-medium text-ink">
+            <div className="flex items-center gap-3">
+              <span className="w-5 text-center text-ink-3" aria-hidden="true">❖</span>
+              <span className="flex-1">配色</span>
+            </div>
+            <PalettePicker compact />
           </li>
           <li className="flex min-h-[56px] items-center gap-3 px-4 text-[1rem] font-medium text-ink">
             <span className="w-5 text-center text-ink-3" aria-hidden="true">Aa</span>
