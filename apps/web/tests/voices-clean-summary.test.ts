@@ -25,3 +25,10 @@ test("falls back to original string if stripping leaves empty text", () => {
   const raw = "原帖页面打不开，未查到原文。";
   assert.deepEqual(splitVoiceProvenance(raw), { summary: raw, auditNote: null });
 });
+
+test("strips live timestamp provenance followed by full-text verification sentence", () => {
+  const raw = "原帖 2026-11-20 05:28（北京时间）。已打开原帖全文。帖主简介写着一线小学数学老师，分享了用 AI 辅助出分层练习题的经验。";
+  const res = splitVoiceProvenance(raw);
+  assert.equal(res.summary, "帖主简介写着一线小学数学老师，分享了用 AI 辅助出分层练习题的经验。");
+  assert.equal(res.auditNote, "原帖 2026-11-20 05:28（北京时间）；已打开原帖全文");
+});
