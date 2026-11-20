@@ -8,7 +8,7 @@ import { pageReuse } from "../lib/page-reuse";
 import { pageMeta } from "../lib/seo";
 import type { Screen } from "../components/shell/screens";
 import { PhoneBar } from "../components/shell/PhoneBar";
-import { logoFor } from "../components/facets/FacetChips";
+import { LogoMark, logoFor } from "../components/facets/FacetChips";
 import { PillTabs } from "../components/ui/Tabs";
 import { CatalogDayList, CatalogFeedItem, companyCatalogTags } from "../features/feed/CatalogFeed";
 
@@ -171,15 +171,15 @@ function CompanySection({ company, logoIndex, previewMax, expandAll, today }: { 
   );
 }
 
-function CompanyChips({ companies, active, allCount }: { companies: CompanyUpdateSection[]; active: string | null; allCount: number }) {
+function CompanyChips({ companies, active, allCount, logos }: { companies: CompanyUpdateSection[]; active: string | null; allCount: number; logos: Record<string, string> }) {
   const ordered = sortCompaniesByLatest(companies);
   const chips: { key: string; name?: string; label: string; count?: number }[] = [
     { key: "__all__", label: "全部", count: allCount || undefined },
     ...ordered.map((c) => ({ key: c.id, name: c.name, label: c.name, count: c.items.length || undefined })),
   ];
   return (
-    <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <nav aria-label="选择公司" className="flex w-max gap-2 pb-1">
+    <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+      <nav aria-label="选择公司" className="flex w-max gap-2 pb-1 sm:w-auto sm:flex-wrap sm:pb-0">
         {chips.map((chip) => {
           const on = chip.key === "__all__" ? !active : active === chip.key || active === chip.name;
           return (
@@ -188,12 +188,13 @@ function CompanyChips({ companies, active, allCount }: { companies: CompanyUpdat
               to={companyHref(chip.name)}
               preventScrollReset
               aria-current={on ? "page" : undefined}
-              className={`inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 text-[0.75rem] font-medium transition-colors duration-150 ${
+              className={`inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[0.75rem] font-medium transition-colors duration-150 ${
                 on
                   ? "bg-accent text-accent-contrast"
-                  : "border border-line bg-surface text-ink-2 hover:text-ink"
+                  : "border border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
               }`}
             >
+              {chip.name ? <LogoMark name={chip.name} src={logoFor(chip.name, logos)} /> : null}
               {chip.label}
               {chip.count ? <span className={`num font-normal ${on ? "text-accent-contrast/80" : "text-ink-4"}`}>{chip.count}</span> : null}
             </Link>
@@ -221,7 +222,7 @@ export default function CompanyUpdatesPage() {
   const companySections = selected ? [selected] : sortCompaniesByLatest(data.companies);
 
   return (
-    <div className="pb-8">
+    <div className="pb-20">
       <PhoneBar
         leading={
           <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-2 text-ink">
@@ -233,7 +234,7 @@ export default function CompanyUpdatesPage() {
       <header className="mb-6">
         <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">国内公司动态</h1>
         <p className="mt-2 text-[0.875rem] leading-[1.7] text-ink-3">
-          列出最近 90 天内已核对原文（或标明「未查到原文」）的报道。可按时间混看各公司，或按公司筛选。不走精选 60 分和 7 天/往期 30 天门槛，也不会把老条目送进首页精选。没有新动态的公司写「{EMPTY_COPY}」，不拿窗口外的旧稿凑数。
+          追踪 21 家国内教育科技公司近 90 天公开动态与产品进展，支持按时间线或单公司筛选。
         </p>
         <p className="mt-1 text-[0.75rem] text-ink-4">
           {data.asOf} 北京时间 · {withNews} 家有动态
@@ -268,7 +269,7 @@ export default function CompanyUpdatesPage() {
         )
       ) : (
         <div className="space-y-7">
-          <CompanyChips companies={data.companies} active={selected?.id ?? null} allCount={timeline.length} />
+          <CompanyChips companies={data.companies} active={selected?.id ?? null} allCount={timeline.length} logos={logoIndex} />
           {companySections.map((company) => (
             <CompanySection
               key={company.id}

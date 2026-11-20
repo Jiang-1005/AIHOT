@@ -66,7 +66,7 @@ export async function loader({ request }: { request: Request }) {
   const upstream = new Headers();
   const remote = await loadOr404<HotResponse>("/api/site/hot", { signal: request.signal, responseHeaders: upstream, base: previewApiBase() });
   const hot = applyDemoState(remote, state);
-  const fallback: Fallback = hot.entries.length === 0 ? await loadFallback(request.signal) : null;
+  const fallback: Fallback = hot.entries.length < 3 ? await loadFallback(request.signal) : null;
   return cachedPage(120, { hot, fallback, demo: state }, state ? undefined : upstream);
 }
 
@@ -340,9 +340,9 @@ function FeedActions() {
   );
 }
 
-function FallbackList({ fallback }: { fallback: NonNullable<Fallback> }) {
+function FallbackList({ fallback, hasEntries = false }: { fallback: NonNullable<Fallback>; hasEntries?: boolean }) {
   const to = fallback.kind === "featured" ? "/" : "/all";
-  const title = fallback.kind === "featured" ? "先看精选" : "先看最新动态";
+  const title = hasEntries ? "近期精选延伸阅读" : fallback.kind === "featured" ? "先看精选" : "先看最新动态";
   const more = fallback.kind === "featured" ? "更多精选" : "全部动态";
   return (
     <section aria-label={title} className="mt-6">
@@ -491,7 +491,7 @@ export default function HotPage() {
       ) : (
         <>
           <section data-hot-cards="" aria-label="热度榜首" className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-4">
-            <div className="grid grid-cols-1 lg:col-span-7 lg:row-span-2 xl:col-span-8">
+            <div className={runners.length === 0 ? "grid grid-cols-1 lg:col-span-12" : "grid grid-cols-1 lg:col-span-7 lg:row-span-2 xl:col-span-8"}>
               <Lead e={lead} hasMore={hot.entries.length > 1} />
             </div>
             {runners.map((e) => (
@@ -530,7 +530,7 @@ export default function HotPage() {
         </>
       )}
 
-      {fallback && <FallbackList fallback={fallback} />}
+      {fallback && <FallbackList fallback={fallback} hasEntries={hot.entries.length > 0} />}
 
       <details id="hot-method" className="disclosure group/method mt-8 scroll-mt-[calc(var(--bar-h)+16px)] text-[0.75rem] text-ink-4">
         <summary className="flex items-center gap-2 py-1 transition-colors hover:text-ink-2">

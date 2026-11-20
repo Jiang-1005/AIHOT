@@ -1,0 +1,329 @@
+/* 刊物 (journal): flagship editorial magazine & crisp paper intelligence workstation. */
+:root[data-style="journal"] {
+  --font-serif: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", Georgia, serif;
+  --bg: #f6f3ec;
+  --bg-sunk: #ede8dd;
+  --bg-muted: rgba(24, 92, 84, 0.06);
+  --well: #ede8dd;
+  --surface: #ffffff;
+  --surface-2: #ffffff;
+  --raised: #ffffff;
+  --sidebar: #f2eee5;
+  --daybar: #f6f3ec;
+  --ink: #1b1917;
+  --ink-2: #3b3732;
+  --ink-3: #635d55;
+  --ink-4: #635d55;
+  --line: #e2dcd0;
+  --line-strong: #c8bfb0;
+  --line-soft: #ede8df;
+  --accent: #185c54;
+  --accent-ink: #134a43;
+  --accent-soft: rgba(24, 92, 84, 0.08);
+  --accent-softer: rgba(24, 92, 84, 0.05);
+  --accent-contrast: #ffffff;
+  --warn: #9e4515;
+  --warn-soft: rgba(158, 69, 21, 0.09);
+  --note: var(--ink-3);
+  --hot: var(--accent);
+  --hot-soft: var(--accent-soft);
+  --amber: var(--accent);
+  --amber-ink: var(--accent-ink);
+  --amber-soft: var(--accent-soft);
+  --ok: var(--accent);
+  --ok-soft: var(--accent-soft);
+  --ok-ink: var(--accent-ink);
+  --rank-1: var(--accent);
+  --rank-2: var(--accent);
+  --rank-3: var(--accent);
+  --rank-rest: var(--ink-4);
+  --selection: rgba(24, 92, 84, 0.16);
+  --prose-ink: #24211e;
+  --shadow-card: 0 1px 2px rgba(27, 25, 23, 0.04);
+  --shadow-card-hover: 0 4px 16px rgba(27, 25, 23, 0.07);
+  --shadow-overlay: 0 16px 40px rgba(27, 25, 23, 0.14);
+  --shadow-soft: var(--shadow-overlay);
+  --shadow-pop: var(--shadow-overlay);
+  --radius-mark: 4px;
+  --radius-control: 8px;
+  --radius-tile: 12px;
+  --radius-card: 12px;
+  --radius-panel: 12px;
+  --radius-sheet: 16px;
+}
+
+:root[data-style="journal"][data-theme="dark"] {
+  --bg: #141311;
+  --bg-sunk: #1f1d19;
+  --bg-muted: rgba(95, 184, 170, 0.09);
+  --well: #1f1d19;
+  --surface: #1c1a17;
+  --surface-2: #22201c;
+  --raised: #22201c;
+  --sidebar: #171512;
+  --daybar: #141311;
+  --ink: #ece7de;
+  --ink-2: #cfc8bc;
+  --ink-3: #a49c90;
+  --ink-4: #a49c90;
+  --line: rgba(236, 231, 222, 0.10);
+  --line-strong: rgba(236, 231, 222, 0.18);
+  --line-soft: rgba(236, 231, 222, 0.06);
+  --accent: #5fb8aa;
+  --accent-ink: #79cabd;
+  --accent-soft: rgba(95, 184, 170, 0.13);
+  --accent-softer: rgba(95, 184, 170, 0.08);
+  --accent-contrast: #141311;
+  --warn: #e59d63;
+  --warn-soft: rgba(229, 157, 99, 0.14);
+  --note: var(--ink-3);
+  --hot: var(--accent);
+  --hot-soft: var(--accent-soft);
+  --amber: var(--accent);
+  --amber-ink: var(--accent-ink);
+  --amber-soft: var(--accent-soft);
+  --ok: var(--accent);
+  --ok-soft: var(--accent-soft);
+  --ok-ink: var(--accent-ink);
+  --rank-1: var(--accent);
+  --rank-2: var(--accent);
+  --rank-3: var(--accent);
+  --rank-rest: var(--ink-4);
+  --selection: rgba(95, 184, 170, 0.22);
+  --prose-ink: #e2dcd2;
+  --shadow-card: none;
+  --shadow-card-hover: 0 6px 20px rgba(0, 0, 0, 0.28);
+  --shadow-overlay: 0 18px 44px rgba(0, 0, 0, 0.55);
+  --shadow-soft: var(--shadow-overlay);
+  --shadow-pop: var(--shadow-overlay);
+}
+
+/* Editorial typography on major headlines & section titles. */
+:root[data-style="journal"] :is([data-fi-title], [data-page-title], [data-home-rail] h2, [data-hot-cards] h2) {
+  font-family: var(--font-serif);
+}
+
+:root[data-style="journal"] [data-page-title] {
+  letter-spacing: -0.015em;
+}
+
+@media (min-width: 700px) {
+  :root[data-style="journal"] [data-masthead] {
+    margin-bottom: 1.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
+    border-bottom: 3px double var(--ink);
+  }
+}
+
+/* Understated AI score chip on journal cards. */
+:root[data-style="journal"] [data-fi-score] > span {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-mark);
+  border: 1px solid var(--line);
+  background: var(--bg-sunk);
+  padding: 1px 7px;
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+/* Home front page: single-column cards without empty 80px left time gutter. */
+:root[data-style="journal"] [data-home-main] [data-slot] > div {
+  grid-template-columns: minmax(0, 1fr);
+  border-bottom: 0;
+  padding-block: 0;
+}
+
+:root[data-style="journal"] [data-home-main] [data-slot-time],
+:root[data-style="journal"] [data-home-main] [data-slot] > div > span[aria-hidden] {
+  display: none;
+}
+
+:root[data-style="journal"] [data-home-main] [data-fi-time] {
+  display: inline;
+}
+
+:root[data-style="journal"] [data-home-main] [data-fi-collected],
+:root[data-style="journal"] [data-home-main] [data-fi-tags],
+:root[data-style="journal"] [data-home-main] [data-fi-reason] {
+  display: none;
+}
+
+:root[data-style="journal"] [data-home-main] [data-feed-card] {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 1rem 1.125rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--duration-fast) var(--ease-enter), box-shadow var(--duration-fast) var(--ease-enter);
+}
+
+:root[data-style="journal"] [data-home-main] [data-feed-card]:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-card-hover);
+}
+
+:root[data-style="journal"] [data-home-main] [data-fi-title] {
+  margin-top: 0.5rem;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+:root[data-style="journal"] [data-home-main] [data-fi-summary] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  color: var(--ink-2);
+}
+
+/* Lead Hero story: elevated card with flush pine top accent & pull-quote editorial reason. */
+:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] {
+  overflow: hidden;
+  padding: 1.125rem 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card);
+}
+
+:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card]:hover {
+  border-color: var(--line-strong);
+  box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card-hover);
+}
+
+:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-title] {
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-summary] {
+  -webkit-line-clamp: 3;
+}
+
+:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-reason] {
+  display: block;
+  margin-top: 0.75rem;
+  border-top: 0;
+  border-left: 2px solid var(--accent);
+  padding: 0.125rem 0 0.125rem 0.75rem;
+  color: var(--ink-3);
+}
+
+@media (min-width: 700px) {
+  :root[data-style="journal"] [data-home-main] [data-feed-card] {
+    padding: 1.125rem 1.375rem;
+  }
+  :root[data-style="journal"] [data-home-main] [data-fi-title] {
+    font-size: 1.125rem;
+  }
+  :root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] {
+    padding: 1.375rem 1.625rem;
+  }
+  :root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-title] {
+    font-size: 1.4375rem;
+    line-height: 1.35;
+  }
+}
+
+/* Right intelligence rail & CommunityRail on journal. */
+:root[data-style="journal"] [data-community-rail] {
+  display: block;
+}
+
+@media (min-width: 1176px) {
+  :root[data-style="journal"] [data-home-grid]:has(> [data-home-rail]) {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 36px;
+  }
+  :root[data-style="journal"] [data-home-rail] {
+    margin-top: 0;
+  }
+}
+
+:root[data-style="journal"] [data-rail-card] {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+
+/* Catalog pages (/companies, /policies): crisp grouped paper sheets. */
+:root[data-style="journal"] [data-catalog-list] ol {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding-inline: 1rem;
+  box-shadow: var(--shadow-card);
+}
+
+:root[data-style="journal"] [data-catalog-list] [data-slot] > div {
+  border-bottom: 0;
+  padding-block: 0;
+}
+
+:root[data-style="journal"] [data-catalog-list] [data-slot] article {
+  border-top: 1px solid var(--line-soft);
+  padding-block: 1rem;
+}
+
+:root[data-style="journal"] [data-catalog-list] [data-slot]:first-child article {
+  border-top: 0;
+}
+
+@media (min-width: 700px) {
+  :root[data-style="journal"] [data-catalog-list] ol {
+    padding-inline: 1.375rem;
+  }
+  :root[data-style="journal"] [data-catalog-list] [data-slot] article {
+    padding-block: 1.25rem;
+  }
+}
+
+/* Community Voices: tactile paper cards instead of heavy dashed dividers. */
+:root[data-style="journal"] .voices-grid {
+  gap: 14px;
+}
+
+@media (min-width: 768px) {
+  :root[data-style="journal"] .voices-grid {
+    gap: 16px;
+  }
+}
+
+:root[data-style="journal"] .voice-card,
+:root[data-style="journal"] .voices-grid > .voice-card:first-child,
+:root[data-style="journal"] .voices-grid > .voice-card:nth-child(2) {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 1.125rem 1.25rem;
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--duration-fast) var(--ease-enter), box-shadow var(--duration-fast) var(--ease-enter);
+}
+
+:root[data-style="journal"] .voice-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-card-hover);
+}
+
+:root[data-style="journal"] .voice-card-title {
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+
+:root[data-style="journal"] .voices-rail {
+  box-shadow: var(--shadow-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="journal"] [data-home-main] [data-feed-card],
+  :root[data-style="journal"] .voice-card {
+    transition: none;
+  }
+}

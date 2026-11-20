@@ -16,6 +16,7 @@ import { Timeline } from "../features/feed/Timeline";
 import { HotTopics } from "../features/feed/HotTopics";
 import { Masthead, type MastheadIssue } from "../features/feed/Masthead";
 import { ActiveFilters, DesktopFacetBlock, FeedBar, SearchField } from "../features/feed/Filters";
+import { splitVoiceProvenance } from "../features/voices/clean-summary";
 
 export const handle: Screen = { tab: "featured", name: "精选" };
 export { pageHeaders as headers } from "../lib/api.server";
@@ -76,43 +77,67 @@ export default function Home() {
         <div data-home-main="">
           <Timeline initial={data} filters={filters} />
         </div>
-        {front && <HomeRail hot={railHot} />}
+        {front && <HomeRail hot={railHot} issue={issue} today={today} todayCount={data.dayCounts[today] ?? 0} />}
       </div>
     </div>
   );
 }
 
 /** The chosen looks' right rail at 1176px and up. Hidden in the classic design (styles/looks/layout.css). */
-function HomeRail({ hot }: { hot: RailHot[] }) {
-  if (hot.length === 0) return null;
+function HomeRail({ hot, issue, today, todayCount }: { hot: RailHot[]; issue: MastheadIssue | null; today: string; todayCount: number }) {
+  if (hot.length === 0 && !issue) return null;
   return (
-    <aside data-home-rail="" aria-label="热点榜前 5">
-      <h2 className="border-b border-line pb-2 text-[1rem] font-bold text-ink">热点榜</h2>
-      <ol>
-        {hot.map((e) => (
-          <li key={e.rank} className="border-b border-line-soft">
-            <Link viewTransition to={e.to} className="block py-3 text-[0.9375rem] leading-[1.6] text-ink transition-colors hover:text-accent">
-              <span className="flex gap-2"><span className="num shrink-0 font-semibold text-accent">{e.rank}.</span><span className="min-w-0"><WordTitle>{e.title}</WordTitle></span></span>
-              {e.sources && <span className="mt-0.5 block pl-5 text-[0.8125rem] text-ink-3">{e.sources}</span>}
-            </Link>
-          </li>
-        ))}
-      </ol>
-      <Link to="/hot" className="mt-3 inline-block text-[0.875rem] font-semibold text-accent hover:text-accent-ink">完整热点榜</Link>
+    <aside data-home-rail="" aria-label="情报侧栏" className="space-y-4">
+      {issue && (
+        <section data-rail-card="" aria-label="每日日报">
+          <div className="flex items-center justify-between text-[0.75rem] text-ink-4">
+            <span className="font-medium tracking-[0.06em] text-accent">每日日报</span>
+            <span className="num">第 {issue.issueNumber} 期</span>
+          </div>
+          <h2 className="mt-1.5 text-[1rem] font-bold leading-[1.45] text-ink">
+            {issue.key === today ? "今日精选速览" : `${issue.key} 刊期归档`}
+          </h2>
+          <p className="mt-1 text-[0.875rem] leading-[1.6] text-ink-3">
+            {todayCount > 0 ? `今日收录精选 ${todayCount} 条，汇总核心动向与一手解读。` : "汇聚近期教育 AI 重要进展与政策产业脉络。"}
+          </p>
+          <Link to={`/daily/${issue.key}`} className="mt-3 inline-flex items-center gap-1 text-[0.875rem] font-semibold text-accent hover:text-accent-ink">
+            阅读本期日报 →
+          </Link>
+        </section>
+      )}
+      {hot.length > 0 && (
+        <section data-rail-card="" aria-label="热点榜前 5">
+          <div className="flex items-baseline justify-between border-b border-line pb-2">
+            <h2 className="text-[1rem] font-bold text-ink">热点榜</h2>
+            <span className="text-[0.75rem] text-ink-4">近 48 小时</span>
+          </div>
+          <ol>
+            {hot.map((e) => (
+              <li key={e.rank} className="border-b border-line-soft last:border-b-0">
+                <Link viewTransition to={e.to} className="block py-2.5 text-[0.9375rem] leading-[1.55] text-ink transition-colors hover:text-accent">
+                  <span className="flex gap-2"><span className="num shrink-0 font-semibold text-accent">{e.rank}.</span><span className="min-w-0"><WordTitle>{e.title}</WordTitle></span></span>
+                  {e.sources && <span className="mt-0.5 block pl-5 text-[0.8125rem] text-ink-3">{e.sources}</span>}
+                </Link>
+              </li>
+            ))}
+          </ol>
+          <Link to="/hot" className="mt-2 inline-block text-[0.875rem] font-semibold text-accent hover:text-accent-ink">查看完整热点榜 →</Link>
+        </section>
+      )}
       <CommunityRail />
     </aside>
   );
 }
 
 /**
- * 社区在聊 under the hot list, for 明净／夜读 only. Fetched once that look is on, from this deployment's own
- * API, so the classic page never pays for the voices catalogue.
+ * 社区在聊 under the hot list, for 刊物 and 明净／夜读. Fetched once that look is on, from this deployment's
+ * own API, so the classic page never pays for the voices catalogue.
  */
 function CommunityRail() {
   const style = useSiteStyle();
   const [voices, setVoices] = useState<RailVoice[]>([]);
   useEffect(() => {
-    if (style !== "clean") return;
+    if (style !== "clean" && style !== "journal") return;
     const ctl = new AbortController();
     fetch("/api/site/voices", { headers: { accept: "application/json" }, signal: ctl.signal })
       .then((res) => (res.ok ? res.json() : null))
@@ -123,17 +148,23 @@ function CommunityRail() {
   return (
     <>
       {voices.length > 0 && (
-        <section data-community-rail="" className="mt-6 border-t border-line pt-4" aria-label="社区在聊">
-          <h2 className="text-[1rem] font-bold text-ink">社区在聊</h2>
+        <section data-rail-card="" data-community-rail="" aria-label="社区在聊">
+          <div className="flex items-baseline justify-between border-b border-line pb-2">
+            <h2 className="text-[1rem] font-bold text-ink">社区在聊</h2>
+            <span className="text-[0.75rem] text-ink-4">一线实测</span>
+          </div>
           <ul>
-            {voices.map((v) => (
-              <li key={v.id} className="border-b border-line-soft py-3">
-                <a href={v.url} target="_blank" rel="noopener noreferrer" className="text-[0.9375rem] leading-[1.6] text-ink hover:text-accent"><WordTitle>{v.title}</WordTitle></a>
-                <span className="mt-1 block text-[0.8125rem] text-ink-3">{v.platform} · {v.author}</span>
-              </li>
-            ))}
+            {voices.map((v) => {
+              const title = splitVoiceProvenance(v.title).summary;
+              return (
+                <li key={v.id} className="border-b border-line-soft py-2.5 last:border-b-0">
+                  <a href={v.url} target="_blank" rel="noopener noreferrer" className="line-clamp-2 text-[0.9375rem] leading-[1.55] text-ink hover:text-accent"><WordTitle>{title}</WordTitle></a>
+                  <span className="mt-1 block text-[0.8125rem] text-ink-3">{v.platform} · {v.author}</span>
+                </li>
+              );
+            })}
           </ul>
-          <Link to="/voices" className="mt-3 inline-block text-[0.875rem] font-semibold text-accent hover:text-accent-ink">更多社区热帖</Link>
+          <Link to="/voices" className="mt-2 inline-block text-[0.875rem] font-semibold text-accent hover:text-accent-ink">更多社区热帖 →</Link>
         </section>
       )}
     </>
@@ -146,8 +177,8 @@ const isRailVoice = (v: unknown): v is RailVoice =>
   "author" in v && typeof v.author === "string" && "platform" in v && typeof v.platform === "string" &&
   "url" in v && typeof v.url === "string" && /^https?:\/\//.test(v.url);
 
-/** The first three posts of a /api/site/voices answer; anything else reads as none. */
+/** The first four posts of a /api/site/voices answer; anything else reads as none. */
 function railVoices(body: unknown): RailVoice[] {
   const items = typeof body === "object" && body !== null && "items" in body && Array.isArray(body.items) ? body.items : [];
-  return items.filter(isRailVoice).slice(0, 3);
+  return items.filter(isRailVoice).slice(0, 4);
 }

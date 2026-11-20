@@ -118,7 +118,7 @@ export function slotClock(at: string | null | undefined): string | null {
   return beijingTime(at);
 }
 
-export function TimelineSlot({ at, publishedAt, children, fresh = false, delay = 0, dataKey }: { at: string; publishedAt?: string | null; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string }) {
+export function TimelineSlot({ at, publishedAt, children, fresh = false, delay = 0, dataKey, hideTimeRail = false }: { at: string; publishedAt?: string | null; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string; hideTimeRail?: boolean }) {
   // The rail leads with the publish date (rowDates); a list without one (policy, company updates) keeps its own time.
   const { day, clock } = publishedAt === undefined ? { day: null, clock: slotClock(at) } : rowDates(publishedAt, at);
   return (
@@ -128,13 +128,17 @@ export function TimelineSlot({ at, publishedAt, children, fresh = false, delay =
       style={fresh ? { animationDelay: `${delay}ms` } : undefined}
     >
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
-      <div className="grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-4 group-last/slot:border-b-0 lg:grid-cols-[56px_24px_minmax(0,1fr)] lg:border-b-0 lg:py-0">
-        <time data-slot-time="" dateTime={publishedAt ?? at} className="mono hidden text-ink-4 lg:block lg:pt-6 lg:text-[0.75rem] lg:leading-[1.5] lg:group-first/slot:pt-4">
-          {day && <span className="block whitespace-nowrap text-[0.75rem]">发布</span>}
-          {day && <span className="block whitespace-nowrap text-[0.75rem]">{day}</span>}
-          {clock ?? ""}
-        </time>
-        <span aria-hidden="true" className="hidden lg:block" />
+      <div className={`grid grid-cols-[minmax(0,1fr)] border-b border-line-soft py-4 group-last/slot:border-b-0 lg:border-b-0 lg:py-0 ${hideTimeRail ? "" : "lg:grid-cols-[56px_24px_minmax(0,1fr)]"}`}>
+        {!hideTimeRail && (
+          <>
+            <time data-slot-time="" dateTime={publishedAt ?? at} className="mono hidden text-ink-4 lg:block lg:pt-6 lg:text-[0.75rem] lg:leading-[1.5] lg:group-first/slot:pt-4">
+              {day && <span className="block whitespace-nowrap text-[0.75rem]">发布</span>}
+              {day && <span className="block whitespace-nowrap text-[0.75rem]">{day}</span>}
+              {clock ?? ""}
+            </time>
+            <span aria-hidden="true" className="hidden lg:block" />
+          </>
+        )}
         {children}
       </div>
     </li>

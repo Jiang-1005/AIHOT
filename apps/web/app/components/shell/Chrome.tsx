@@ -45,11 +45,11 @@ export function BackToTop() {
       type="button"
       aria-label="回到顶部"
       onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior() })}
-      className={`fixed bottom-[max(24px,env(safe-area-inset-bottom))] right-[max(24px,env(safe-area-inset-right))] z-30 hidden size-11 items-center justify-center rounded-full border border-line bg-surface text-ink-2 shadow-[var(--shadow-soft)] transition-[transform,opacity,color] duration-200 hover:text-ink lg:flex ${
+      className={`fixed bottom-[max(20px,env(safe-area-inset-bottom))] right-[max(20px,env(safe-area-inset-right))] z-30 hidden size-10 items-center justify-center rounded-full border border-line-strong bg-surface/95 text-ink-3 shadow-[var(--shadow-soft)] backdrop-blur-sm transition-[transform,opacity,color] duration-200 hover:text-ink lg:flex ${
         shown ? "translate-y-0 opacity-100 ease-[var(--ease-enter)]" : "pointer-events-none translate-y-2 opacity-0 ease-[var(--ease-exit)]"
       }`}
     >
-      <IconArrowUp size={18} />
+      <IconArrowUp size={16} />
     </button>
   );
 }

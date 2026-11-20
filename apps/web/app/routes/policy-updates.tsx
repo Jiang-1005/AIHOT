@@ -54,6 +54,16 @@ export function meta() {
 
 const PREVIEW = 20;
 
+type PolicyCategory = "all" | "national" | "local" | "draft";
+
+const NATIONAL_POLICY_PATTERN = /教育部|国务院|中央|中共|中办|国办|全国|国家|发改委|工信部|网信办|科技部|人社部|财政部|广电总局|市场监管总局|多部门|九部门|七部门|五部门/;
+
+function classifyPolicy(item: PolicyUpdateItem): Exclude<PolicyCategory, "all"> {
+  if (item.consultationDraft) return "draft";
+  if (NATIONAL_POLICY_PATTERN.test(`${item.source} ${item.title}`)) return "national";
+  return "local";
+}
+
 function PolicyCard({ item }: { item: PolicyUpdateItem }) {
   return (
     <CatalogFeedItem
@@ -70,12 +80,18 @@ function PolicyCard({ item }: { item: PolicyUpdateItem }) {
 
 export default function PolicyUpdatesPage() {
   const data = useLoaderData<typeof loader>();
+  const [kind, setKind] = useState<PolicyCategory>("all");
   const [open, setOpen] = useState(false);
-  const hidden = Math.max(0, data.items.length - PREVIEW);
-  const shown = open ? data.items : data.items.slice(0, PREVIEW);
+
+  const counts = { all: data.items.length, national: 0, local: 0, draft: 0 };
+  for (const item of data.items) counts[classifyPolicy(item)]++;
+
+  const filtered = kind === "all" ? data.items : data.items.filter((item) => classifyPolicy(item) === kind);
+  const hidden = Math.max(0, filtered.length - PREVIEW);
+  const shown = open ? filtered : filtered.slice(0, PREVIEW);
 
   return (
-    <div className="pb-8">
+    <div className="pb-20">
       <PhoneBar
         leading={
           <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-2 text-ink">
@@ -84,18 +100,51 @@ export default function PolicyUpdatesPage() {
         }
         title="国内政策"
       />
-      <header className="mb-6">
+      <header className="mb-5">
         <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">国内政策</h1>
         <p className="mt-2 text-[0.875rem] leading-[1.7] text-ink-3">
-          以近 90 天政策补录为准，已核对原文（或标明「未查到原文」），按文章自己的日期倒序。征求意见稿会标明「征求意见稿，未施行」。不走精选 7 天和往期 30 天新鲜度规则，也不会把老条目送进首页精选。
+          汇集近 90 天国家级与地方教育 AI 相关政策文件，按发布日期倒序；征求意见稿已标明「未施行」。
         </p>
         <p className="mt-1 text-[0.75rem] text-ink-4">
           {data.asOf} 北京时间 · 共 {data.items.length} 条
         </p>
       </header>
 
+      {data.items.length > 0 && (
+        <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="政策层级筛选">
+          {(
+            [
+              ["all", "全部"],
+              ["national", "国家级"],
+              ["local", "地方试点"],
+              ["draft", "征求意见稿"],
+            ] as const
+          ).map(([key, label]) => {
+            const on = kind === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={on}
+                onClick={() => { setKind(key); setOpen(false); }}
+                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.75rem] font-medium transition-colors duration-150 ${
+                  on
+                    ? "bg-accent text-accent-contrast"
+                    : "border border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
+                }`}
+              >
+                <span>{label}</span>
+                <span className={`num font-normal ${on ? "text-accent-contrast/80" : "text-ink-4"}`}>{counts[key]}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {data.items.length === 0 ? (
         <p className="text-[0.875rem] leading-7 text-ink-3">近三个月未查到</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-[0.875rem] leading-7 text-ink-3">当前分类暂无政策条目。</p>
       ) : (
         <>
           <CatalogDayList
@@ -107,7 +156,7 @@ export default function PolicyUpdatesPage() {
             render={(item) => <PolicyCard item={item} />}
           />
           {hidden > 0 ? (
-            <button type="button" className="mt-3 text-[0.875rem] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
+            <button type="button" className="mt-4 text-[0.875rem] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
               {open ? "收起" : `展开全部（还有 ${hidden} 条）`}
             </button>
           ) : null}

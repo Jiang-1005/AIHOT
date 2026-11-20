@@ -10,6 +10,7 @@ import { useSyncExternalStore } from "react";
  * which fits 外观：plus four characters (180px sidebar, 13px type); a longer label sets one.
  */
 export const SITE_STYLES = [
+  { id: "journal", label: "刊物" },
   { id: "classic", label: "原版" },
   { id: "paper", label: "暖纸" },
   { id: "press", label: "编辑部" },
@@ -22,7 +23,7 @@ export const shortLabel = (s: (typeof SITE_STYLES)[number]): string => ("short" 
 
 export type SiteStyleId = (typeof SITE_STYLES)[number]["id"];
 
-export const DEFAULT_STYLE: SiteStyleId = "classic";
+export const DEFAULT_STYLE: SiteStyleId = "journal";
 /** localStorage key. Not aihot-theme: that one holds light/dark. */
 export const STYLE_KEY = "aihot-style";
 /** ?style=<id> opens a look for a shared link and keeps it. */

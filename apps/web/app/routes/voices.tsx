@@ -28,6 +28,7 @@ import {
   voicesMatchCount,
   voicesSearchOnlyRevalidate,
 } from "../features/voices/catalog-state";
+import { splitVoiceProvenance } from "../features/voices/clean-summary";
 
 export const handle: Screen = { tab: "voices", name: "社区热帖" };
 export { pageHeaders as headers } from "../lib/api.server";
@@ -314,6 +315,9 @@ const PLATFORM_MARK: Record<string, { label: string; aria: string }> = {
   豆瓣: { label: "豆", aria: "豆瓣" },
   B站: { label: "B", aria: "B站" },
   微信: { label: "信", aria: "微信" },
+  Reddit: { label: "R", aria: "Reddit" },
+  "Hacker News": { label: "HN", aria: "Hacker News" },
+  HN: { label: "HN", aria: "Hacker News" },
 };
 
 function PlatformMark({ platform }: { platform: string }) {
@@ -606,7 +610,7 @@ export default function VoicesPage() {
   );
 
   return (
-    <div className="pb-8">
+    <div className="pb-20">
       <PhoneBar
         leading={
           <Link to="/" aria-label={`${SITE.name} 首页`} className="flex h-11 items-center pl-3 pr-2 text-ink">
@@ -623,7 +627,7 @@ export default function VoicesPage() {
       <header className="mb-3 lg:mb-4">
         <h1 data-page-title="" className="text-[1.75rem] font-semibold leading-[1.3] text-ink">社区热帖</h1>
         <p className="mt-1 hidden text-[0.875rem] leading-[1.7] text-ink-3 lg:block">
-          X、小红书和中文社区里的真实讨论。先看站内摘要，再决定要不要去原帖。
+          X、小红书和中文社区里的一手真实讨论。先看站内精华摘要，再决定是否跳转到原帖。
         </p>
         <p className="mt-1 text-[0.75rem] text-ink-4">
           共 <span className="num">{counts.total}</span> 条 · 近 7 天 <span className="num">{counts.last7}</span> 条 · 已核实原文 <span className="num">{counts.verified}</span> 条
@@ -637,6 +641,52 @@ export default function VoicesPage() {
         </aside>
 
         <div className="min-w-0">
+          <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-line-soft pb-3">
+            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="按平台筛选">
+              {(["all", "小红书", "X", "中文社区"] as const).map((k) => {
+                const count = k === "all" ? counts.total : (counts.platform[k] ?? 0);
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={platform === k}
+                    onClick={() => setPlatform(k)}
+                    className={`voice-chip ${platform === k ? "is-on" : ""}`}
+                  >
+                    <span>{k === "all" ? "全部平台" : k}</span>
+                    {count > 0 ? <span className="num opacity-75">{count}</span> : null}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-1.5 sm:ml-auto" role="group" aria-label="排序方式">
+              <button
+                type="button"
+                aria-pressed={sort === "latest"}
+                onClick={() => setSort("latest")}
+                className={`voice-chip ${sort === "latest" ? "is-on" : ""}`}
+              >
+                最新
+              </button>
+              <button
+                type="button"
+                aria-pressed={sort === "hot"}
+                onClick={() => setSort("hot")}
+                className={`voice-chip ${sort === "hot" ? "is-on" : ""}`}
+              >
+                近 7 天最热
+              </button>
+              <span className="inline-flex side:hidden">
+                <button
+                  type="button"
+                  onClick={() => setSheet(true)}
+                  className={`voice-chip ${scoped ? "is-on" : ""}`}
+                >
+                  筛选{scoped ? " · 已选" : ""}
+                </button>
+              </span>
+            </div>
+          </div>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="text-[0.875rem] text-ink-2"><span className="num font-semibold text-ink">{matchCount}</span> 条{scoped ? "符合筛选" : ""}</span>
             {scoped ? (
@@ -690,6 +740,17 @@ export default function VoicesPage() {
               ))}
             </div>
           )}
+          {filtered.length > shownCount && (
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={requestMore}
+                className="h-9 rounded-full border border-line-strong bg-surface px-5 text-[0.875rem] font-medium text-ink-2 transition-colors hover:border-ink-4 hover:text-ink"
+              >
+                加载更多（还有 <span className="num">{filtered.length - shownCount}</span> 条）
+              </button>
+            </div>
+          )}
           <div ref={sentinel} className="h-8" data-voices-sentinel="" />
           {data.catalog.generatedAt && (
             <p className="mt-4 text-[0.75rem] text-ink-4">目录更新于 {data.catalog.generatedAt} 北京时间</p>
@@ -698,7 +759,7 @@ export default function VoicesPage() {
       </div>
 
       {sheet && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 side:hidden">
           <button type="button" tabIndex={-1} className="absolute inset-0 bg-black/40" aria-label="关闭筛选" onClick={closeSheet} />
           <div ref={sheetPanel} role="dialog" aria-modal="true" aria-label="筛选" tabIndex={-1} className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-sheet bg-surface pb-8 shadow-[var(--shadow-overlay)] outline-none">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line-soft bg-surface px-4 py-3">
@@ -735,7 +796,7 @@ export default function VoicesPage() {
 
 const VoiceTile = memo(function VoiceTile({ item, today, onOpen }: { item: VoiceCard; today: string; onOpen: (id: string) => void }) {
   const title = cardTitle(item);
-  const summary = cardSummary(item);
+  const { summary } = splitVoiceProvenance(cardSummary(item));
   const unverified = isUnverified(item);
   const likes = likesOf(item);
   const replies = metricOf(item, "replies");
@@ -795,7 +856,7 @@ function VoiceReader({ item, index, total, today, onClose, onStep, hasPrev, hasN
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const unverified = isUnverified(item);
-  const summary = cardSummary(item);
+  const { summary, auditNote } = splitVoiceProvenance(cardSummary(item));
   const tags = item.tags;
   const host = (() => {
     try { return new URL(item.url).hostname.replace(/^www\./, ""); } catch { return ""; }
@@ -849,6 +910,12 @@ function VoiceReader({ item, index, total, today, onClose, onStep, hasPrev, hasN
               <div className="mb-1 text-[0.75rem] text-ink-4">站内摘要</div>
               <p className="text-[1rem] leading-[1.75] text-ink-2">{summary}</p>
             </div>
+          ) : null}
+          {auditNote ? (
+            <details className="mt-3 rounded-control border border-line-soft bg-bg px-3 py-2 text-[0.75rem] text-ink-4">
+              <summary className="cursor-pointer select-none font-medium text-ink-3 hover:text-ink">核验溯源记录</summary>
+              <p className="mt-1.5 leading-[1.65] text-ink-3">{auditNote}</p>
+            </details>
           ) : null}
           {facts.length ? (
             <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[0.875rem]">

@@ -27,8 +27,10 @@ function SideLink({ item, dot, active }: { item: NavItem; dot: boolean; active: 
     <IntentLink
       to={item.to}
       aria-current={active ? "page" : undefined}
-      className={`flex h-10 items-center gap-3 rounded-control px-3 text-[0.875rem] transition-colors duration-150 touch:h-11 ${
-        active ? "bg-accent-soft font-semibold text-ink" : "font-medium text-ink-3 hover:bg-bg-sunk hover:text-ink"
+      className={`relative flex h-10 items-center gap-3 rounded-control px-3 text-[0.875rem] transition-colors duration-150 touch:h-11 ${
+        active
+          ? "bg-accent-soft font-semibold text-accent-ink ring-1 ring-inset ring-accent/15 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r-full before:bg-accent"
+          : "font-medium text-ink-3 hover:bg-bg-sunk hover:text-ink"
       }`}
     >
       <span className={`flex w-[22px] shrink-0 justify-center ${active ? "text-accent" : ""}`}>
@@ -90,17 +92,17 @@ export function Sidebar({ changelogVersion }: { changelogVersion: string | null 
   return (
     <>
       <Rail dot={dot} />
-      <aside ref={columnRef} className={`scrollbar-thin sticky top-0 hidden h-dvh w-[180px] shrink-0 flex-col border-r border-line bg-sidebar px-3 pb-[max(16px,env(safe-area-inset-bottom))] pt-6 wide:flex short:overflow-y-auto ${columnOverscroll}`}>
+      <aside ref={columnRef} className={`scrollbar-thin sticky top-0 hidden h-dvh w-[192px] shrink-0 flex-col border-r border-line bg-sidebar px-3 pb-[max(16px,env(safe-area-inset-bottom))] pt-6 wide:flex short:overflow-y-auto ${columnOverscroll}`}>
         <Link to="/" className="mb-4 flex h-[50px] shrink-0 items-center px-1 text-ink" aria-label={`${SITE.name} 首页`}>
           <Wordmark size={26} className="shrink-0 whitespace-nowrap" />
         </Link>
         <nav ref={navRef} className={`scrollbar-thin -mx-1 flex-1 overflow-y-auto px-1 short:flex-none short:overflow-visible ${navOverscroll}`} aria-label="主导航">
-          {sidebar().map((section) => {
+          {sidebar().map((section, idx) => {
             // Only the most specific entry of a section is lit, so a detail page does not light the list above it too.
             const lit = activeSidebarItem(section.items, pathname);
             return (
               <div key={section.title}>
-                <div className="px-3 pb-1 pt-4 text-[0.75rem] text-ink-4">{section.title}</div>
+                <div className={`px-3 pb-1.5 text-[0.75rem] font-medium tracking-[0.06em] text-ink-4 ${idx === 0 ? "pt-1" : "pt-4"}`}>{section.title}</div>
                 <div className="flex flex-col gap-1">
                   {section.items.map((item) => (
                     <SideLink key={item.to} item={item} dot={dot} active={item.to === lit?.to} />

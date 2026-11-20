@@ -82,28 +82,86 @@ export interface PolicyUpdateItem {
   publishedAt?: string;
 }
 
+export interface PolicySourceRow {
+  id: string;
+  title: string;
+  summary: string | null;
+  url: string;
+  published_at: Date | null;
+  publication_time: string | null;
+  source_name: string;
+  tags: string[] | null;
+  verify: string | null;
+  body_status: string | null;
+  visibility: string | null;
+  country: string | null;
+  section: string | null;
+  type: string | null;
+  brief: string | null;
+  topic?: string | null;
+}
+
+export type PolicyCandidate = PolicyUpdateItem & { eventKey: string; fromBackfill: boolean };
+
+/** 评估一条入库报道是否符合「国内政策」栏目的收录口径：补录或已带政策标签/主题的国内报道。 */
+export function matchesDomesticPolicyRow(
+  row: PolicySourceRow,
+  window: { since: string; today: string },
+): PolicyCandidate | null {
+  if (row.visibility && row.visibility !== "public") return null;
+  const fromBackfill = row.section === "policy" || row.brief === "policy-backfill";
+  const day = articleDay(row.publication_time, row.published_at);
+  if (!day || day < window.since || day > window.today) return null;
+  if (isNationalAprilAiEduPlan(row.title)) return null;
+  const check = originChecked(row.verify, row.body_status, row.summary, row.title);
+  if (!check.ok) return null;
+  const matchedPolicy = fromBackfill || isPolicy({
+    tags: row.tags ?? [],
+    topic: row.topic ?? null,
+    section: row.section,
+    type: row.type,
+  });
+  if (!matchedPolicy) return null;
+  if (!isDomestic({ source_name: row.source_name, title: row.title, country: row.country })) return null;
+  const title = scrubPublic(row.title);
+  const source = scrubPublic(publicSourceName(row.source_name));
+  if (!title || /心田|花啦啦|xintian/i.test(title) || /心田|花啦啦|xintian/i.test(source)) return null;
+  return {
+    id: row.id,
+    title,
+    url: row.url,
+    date: day,
+    source,
+    unverified: check.unverified,
+    consultationDraft: isConsultationDraft(title, `${row.summary ?? ""} ${row.type ?? ""}`),
+    summary: publicSummary(row.summary, title),
+    publishedAt: publicPublishedAt(row.published_at),
+    eventKey: policyEventKey(title, row.url),
+    fromBackfill,
+  };
+}
+
+/** 同一政策事件只留一条：补录优先，已核对原文优先，日期较新优先。 */
+export function dedupePolicyItems(candidates: readonly PolicyCandidate[]): PolicyUpdateItem[] {
+  const byEvent = new Map<string, PolicyCandidate>();
+  const rank = (x: PolicyCandidate) => (x.fromBackfill ? 2 : 0) + (x.unverified ? 0 : 1);
+  for (const item of candidates) {
+    const prev = byEvent.get(item.eventKey);
+    if (!prev || rank(item) > rank(prev) || (rank(item) === rank(prev) && item.date > prev.date)) {
+      byEvent.set(item.eventKey, item);
+    }
+  }
+  return [...byEvent.values()]
+    .map(({ eventKey: _k, fromBackfill: _f, ...item }) => item)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+}
+
 export async function loadPolicyUpdatesPage(now = new Date()) {
   const since = windowStartDay(now, COMPANY_LOOKBACK_DAYS);
   const today = beijingDate(now);
   const tagMap = loadContentTagMap();
 
-  const rows = await sql<{
-    id: string;
-    title: string;
-    summary: string | null;
-    url: string;
-    published_at: Date | null;
-    publication_time: string | null;
-    source_name: string;
-    tags: string[] | null;
-    verify: string | null;
-    body_status: string | null;
-    visibility: string | null;
-    country: string | null;
-    section: string | null;
-    type: string | null;
-    brief: string | null;
-  }[]>`
+  const rows = await sql<PolicySourceRow[]>`
     SELECT a.id,
            coalesce(p.title, a.title) AS title,
            coalesce(p.summary, a.excerpt) AS summary,
@@ -130,51 +188,18 @@ export async function loadPolicyUpdatesPage(now = new Date()) {
       )
   `;
 
-  const candidates: Array<PolicyUpdateItem & { eventKey: string; fromBackfill: boolean }> = [];
+  const candidates: PolicyCandidate[] = [];
   const seenUrl = new Set<string>();
   for (const row of rows) {
-    if (row.visibility && row.visibility !== "public") continue;
-    const fromBackfill = row.section === "policy" || row.brief === "policy-backfill";
-    const day = articleDay(row.publication_time, row.published_at);
-    if (!day || day < since || day > today) continue;
-    if (isNationalAprilAiEduPlan(row.title)) continue;
-    const check = originChecked(row.verify, row.body_status, row.summary, row.title);
-    if (!check.ok) continue;
-    // 栏目以 policy-backfill 为准；站内/雷达同题帖只在没有补录版本时才考虑（后面按事件去重，优先已核对的补录）。
-    if (!fromBackfill) continue;
-    if (!isDomestic({ source_name: row.source_name, title: row.title, country: row.country })) continue;
-    const title = scrubPublic(row.title);
-    const source = scrubPublic(publicSourceName(row.source_name));
-    if (!title || /心田|花啦啦|xintian/i.test(title) || /心田|花啦啦|xintian/i.test(source)) continue;
     if (seenUrl.has(row.id) || seenUrl.has(row.url)) continue;
+    const facet = tagMap[row.id] ?? tagMap[row.url];
+    const candidate = matchesDomesticPolicyRow({ ...row, topic: facet?.topic ?? null }, { since, today });
+    if (!candidate) continue;
     seenUrl.add(row.id);
     seenUrl.add(row.url);
-    candidates.push({
-      id: row.id,
-      title,
-      url: row.url,
-      date: day,
-      source,
-      unverified: check.unverified,
-      consultationDraft: isConsultationDraft(title, `${row.summary ?? ""} ${row.type ?? ""}`),
-      summary: publicSummary(row.summary, title),
-      publishedAt: publicPublishedAt(row.published_at),
-      eventKey: policyEventKey(title, row.url),
-      fromBackfill,
-    });
+    candidates.push(candidate);
   }
-  // 同一政策事件只留一条：补录优先，已核对原文优先，日期较新优先。
-  const byEvent = new Map<string, (typeof candidates)[number]>();
-  const rank = (x: (typeof candidates)[number]) => (x.fromBackfill ? 2 : 0) + (x.unverified ? 0 : 1);
-  for (const item of candidates) {
-    const prev = byEvent.get(item.eventKey);
-    if (!prev || rank(item) > rank(prev) || (rank(item) === rank(prev) && item.date > prev.date)) {
-      byEvent.set(item.eventKey, item);
-    }
-  }
-  const items: PolicyUpdateItem[] = [...byEvent.values()]
-    .map(({ eventKey: _k, fromBackfill: _f, ...item }) => item)
-    .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  const items = dedupePolicyItems(candidates);
 
   return {
     asOf: today,

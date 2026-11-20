@@ -108,21 +108,21 @@ SEED_QUERIES = [
 
 
 DAILY_QUERIES = [
-    'site:zhihu.com (AI家教 OR AI作文批改 OR 豆包爱学 OR 作业帮AI OR 学而思学习机) after:{after}',
-    'site:zhihu.com (教师用AI OR 孩子用ChatGPT OR 孩子用豆包) after:{after}',
-    'site:zhihu.com (作业帮学习机 OR 小猿学习机 OR 讯飞学习机 体验) after:{after}',
-    'site:zhihu.com (AI绘本 OR 口语陪练 OR 豆神语文) after:{after}',
-    'site:weibo.com (AI家教 OR 豆包爱学 OR AI作文) after:{after}',
-    'site:weibo.com (学而思学习机 OR 作业帮学习机 OR 孩子用AI) after:{after}',
-    'site:weibo.com (教师 AI 备课 OR 家长 AI批改作文) after:{after}',
-    'site:bilibili.com (豆包爱学 OR AI学习机 OR AI作文) after:{after}',
-    'site:bilibili.com (作业帮学习机 OR 学而思学习机 体验) after:{after}',
-    'site:bilibili.com (家长 AI辅导 OR 教师 AI 课堂) after:{after}',
-    'site:okjike.com (AI教育 OR AI家教 OR 学习机) after:{after}',
-    'site:okjike.com (ChatGPT 作业 OR 教师 AI) after:{after}',
-    'site:douban.com (AI教育 OR AI作文 OR 学习机) after:{after}',
-    'site:douban.com (家长 AI 作业 OR ChatGPT 作业) after:{after}',
-    'site:zhihu.com (儿童用AI 担忧 OR AI玩具) after:{after}',
+    'site:zhihu.com ("AI家教" OR "AI作文批改" OR "豆包爱学" OR "小猿学练机" OR "学而思学习机") (体验 OR 实测 OR 测评) after:{after}',
+    'site:zhihu.com ("AI学习机横评" OR "作业帮学习机" OR "讯飞学习机") (对比 OR 优缺点 OR 真实体验) after:{after}',
+    'site:zhihu.com (教师用AI OR AI备课 OR 老师用DeepSeek) (课堂 OR 批改 OR 教学) after:{after}',
+    'site:zhihu.com (孩子用AI OR 孩子用ChatGPT OR 孩子用豆包) (作业 OR 依赖 OR 引导) after:{after}',
+    'site:zhihu.com ("AI口语陪练" OR "AI绘本" OR "AI学伴") (家长 OR 孩子 OR 体验) after:{after}',
+    'site:weibo.com ("AI家教" OR "豆包爱学" OR "AI作文批改") (家长 OR 实测 OR 体验) after:{after}',
+    'site:weibo.com ("学而思学习机" OR "作业帮学习机" OR "小猿学习机" OR "讯飞学习机") after:{after}',
+    'site:weibo.com (教师 AI 备课 OR 老师 AI批改 OR 家长 AI辅导) after:{after}',
+    'site:bilibili.com ("AI学习机横评" OR "学而思学习机" OR "讯飞学习机" OR "作业帮学习机") 实测 after:{after}',
+    'site:bilibili.com ("豆包爱学" OR "AI作文批改" OR "AI口语陪练") 真实体验 after:{after}',
+    'site:bilibili.com (教师 AI 备课 OR 老师用AI OR 家长 AI辅导) after:{after}',
+    'site:okjike.com (AI教育 OR AI家教 OR AI学习机 OR 豆包爱学) after:{after}',
+    'site:okjike.com (教师 AI OR 学生用AI OR AI学伴) after:{after}',
+    'site:douban.com (AI教育 OR AI作文 OR 学习机 OR 口语陪练) (家长 OR 孩子) after:{after}',
+    'site:douban.com (孩子用AI OR AI辅导作业 OR 家长用DeepSeek) after:{after}',
 ]
 
 TOPIC_OK = re.compile(

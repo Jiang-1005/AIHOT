@@ -59,10 +59,10 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
           </span>
         )}
         <span className="ml-auto flex shrink-0 items-center gap-1 pl-2 lg:gap-2">
-          <span className="hidden lg:inline-flex">
+          <span data-fi-score="" className="hidden lg:inline-flex">
             <ScoreLabel score={item.score} />
           </span>
-          <span className="lg:hidden">
+          <span data-fi-score="" className="lg:hidden">
             <ScoreLabel score={item.score} compact />
           </span>
           <span className="-my-[12px] -mr-3 inline-flex lg:-my-1 lg:mr-0">

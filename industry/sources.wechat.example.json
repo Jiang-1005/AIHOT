@@ -1,0 +1,181 @@
+{
+  "$comment": "国内教培与 AI 教育核心微信公众号信源模板（16 个）。支持两种接入方式：1）配置极致了 DAJIALA_API_KEY 后，在后台 /admin/sources/new 按 mp_account 填入 nickname/wxid/ghid；2）若自建了 WeWe-RSS / RSSHub，将 kind 改为 rss 并把 feedUrl 设为内网订阅地址（配合 .env 的 PRIVATE_FEED_HOSTS）。",
+  "sources": [
+    {
+      "id": "mp-duozhi",
+      "name": "多知",
+      "kind": "mp_account",
+      "config": { "nickname": "多知网" },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": ["媒体", "公众号"]
+    },
+    {
+      "id": "mp-jiemodui",
+      "name": "芥末堆看教育",
+      "kind": "mp_account",
+      "config": { "nickname": "芥末堆看教育" },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": ["媒体", "公众号"]
+    },
+    {
+      "id": "mp-jingmedia",
+      "name": "鲸媒体",
+      "kind": "mp_account",
+      "config": { "nickname": "鲸媒体" },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "公众号"]
+    },
+    {
+      "id": "mp-lanjinger-edu",
+      "name": "蓝鲸教育",
+      "kind": "mp_account",
+      "config": { "nickname": "蓝鲸教育" },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "公众号"]
+    },
+    {
+      "id": "mp-heibandc",
+      "name": "黑板洞察",
+      "kind": "mp_account",
+      "config": { "nickname": "黑板洞察" },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "公众号"]
+    },
+    {
+      "id": "mp-weiyanjiaoyu",
+      "name": "微言教育（教育部政务）",
+      "kind": "mp_account",
+      "config": { "nickname": "微言教育" },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": ["官方", "政策", "公众号"]
+    },
+    {
+      "id": "mp-qbitai",
+      "name": "量子位（公众号）",
+      "kind": "mp_account",
+      "config": { "nickname": "量子位" },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "公众号"]
+    },
+    {
+      "id": "mp-zhidx",
+      "name": "智东西",
+      "kind": "mp_account",
+      "config": { "nickname": "智东西" },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "公众号"]
+    },
+    {
+      "id": "mp-latepost",
+      "name": "晚点 LatePost",
+      "kind": "mp_account",
+      "config": { "nickname": "晚点LatePost" },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["媒体", "公众号"]
+    },
+    {
+      "id": "mp-tal",
+      "name": "好未来集团",
+      "kind": "mp_account",
+      "config": { "nickname": "好未来" },
+      "tier": "T1",
+      "owner_entity_id": "xueersi",
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "公众号"]
+    },
+    {
+      "id": "mp-zuoyebang",
+      "name": "作业帮",
+      "kind": "mp_account",
+      "config": { "nickname": "作业帮" },
+      "tier": "T1",
+      "owner_entity_id": "zuoyebang",
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "公众号"]
+    },
+    {
+      "id": "mp-yuanfudao",
+      "name": "猿辅导",
+      "kind": "mp_account",
+      "config": { "nickname": "猿辅导" },
+      "tier": "T1",
+      "owner_entity_id": "yuanfudao",
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "公众号"]
+    },
+    {
+      "id": "mp-youdao",
+      "name": "网易有道",
+      "kind": "mp_account",
+      "config": { "nickname": "网易有道" },
+      "tier": "T1",
+      "owner_entity_id": "youdao",
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "公众号"]
+    },
+    {
+      "id": "mp-iflytek-edu",
+      "name": "科大讯飞AI学习机",
+      "kind": "mp_account",
+      "config": { "nickname": "科大讯飞AI学习机" },
+      "tier": "T1",
+      "owner_entity_id": "iflytek",
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "公众号"]
+    },
+    {
+      "id": "mp-doubao-aixue",
+      "name": "豆包爱学",
+      "kind": "mp_account",
+      "config": { "nickname": "豆包爱学" },
+      "tier": "T1",
+      "owner_entity_id": "doubao",
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "公众号"]
+    },
+    {
+      "id": "mp-jiaojao",
+      "name": "叫叫",
+      "kind": "mp_account",
+      "config": { "nickname": "叫叫" },
+      "tier": "T1_5",
+      "owner_entity_id": "jiaojao",
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "公众号"]
+    }
+  ]
+}

@@ -3,9 +3,11 @@ import { test } from "node:test";
 import {
   COMPANY_ROSTER,
   COMPANY_EVENT_TITLE_SIMILARITY,
+  companiesForItem,
   dedupeCompanyEvents,
   flattenCompanyTimeline,
   isCommunityVoiceItem,
+  isStockTickerNoise,
   mapCompanyLabel,
   normalizeCompanyUrl,
   scrubPublic,
@@ -124,4 +126,78 @@ test("银河智学 and 小鹿爱学 map to one roster entry with the combined di
   assert.equal(mapCompanyLabel("银河智学")?.name, "银河智学（小鹿爱学）");
   const names = COMPANY_ROSTER.filter((c) => /小鹿爱学|银河智学/.test(`${c.name} ${c.aliases.join(" ")}`)).map((c) => c.id);
   assert.deepEqual(names, ["xiaolu"]);
+});
+
+test("isStockTickerNoise filters automated stock-movement boilerplate while keeping real earnings and product news", () => {
+  assert.equal(
+    isStockTickerNoise({
+      source: "新浪证券-红岸工作室",
+      title: "ST豆神：11月18日主力资金净流入3210万元",
+      summary: "主力资金流向与换手率播报。",
+    }),
+    true,
+  );
+  assert.equal(
+    isStockTickerNoise({
+      source: "证券之星",
+      title: "豆神教育跌5.01%，成交额1.45亿元",
+    }),
+    true,
+  );
+  assert.equal(
+    isStockTickerNoise({
+      source: "有道",
+      title: "网易有道公布2026年第三季度业绩：净收入同比降12.3%，经营利润同比增19.2%",
+    }),
+    false,
+  );
+  assert.equal(
+    isStockTickerNoise({
+      source: "东方财富财富号",
+      title: "科大讯飞参与起草的《AI学习机精准学系统技术要求》团体标准发布",
+    }),
+    false,
+  );
+});
+
+test("companiesForItem rejects false-positive ambiguous auto-tags while keeping real matches", () => {
+  assert.deepEqual(
+    companiesForItem({
+      tags: ["豆包爱学"],
+      companies: ["豆包爱学"],
+      rawCompany: null,
+      title: "夸克升级拍题答疑，接入通义千问学习大模型",
+      summary: "阿里夸克公布新学习功能。",
+    }),
+    [],
+  );
+  assert.deepEqual(
+    companiesForItem({
+      tags: ["讯飞"],
+      companies: ["讯飞"],
+      rawCompany: null,
+      title: "北语与中国移动联合发布“汉桥”国际中文教育大模型",
+      summary: "双方聚焦海外中文学习场景。",
+    }),
+    [],
+  );
+  assert.deepEqual(
+    companiesForItem({
+      tags: [],
+      companies: ["讯飞"],
+      rawCompany: null,
+      title: "河北廊坊七中将人工智能教育融入日常课表",
+      summary: "选用科大讯飞的人工智能教学平台。",
+    }).map((c) => c.id),
+    ["iflytek"],
+  );
+  assert.deepEqual(
+    companiesForItem({
+      tags: [],
+      companies: [],
+      rawCompany: "豆包爱学",
+      title: "字节跳动教育硬件线调整说明",
+    }).map((c) => c.id),
+    ["doubao"],
+  );
 });

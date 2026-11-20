@@ -21,16 +21,26 @@ export interface NavItem {
 
 const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
   {
-    title: "内容",
+    title: "每日必看",
     items: [
       { to: "/", label: "精选", icon: IconBolt, end: true },
-      { to: "/archive", label: "往期", icon: IconCalendar },
+      { to: "/hot", label: "热点榜", icon: IconFlame },
+      { to: "/daily", label: withSubject("日报"), icon: IconNewspaper, covers: ["/weekly", "/monthly"] },
+    ],
+  },
+  {
+    title: "深度雷达",
+    items: [
       { to: "/voices", label: "社区热帖", icon: IconMessage },
       { to: "/companies", label: "国内公司动态", icon: IconBuilding },
       { to: "/policies", label: "国内政策", icon: IconLandmark },
+    ],
+  },
+  {
+    title: "资料归档",
+    items: [
+      { to: "/archive", label: "往期", icon: IconCalendar },
       { to: "/all", label: subjectAfter("全部", "动态"), icon: IconLayers },
-      { to: "/hot", label: "热点榜", icon: IconFlame },
-      { to: "/daily", label: withSubject("日报"), icon: IconNewspaper, covers: ["/weekly", "/monthly"] },
       { to: "/topics", label: "主题", icon: IconGrid },
       { to: "/starred", label: "收藏", icon: IconBookmark },
     ],
@@ -69,9 +79,11 @@ export function navUp(entry: keyof typeof UP): { to: string; name: string; back:
  * that is already there adds to it.
  */
 export function sidebar(): Array<{ title: string; items: NavItem[] }> {
-  const [content, ...rest] = SECTIONS;
+  const rest = [...SECTIONS];
   const more = rest.pop()!;
-  const sections = [content!, ...rest].map((s) => ({ ...s, items: s.items.filter((i) => inNav(i.to)) }));
+  const sections = rest
+    .map((s) => ({ ...s, items: s.items.filter((i) => inNav(i.to)) }))
+    .filter((s) => s.items.length > 0);
   for (const m of webModules()) {
     if (!m.sidebar) continue;
     const section = sections.find((s) => s.title === m.sidebar!.section);

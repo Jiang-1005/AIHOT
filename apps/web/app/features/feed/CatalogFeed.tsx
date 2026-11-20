@@ -97,20 +97,23 @@ export function CatalogDayList<T>({
 }) {
   const days = byBeijingDay(items, (item) => dayOf(item));
   return (
-    <>
-      {days.map(({ day, entries }) => (
-        <section key={day} className="mt-5 first:mt-0 lg:mt-6">
-          <DayHeader day={day} today={today} count={entries.length} />
-          <ol className="lg:pt-1">
-            {entries.map((item) => (
-              <TimelineSlot key={keyOf(item)} at={atOf(item)}>
-                {render(item)}
-              </TimelineSlot>
-            ))}
-          </ol>
-        </section>
-      ))}
-    </>
+    <div data-catalog-list="">
+      {days.map(({ day, entries }) => {
+        const hasClock = entries.some((item) => Boolean(slotClock(atOf(item))));
+        return (
+          <section key={day} className="mt-5 first:mt-0 lg:mt-6">
+            <DayHeader day={day} today={today} count={entries.length} />
+            <ol className="lg:pt-1">
+              {entries.map((item) => (
+                <TimelineSlot key={keyOf(item)} at={atOf(item)} hideTimeRail={!hasClock}>
+                  {render(item)}
+                </TimelineSlot>
+              ))}
+            </ol>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 

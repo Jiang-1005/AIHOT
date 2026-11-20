@@ -1,5 +1,5 @@
 {
-  "$comment": "首次启动导入的 AI+教育信源。都经过抓取验证，能返回 RSS/Atom 条目。已存在的不会被覆盖。中国多家媒体此前未列入：芥末堆现已确认官方 RSS（https://www.jiemodui.com/rss.xml）。教育部官网、中国教育报、中国教育在线、中国教育和科研计算机网、多知、36氪教育频道当时或现在仍无可用教育向 RSS，未列入。知新（https://zhixin.qianxuyan.com/feed.xml）为教育 AI 精选站的公开 RSS，仅供内部阅读参考。X 账号需要 SocialData，本次未配置。",
+  "$comment": "AI+教育核心信源库（57 个：原 23 个核心源 + 34 个实测验证可用免费扩充源，覆盖 AI 实验室、海外标杆媒体、顶级教育 AI Substack 专栏、arXiv/高校研究、教育部官网政策、国内科技垂直过滤源、Hacker News & Product Hunt）。注：Reddit RSS 与部分反爬站点在当前网络返回 429/403 未强行收录；国内微信公众号请见 industry/sources.wechat.example.json；X/小红书走独立社区采集团队流程。",
   "sources": [
     {
       "id": "rss-khan-academy",
@@ -7,17 +7,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://blog.khanacademy.org/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T1",
       "owner_entity_id": "khan",
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "官方"
-      ],
+      "tags": ["官方"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -27,17 +23,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://blog.duolingo.com/rss/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T1",
       "owner_entity_id": "duolingo",
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "官方"
-      ],
+      "tags": ["官方"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -47,17 +39,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://blog.google/outreach-initiatives/education/rss/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T1",
       "owner_entity_id": "google",
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "官方"
-      ],
+      "tags": ["官方"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -67,17 +55,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://educationblog.microsoft.com/feed",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T1",
       "owner_entity_id": "microsoft",
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "官方"
-      ],
+      "tags": ["官方"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -87,17 +71,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://openai.com/news/rss.xml",
-        "_aihot": {
-          "initialBackfillLimit": 4
-        }
+        "_aihot": { "initialBackfillLimit": 4 }
       },
       "tier": "T1",
       "owner_entity_id": "openai",
       "participation_mode": "editorial",
       "interval_minutes": 240,
-      "tags": [
-        "官方"
-      ],
+      "tags": ["官方"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -107,17 +87,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.edsurge.com/articles_rss",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 120,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -127,17 +103,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.the74million.org/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -147,17 +119,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://hechingerreport.org/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -167,17 +135,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.eschoolnews.com/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -187,17 +151,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.classcentral.com/report/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 360,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -207,17 +167,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.gettingsmart.com/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 360,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -227,18 +183,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://news.mit.edu/topic/miteducation-rss.xml",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 360,
-      "tags": [
-        "媒体",
-        "研究"
-      ],
+      "tags": ["媒体", "研究"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -248,17 +199,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.chinanews.com.cn/rss/edu.xml",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 120,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -268,18 +215,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://oecdedutoday.com/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 360,
-      "tags": [
-        "媒体",
-        "研究"
-      ],
+      "tags": ["媒体", "研究"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -289,17 +231,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://ww2.kqed.org/mindshift/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 360,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -309,18 +247,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.cultofpedagogy.com/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 360,
-      "tags": [
-        "媒体",
-        "实践"
-      ],
+      "tags": ["媒体", "实践"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -330,17 +263,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://zhixin.qianxuyan.com/feed.xml",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -350,17 +279,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.jiemodui.com/rss.xml",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -370,17 +295,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.k12dive.com/feeds/news/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -390,17 +311,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.highereddive.com/feeds/news/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 360,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -410,18 +327,13 @@
       "kind": "rss",
       "config": {
         "feedUrl": "https://www.educationnext.org/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 5
-        }
+        "_aihot": { "initialBackfillLimit": 5 }
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 360,
-      "tags": [
-        "媒体",
-        "研究"
-      ],
+      "tags": ["媒体", "研究"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -448,9 +360,7 @@
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
@@ -476,9 +386,646 @@
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "媒体"
-      ],
+      "tags": ["媒体"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-anthropic-news",
+      "name": "Anthropic News",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["education", "school", "student", "teacher", "classroom", "learning", "tutor", "university", "college", "campus", "curriculum", "literacy", "k-12", "study", "academic", "research"]
+        },
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["官方", "AI实验室"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-deepmind",
+      "name": "Google DeepMind Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://deepmind.google/blog/rss.xml",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["education", "learnlm", "school", "student", "teacher", "classroom", "learning", "tutor", "math", "science", "gemini", "youth", "child"]
+        },
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T1",
+      "owner_entity_id": "google",
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["官方", "AI实验室"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-huggingface",
+      "name": "Hugging Face Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://huggingface.co/blog/feed.xml",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["education", "student", "teacher", "learning", "tutor", "curriculum", "k-12", "school", "course", "literacy", "classroom", "exam"]
+        },
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "AI实验室"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-chalkbeat",
+      "name": "Chalkbeat",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.chalkbeat.org/arc/outboundfeeds/rss/",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["ai", "artificial intelligence", "chatbot", "chatgpt", "edtech", "tech", "tutor", "digital", "screen", "device", "literacy", "math", "reading"]
+        },
+        "_aihot": { "initialBackfillLimit": 8 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": ["媒体", "K12"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-edweek",
+      "name": "Education Week",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.edweek.org/index.rss",
+        "_aihot": { "initialBackfillLimit": 8 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": ["媒体", "K12"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-edtech-mag",
+      "name": "EdTech Magazine K-12",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://edtechmagazine.com/k12/rss.xml",
+        "_aihot": { "initialBackfillLimit": 6 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "K12"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-the-journal",
+      "name": "THE Journal",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://thejournal.com/rss-feeds/all-articles.aspx",
+        "_aihot": { "initialBackfillLimit": 6 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "K12"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-techlearning",
+      "name": "Tech & Learning",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.techlearning.com/feeds/all",
+        "_aihot": { "initialBackfillLimit": 6 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "K12"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-guardian-edu",
+      "name": "The Guardian · Education",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.theguardian.com/education/rss",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["ai", "artificial intelligence", "chatbot", "chatgpt", "tech", "phone", "screen", "digital", "tutor", "exam", "reading", "literacy", "writing"]
+        },
+        "_aihot": { "initialBackfillLimit": 6 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": ["媒体"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-campus-tech",
+      "name": "Campus Technology",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://campustechnology.com/rss-feeds/all-articles.aspx",
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["媒体"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-inside-highered",
+      "name": "Inside Higher Ed",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.insidehighered.com/rss.xml",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["ai", "artificial intelligence", "chatbot", "chatgpt", "edtech", "tutor", "assessment", "plagiarism", "teaching"]
+        },
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["媒体"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-one-useful-thing",
+      "name": "One Useful Thing (Ethan Mollick)",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.oneusefulthing.org/feed",
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["专栏", "研究"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-edtech-insiders",
+      "name": "EdTech Insiders",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://edtechinsiders.substack.com/feed",
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["专栏", "媒体"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-dan-meyer",
+      "name": "Mathworlds (Dan Meyer)",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://danmeyer.substack.com/feed",
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["专栏", "实践"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-marc-watkins",
+      "name": "Rhetorica (Marc Watkins)",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://marcwatkins.substack.com/feed",
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["专栏", "观点"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-code-acts",
+      "name": "Code Acts in Education (Ben Williamson)",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://codeactsineducation.wordpress.com/feed/",
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["专栏", "研究"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-leon-furze",
+      "name": "Leon Furze · AI & Education",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://leonfurze.com/feed/",
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["专栏", "实践"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-control-alt",
+      "name": "Control Alt Achieve",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.controlaltachieve.com/feeds/posts/default",
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["专栏", "实践"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-future-school",
+      "name": "Ditch That Textbook",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://ditchthattextbook.com/feed/",
+        "_aihot": { "initialBackfillLimit": 5 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["专栏", "实践"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-arxiv-cy",
+      "name": "arXiv · Computers and Society",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://rss.arxiv.org/rss/cs.CY",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["education", "student", "teacher", "classroom", "pedagogy", "tutoring", "intelligent tutoring", "k-12", "homework", "assessment", "grading", "literacy", "writing"]
+        },
+        "_aihot": { "initialBackfillLimit": 10 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 720,
+      "tags": ["研究", "论文"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-arxiv-hc",
+      "name": "arXiv · Human-Computer Interaction",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://rss.arxiv.org/rss/cs.HC",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["education", "student", "teacher", "classroom", "pedagogy", "tutor", "learning", "children", "kids", "homework", "reading", "writing"]
+        },
+        "_aihot": { "initialBackfillLimit": 10 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 720,
+      "tags": ["研究", "论文"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-mit-ai",
+      "name": "MIT News · Artificial Intelligence",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://news.mit.edu/topic/mitartificial-intelligence2-rss.xml",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["education", "student", "teacher", "classroom", "learning", "tutor", "school", "child", "children", "literacy", "curriculum"]
+        },
+        "_aihot": { "initialBackfillLimit": 6 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["研究"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-theconv-us-edu",
+      "name": "The Conversation · Education",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://theconversation.com/us/education/articles.atom",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["ai", "artificial intelligence", "chatbot", "chatgpt", "tech", "digital", "screen", "reading", "literacy", "tutor", "math", "teacher"]
+        },
+        "_aihot": { "initialBackfillLimit": 6 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["媒体", "研究"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-elearning-ind",
+      "name": "eLearning Industry",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://elearningindustry.com/feed",
+        "_aihot": { "initialBackfillLimit": 6 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["媒体", "实践"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "web-moe-yaowen",
+      "name": "教育部官网 · 工作动态",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.moe.gov.cn/jyb_xwfb/gzdt_gzdt/",
+        "baseUrl": "https://www.moe.gov.cn/jyb_xwfb/gzdt_gzdt/",
+        "parseMode": "html",
+        "itemSelector": "ul#list li",
+        "linkSelector": "a",
+        "titleSelector": "a",
+        "publishedAtSelector": "span",
+        "fetchPublicContent": true,
+        "_aihot": { "initialBackfillLimit": 20 }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["官方", "政策"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "web-moe-zhongyang",
+      "name": "教育部官网 · 中央文件",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.moe.gov.cn/jyb_xxgk/moe_1777/moe_1778/",
+        "baseUrl": "https://www.moe.gov.cn/jyb_xxgk/moe_1777/moe_1778/",
+        "parseMode": "html",
+        "itemSelector": "ul#list li",
+        "linkSelector": "a",
+        "titleSelector": "a",
+        "publishedAtSelector": "span",
+        "fetchPublicContent": true,
+        "_aihot": { "initialBackfillLimit": 15 }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "政策"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "web-moe-other",
+      "name": "教育部官网 · 部门联合文件",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.moe.gov.cn/jyb_xxgk/moe_1777/moe_1779/",
+        "baseUrl": "https://www.moe.gov.cn/jyb_xxgk/moe_1777/moe_1779/",
+        "parseMode": "html",
+        "itemSelector": "ul#list li",
+        "linkSelector": "a",
+        "titleSelector": "a",
+        "publishedAtSelector": "span",
+        "fetchPublicContent": true,
+        "_aihot": { "initialBackfillLimit": 15 }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["官方", "政策"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-qbitai",
+      "name": "量子位（教育 AI 过滤）",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.qbitai.com/feed",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["教育", "学习机", "学而思", "好未来", "作业帮", "猿辅导", "小猿", "新东方", "有道", "豆包爱学", "豆神", "高途", "斑马", "叫叫", "洋葱学园", "松鼠ai", "希沃", "小鹿爱学", "中小学", "k12", "课堂", "教师", "老师", "家长", "学生", "作文", "口语陪练", "家教", "绘本", "双减", "词典笔", "伴学"]
+        },
+        "_aihot": { "initialBackfillLimit": 10 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": ["媒体", "国内"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-sspai",
+      "name": "少数派（教育与学习过滤）",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://sspai.com/feed",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["教育", "学习机", "学而思", "好未来", "作业帮", "猿辅导", "小猿", "新东方", "有道", "豆包爱学", "多邻国", "duolingo", "可汗学院", "khan", "词典笔", "作文", "口语", "伴学", "老师", "家长", "中小学", "k12", "课堂", "背单词"]
+        },
+        "_aihot": { "initialBackfillLimit": 10 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "国内"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-tmtpost",
+      "name": "钛媒体（教育 AI 过滤）",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.tmtpost.com/rss.xml",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["教育", "学习机", "学而思", "好未来", "作业帮", "猿辅导", "小猿", "新东方", "有道", "豆包爱学", "豆神", "高途", "斑马", "叫叫", "洋葱学园", "松鼠ai", "希沃", "小鹿爱学", "中小学", "k12", "双减", "教师", "学生", "家教", "伴学"]
+        },
+        "_aihot": { "initialBackfillLimit": 10 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "国内"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-ifanr",
+      "name": "爱范儿（教育 AI 过滤）",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.ifanr.com/feed",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["教育", "学习机", "学而思", "好未来", "作业帮", "猿辅导", "新东方", "有道", "豆包爱学", "多邻国", "duolingo", "可汗学院", "khan", "词典笔", "伴学", "老师", "家长", "学生", "课堂", "k12"]
+        },
+        "_aihot": { "initialBackfillLimit": 10 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": ["媒体", "国内"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "json-hn-edu-ai",
+      "name": "Hacker News · Education & AI",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=education%20AI&tags=story&numericFilters=points%3E15",
+        "itemsPath": "hits",
+        "titlePaths": ["title"],
+        "urlTemplate": "{raw:url}",
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "publishedAtPath": "created_at",
+        "authorPaths": ["author"],
+        "externalIdPath": "objectID",
+        "_aihot": { "initialBackfillLimit": 10 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 240,
+      "tags": ["社区", "技术"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "json-hn-ai-tutor",
+      "name": "Hacker News · AI Learning & Tutor",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=AI%20learning%20tutor&tags=story&numericFilters=points%3E10",
+        "itemsPath": "hits",
+        "titlePaths": ["title"],
+        "urlTemplate": "{raw:url}",
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "publishedAtPath": "created_at",
+        "authorPaths": ["author"],
+        "externalIdPath": "objectID",
+        "_aihot": { "initialBackfillLimit": 10 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 240,
+      "tags": ["社区", "技术"],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-producthunt",
+      "name": "Product Hunt（AI 教育新品过滤）",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.producthunt.com/feed",
+        "ingestNoiseFilter": {
+          "dropMarkers": ["\n"],
+          "keepIfMatches": ["education", "learn", "study", "tutor", "school", "teacher", "student", "language", "flashcard", "quiz", "math", "reading", "writing", "kid", "child"]
+        },
+        "_aihot": { "initialBackfillLimit": 15 }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": ["产品", "新品"],
       "site_fulltext": false,
       "syndicate_fulltext": false
     }

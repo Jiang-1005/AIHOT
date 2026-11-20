@@ -76,18 +76,32 @@ function tokensFor(item: { tags: string[]; companies: string[]; rawCompany: stri
   return [...item.tags, ...item.companies, item.rawCompany ?? ""].filter(Boolean);
 }
 
-export function companiesForItem(item: { tags: string[]; companies: string[]; rawCompany: string | null; title?: string | null }): CompanyRosterEntry[] {
+const AMBIGUOUS_AUTO_TAG_COMPANIES = new Set(["doubao", "iflytek", "yangcong", "bmma", "jiaojao"]);
+
+function textMentionsCompanyAlias(text: string, company: CompanyRosterEntry): boolean {
+  const haystack = text.toLowerCase();
+  return company.aliases.some((alias) => haystack.includes(alias.toLowerCase()));
+}
+
+export function companiesForItem(item: {
+  tags: string[];
+  companies: string[];
+  rawCompany: string | null;
+  title?: string | null;
+  summary?: string | null;
+}): CompanyRosterEntry[] {
   // Prefer editorial company tags (content-tags.json). publication.tags can carry
   // mistaken entity labels; only fall back to them when the catalog has no companies.
-  const tokens = [
-    ...(item.companies?.length ? item.companies : item.tags),
-    item.rawCompany ?? "",
-  ].filter(Boolean);
+  const autoTokens = [...(item.companies?.length ? item.companies : item.tags)].filter(Boolean);
+  const explicitTokens = [item.rawCompany ?? ""].filter(Boolean);
   // 标题里的「心田花开」「花啦啦」归入心田花开；不扫摘要，以免把相关说明误标成该公司新闻。
-  if (/心田花开|花啦啦/.test(item.title ?? "")) tokens.push("心田花开");
+  if (/心田花开|花啦啦/.test(item.title ?? "")) explicitTokens.push("心田花开");
+
   const hits: CompanyRosterEntry[] = [];
   const seen = new Set<string>();
-  for (const token of tokens) {
+  const evidenceText = `${item.title ?? ""} ${item.summary ?? ""}`.trim();
+
+  for (const token of explicitTokens) {
     for (const company of COMPANY_ROSTER) {
       if (seen.has(company.id)) continue;
       if (tokenMatchesCompany(token, company)) {
@@ -96,7 +110,36 @@ export function companiesForItem(item: { tags: string[]; companies: string[]; ra
       }
     }
   }
+
+  for (const token of autoTokens) {
+    for (const company of COMPANY_ROSTER) {
+      if (seen.has(company.id)) continue;
+      if (!tokenMatchesCompany(token, company)) continue;
+      if (item.title && AMBIGUOUS_AUTO_TAG_COMPANIES.has(company.id) && !textMentionsCompanyAlias(evidenceText, company)) {
+        continue;
+      }
+      seen.add(company.id);
+      hits.push(company);
+    }
+  }
   return hits;
+}
+
+const STOCK_WIRE_SOURCE = /(新浪证券|红岸工作室|证券之星|同花顺金融研究中心|金融界AI电报|格隆汇快讯|东方财富Choice|财联社电报|股市播报)/i;
+const STOCK_MOVE_TITLE = /(盘中异动|股价异动|主力资金|龙虎榜|大宗交易|换手率|拉升封板|触及涨停|触及跌停|涨停|跌停|融资融券|两融余额|北向资金|资金流向|振幅达|(?:开盘|收盘|盘中|股价|早盘|尾盘).{0,6}(?:涨|跌)\d+(?:\.\d+)?%|(?:涨|跌)\d+(?:\.\d+)?%.*成交额)/;
+const REAL_BUSINESS_TITLE = /(财报|业绩|第[一二三四1234]季度|Q[1-4]|净收入|净利润|团体标准|技术要求|新产品|新品|发布会|战略合作|并购|收购)/;
+
+/** 过滤证券快讯自动生成的股价涨跌、主力资金与龙虎榜水稿，保留真实财报与业务新闻。 */
+export function isStockTickerNoise(item: { source: string; title: string; summary?: string | null }): boolean {
+  const title = (item.title ?? "").trim();
+  const source = (item.source ?? "").trim();
+  if (!title) return false;
+  if (STOCK_MOVE_TITLE.test(title) && !REAL_BUSINESS_TITLE.test(title)) return true;
+  if (STOCK_WIRE_SOURCE.test(source)) {
+    const text = `${title} ${item.summary ?? ""}`;
+    if (STOCK_MOVE_TITLE.test(text) || !REAL_BUSINESS_TITLE.test(title)) return true;
+  }
+  return false;
 }
 
 export function originChecked(verify: string | null, bodyStatus: string | null, summary: string | null, title: string | null): { ok: boolean; unverified: boolean } {
@@ -430,17 +473,20 @@ export async function loadCompanyUpdatesPage(now = new Date()) {
     if (!day || day < since || day > today) continue;
     const check = originChecked(row.verify, row.body_status, row.summary, row.title);
     if (!check.ok) continue;
+    const title = scrubPublic(row.title);
+    const source = scrubPublic(publicSourceName(row.source_name));
+    if (!title) continue;
+    const summary = publicSummary(row.summary, title);
+    if (isStockTickerNoise({ source, title, summary })) continue;
     const facet = tagMap[row.id] ?? tagMap[row.url];
     const companies = companiesForItem({
       tags: row.tags ?? [],
       companies: facet?.companies ?? [],
       rawCompany: row.raw_company,
       title: row.title,
+      summary: row.summary,
     });
     if (!companies.length) continue;
-    const title = scrubPublic(row.title);
-    const source = scrubPublic(publicSourceName(row.source_name));
-    if (!title) continue;
     const item: BucketItem = {
       id: row.id,
       title,
@@ -448,7 +494,7 @@ export async function loadCompanyUpdatesPage(now = new Date()) {
       date: day,
       source,
       unverified: check.unverified,
-      summary: publicSummary(row.summary, title),
+      summary,
       publishedAt: publicPublishedAt(row.published_at),
       companies: companies.map((c) => ({ id: c.id, name: c.name })),
       fromBackfill: isCompanyBackfill({ brief: row.brief, backfillReason: row.backfill_reason }),
