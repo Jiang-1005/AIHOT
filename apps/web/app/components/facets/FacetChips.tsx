@@ -155,12 +155,14 @@ export function SelectedFacetBars({
   onToggle,
   onClearIdentity,
   onClearAll,
+  clearLabel = "清空",
 }: {
   value: FacetState;
   identity?: { label: string; onClear: () => void } | null;
   onToggle: (key: FacetKey, name: string) => void;
   onClearIdentity?: () => void;
   onClearAll: () => void;
+  clearLabel?: string;
 }) {
   const pills: Array<{ key: string; label: string; onRemove: () => void }> = [];
   if (identity) pills.push({ key: "id", label: identity.label, onRemove: identity.onClear });
@@ -179,7 +181,7 @@ export function SelectedFacetBars({
         </button>
       ))}
       <button type="button" onClick={onClearAll} className="inline-flex h-8 items-center px-2 text-[0.75rem] text-accent hover:underline">
-        清空
+        {clearLabel}
       </button>
     </div>
   );
