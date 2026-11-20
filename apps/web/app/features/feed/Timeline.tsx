@@ -118,13 +118,15 @@ export function slotClock(at: string | null | undefined): string | null {
   return beijingTime(at);
 }
 
-export function TimelineSlot({ at, publishedAt, children, fresh = false, delay = 0, dataKey, hideTimeRail = false }: { at: string; publishedAt?: string | null; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string; hideTimeRail?: boolean }) {
+export function TimelineSlot({ at, publishedAt, children, fresh = false, delay = 0, dataKey, hideTimeRail = false, isLead = false }: { at: string; publishedAt?: string | null; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string; hideTimeRail?: boolean; isLead?: boolean }) {
   // The rail leads with the publish date (rowDates); a list without one (policy, company updates) keeps its own time.
   const { day, clock } = publishedAt === undefined ? { day: null, clock: slotClock(at) } : rowDates(publishedAt, at);
   return (
     <li
       data-card-key={dataKey}
-      data-slot="" className={`group/slot bleed touch:has-[a:active]:bg-bg-sunk/70 lg:mx-0 lg:px-0 lg:touch:has-[a:active]:bg-transparent ${fresh ? "animate-fade-up" : ""}`}
+      data-slot=""
+      data-lead-card={isLead ? "" : undefined}
+      className={`group/slot bleed touch:has-[a:active]:bg-bg-sunk/70 lg:mx-0 lg:px-0 lg:touch:has-[a:active]:bg-transparent ${fresh ? "animate-fade-up" : ""}`}
       style={fresh ? { animationDelay: `${delay}ms` } : undefined}
     >
       {/* Phones: the row without the rail (the item shows its time); a hairline between rows. */}
@@ -145,7 +147,7 @@ export function TimelineSlot({ at, publishedAt, children, fresh = false, delay =
   );
 }
 
-export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnread = false }: { initial: TimelineResponse; filters: TimelineFilters; emptyTitle?: string; emptyHint?: string; hidePhoneUnread?: boolean }) {
+export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnread = false, leadKey = null }: { initial: TimelineResponse; filters: TimelineFilters; emptyTitle?: string; emptyHint?: string; hidePhoneUnread?: boolean; leadKey?: string | null }) {
   const location = useLocation();
   const navigation = useNavigation();
   const readSet = useReadSet();
@@ -317,12 +319,20 @@ export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnr
       只看未读
     </ToggleChip>
   );
+  const firstDayOnlyLead = Boolean(
+    leadKey && days.length > 0 && days[0]!.entries.length === 1 && days[0]!.entries[0]!.key === leadKey,
+  );
   return (
     <div className="relative">
       {/* Desktop puts it on the first date row; phones, and a list the filter left empty, keep its own row. */}
       {/* Phones reach it from the bar's filter sheet; a list the filter left empty keeps it here to turn it off. */}
       {!hidePhoneUnread && !days.length && (
         <div className="mb-2 flex justify-end">{unreadToggle}</div>
+      )}
+      {days.length === 1 && firstDayOnlyLead && (
+        <div className="flex justify-end">
+          <span data-journal-fallback-unread="" className="mb-2 hidden">{unreadToggle}</span>
+        </div>
       )}
 
       {days.length === 0 && !loadingMore && (
@@ -343,16 +353,22 @@ export function Timeline({ initial, filters, emptyTitle, emptyHint, hidePhoneUnr
         const collapsed = state.collapsed.includes(day);
         // The server counts whole days; with the filter on, only the visible cards count.
         const count = unreadOnly ? cards.length : (state.dayCounts[day] ?? cards.length);
+        const dayAside =
+          dayIndex === 0
+            ? unreadToggle
+            : dayIndex === 1 && firstDayOnlyLead
+              ? <span data-journal-fallback-unread="" className="hidden">{unreadToggle}</span>
+              : undefined;
         return (
-          <section key={day} aria-label={day} className="lg:mb-1">
-            <DayHeader day={day} today={today} count={count} collapsed={collapsed} onToggle={() => toggleDay(day)} aside={dayIndex === 0 ? unreadToggle : undefined} asideOnPhone={false} />
+          <section key={day} data-day-section="" aria-label={day} className="lg:mb-1">
+            <DayHeader day={day} today={today} count={count} collapsed={collapsed} onToggle={() => toggleDay(day)} aside={dayAside} asideOnPhone={false} />
             <Collapse open={!collapsed}>
                 <ol className="lg:pt-1">
                   {cards.map((c) => {
                     const fresh = freshKeys.has(c.key);
                     const delay = fresh ? Math.min(order++, 10) * 40 : 0;
                     return (
-                      <TimelineSlot key={c.key} dataKey={c.key} at={c.anchorAt} publishedAt={c.item.publishedAt} fresh={fresh} delay={delay}>
+                      <TimelineSlot key={c.key} dataKey={c.key} at={c.anchorAt} publishedAt={c.item.publishedAt} fresh={fresh} delay={delay} isLead={Boolean(leadKey && c.key === leadKey)}>
                         <FeedItem item={c.item} group={c.group} filters={filters} read={readSet.has(c.item.id) && !(unreadOnly && unreadVisible(c))} onOpen={markRead} at={c.anchorAt} />
                       </TimelineSlot>
                     );

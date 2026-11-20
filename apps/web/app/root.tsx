@@ -10,12 +10,15 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { STYLE_BOOT_SCRIPT } from "./lib/site-styles";
 import { Sidebar } from "./components/shell/Sidebar";
+import { TopDeck } from "./components/shell/TopDeck";
+import { Filings } from "./components/shell/Filings";
 import { TabBar } from "./components/shell/TabBar";
 import { PullToRefresh } from "./components/shell/PullToRefresh";
 import { usePageTransition } from "./components/shell/transitions";
 import { useWarmSectionCode } from "./components/shell/warm-nav";
 import { SearchOverlay } from "./features/search/SearchOverlay";
 import { BackToTop, NavigationProgress } from "./components/shell/Chrome";
+import { IconGithub, IconRss } from "./components/icons";
 import { buttonClass } from "./components/ui/Controls";
 import { rememberPage, APPEARANCE_BOOT_SCRIPT, useAppearanceSync } from "./lib/local-state";
 import { apiGet, previewApiBase } from "./lib/api.server";
@@ -95,18 +98,55 @@ function SiteShell({ changelogVersion, children }: { changelogVersion: string | 
   return (
     // The desktop shell also opens on large phones held sideways, where the notch takes a side: the whole
     // shell keeps clear of it (the phone shell does so through its gutters).
-    <div className="flex min-h-dvh lg:pl-[env(safe-area-inset-left)] lg:pr-[env(safe-area-inset-right)]">
+    <div data-site-shell="" className="flex min-h-dvh lg:pl-[env(safe-area-inset-left)] lg:pr-[env(safe-area-inset-right)]">
       <NavigationProgress active={navigation.state === "loading"} />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:rounded-control focus:bg-surface focus:px-3 focus:py-2">
         跳到正文
       </a>
+      <TopDeck changelogVersion={changelogVersion} />
       <Sidebar changelogVersion={changelogVersion} />
       {/* Phone shell (≤ 699px): each page's top bar (PhoneBar), one centred column, the tab bar below.
           Desktop: the page fills the main area up to the list width (--page-max-wide), centred beyond it. */}
-      <main id="main" className="min-w-0 flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] lg:px-5 lg:pb-[72px] lg:pt-6 wide:px-7">
-        <div className="mx-auto w-full max-w-[640px] pl-[var(--gutter-l)] pr-[var(--gutter-r)] lg:max-w-[var(--page-max-wide)] lg:px-0">
+      <main id="main" data-shell-main="" className="min-w-0 flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] lg:px-5 lg:pb-[72px] lg:pt-6 wide:px-7">
+        <div data-shell-container="" className="mx-auto w-full max-w-[640px] pl-[var(--gutter-l)] pr-[var(--gutter-r)] lg:max-w-[var(--page-max-wide)] lg:px-0">
           {webModules().map((m) => m.root?.Top && <m.root.Top key={m.name} />)}
           {children}
+          <footer data-journal-footer="" className="mt-14 hidden border-t border-line pt-6 pb-4 text-[0.75rem] text-ink-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="inline-flex items-center gap-2 text-ink-3">
+                  <strong className="font-serif text-[0.875rem] font-semibold text-ink">{SITE.name}</strong>
+                  {SITE.tagline && <span className="text-ink-4">· {SITE.tagline}</span>}
+                </span>
+                <span aria-hidden="true" className="hidden h-3 w-px bg-line lg:inline-block" />
+                <nav aria-label="页脚链接" className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
+                  <Link to="/about" className="transition-colors hover:text-ink">关于</Link>
+                  <Link to="/changelog" className="transition-colors hover:text-ink">更新日志</Link>
+                  <Link to="/feedback" className="transition-colors hover:text-ink">反馈</Link>
+                  <Link to="/agent" className="transition-colors hover:text-ink">Agent 接入</Link>
+                  <Link reloadDocument to="/feed.xml" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 transition-colors hover:text-ink">
+                    <IconRss size={12} />
+                    RSS
+                  </Link>
+                </nav>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
+                {SITE.github && (
+                  <a href={SITE.github} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 transition-colors hover:text-ink">
+                    <IconGithub size={13} />
+                    GitHub 开源
+                  </a>
+                )}
+                {SITE.poweredBy && (
+                  <a href={SITE.poweredBy.url} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap transition-colors hover:text-ink">
+                    由 {SITE.poweredBy.name} 驱动
+                  </a>
+                )}
+                <Filings className="whitespace-nowrap transition-colors hover:text-ink" badgeSize={10} />
+                {SITE.footerNote && <span className="text-ink-4">{SITE.footerNote}</span>}
+              </div>
+            </div>
+          </footer>
         </div>
       </main>
       <TabBar changelogVersion={changelogVersion} />

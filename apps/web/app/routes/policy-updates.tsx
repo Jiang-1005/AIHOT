@@ -127,9 +127,9 @@ export default function PolicyUpdatesPage() {
                 type="button"
                 aria-pressed={on}
                 onClick={() => { setKind(key); setOpen(false); }}
-                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.75rem] font-medium transition-colors duration-150 ${
+                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.75rem] font-medium transition-all duration-150 ${
                   on
-                    ? "bg-accent text-accent-contrast"
+                    ? "bg-accent text-accent-contrast shadow-[var(--shadow-card)]"
                     : "border border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
                 }`}
               >
@@ -156,7 +156,7 @@ export default function PolicyUpdatesPage() {
             render={(item) => <PolicyCard item={item} />}
           />
           {hidden > 0 ? (
-            <button type="button" className="mt-4 text-[0.875rem] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
+            <button type="button" className="mt-4 inline-flex h-9 items-center rounded-full border border-line bg-surface px-4 text-[0.8125rem] font-medium text-accent transition-colors hover:border-line-strong hover:text-accent-ink" onClick={() => setOpen((v) => !v)}>
               {open ? "收起" : `展开全部（还有 ${hidden} 条）`}
             </button>
           ) : null}

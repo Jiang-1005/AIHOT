@@ -427,7 +427,7 @@ export default function HotPage() {
               实时热度
             </div>
           )}
-          <h1 className="mt-2 text-[1.75rem] font-semibold leading-[1.3] text-ink">{withSubject("热点榜")}</h1>
+          <h1 data-page-title="" className="mt-2 text-[1.75rem] font-semibold leading-[1.3] text-ink">{withSubject("热点榜")}</h1>
           {stale ? (
             <p className="mt-2 text-[0.875rem] text-ink-2">
               {hot.computedAt

@@ -161,7 +161,7 @@ function CompanySection({ company, logoIndex, previewMax, expandAll, today }: { 
         <>
           <CompanyDayList items={shown} today={today} />
           {hidden > 0 ? (
-            <button type="button" className="mt-2 text-[0.875rem] text-accent hover:underline" onClick={() => setOpen((v) => !v)}>
+            <button type="button" className="mt-3 inline-flex h-8 items-center rounded-full border border-line bg-surface px-3.5 text-[0.8125rem] font-medium text-accent transition-colors hover:border-line-strong hover:text-accent-ink" onClick={() => setOpen((v) => !v)}>
               {open ? "收起" : `展开全部（还有 ${hidden} 条）`}
             </button>
           ) : null}
@@ -188,9 +188,9 @@ function CompanyChips({ companies, active, allCount, logos }: { companies: Compa
               to={companyHref(chip.name)}
               preventScrollReset
               aria-current={on ? "page" : undefined}
-              className={`inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[0.75rem] font-medium transition-colors duration-150 ${
+              className={`inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[0.75rem] font-medium transition-all duration-150 ${
                 on
-                  ? "bg-accent text-accent-contrast"
+                  ? "bg-accent text-accent-contrast shadow-[var(--shadow-card)]"
                   : "border border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
               }`}
             >
@@ -261,7 +261,7 @@ export default function CompanyUpdatesPage() {
           <>
             <CompanyDayList items={timeShown} today={data.asOf} />
             {timeHidden > 0 ? (
-              <button type="button" className="mt-3 text-[0.875rem] text-accent hover:underline" onClick={() => setTimeOpen((v) => !v)}>
+              <button type="button" className="mt-4 inline-flex h-9 items-center rounded-full border border-line bg-surface px-4 text-[0.8125rem] font-medium text-accent transition-colors hover:border-line-strong hover:text-accent-ink" onClick={() => setTimeOpen((v) => !v)}>
                 {timeOpen ? "收起" : `展开全部（还有 ${timeHidden} 条）`}
               </button>
             ) : null}

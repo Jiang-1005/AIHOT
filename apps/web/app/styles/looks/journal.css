@@ -1,26 +1,30 @@
-/* 刊物 (journal): flagship editorial magazine & crisp paper intelligence workstation. */
+/* 刊物 · 旗舰版 (journal): flagship editorial magazine & frosted glass intelligence workstation.
+   NOTE: Imported BEFORE :root and [data-theme="dark"] in app.css, and before layout.css.
+   Every selector MUST be prefixed with :root[data-style="journal"] (or html:root[data-style="journal"]
+   when overriding layout.css :root:not([data-style="classic"]) rules) so zero rules leak to other looks. */
+
 :root[data-style="journal"] {
   --font-serif: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", Georgia, serif;
-  --bg: #f6f3ec;
-  --bg-sunk: #ede8dd;
-  --bg-muted: rgba(24, 92, 84, 0.06);
-  --well: #ede8dd;
+  --bg: #f5f2eb;
+  --bg-sunk: #ebe6db;
+  --bg-muted: rgba(20, 89, 80, 0.065);
+  --well: #ebe6db;
   --surface: #ffffff;
   --surface-2: #ffffff;
   --raised: #ffffff;
-  --sidebar: #f2eee5;
-  --daybar: #f6f3ec;
-  --ink: #1b1917;
-  --ink-2: #3b3732;
-  --ink-3: #635d55;
-  --ink-4: #635d55;
+  --sidebar: #f0ece2;
+  --daybar: #f5f2eb;
+  --ink: #181614;
+  --ink-2: #36322d;
+  --ink-3: #5f5951;
+  --ink-4: #5f5951;
   --line: #e2dcd0;
   --line-strong: #c8bfb0;
-  --line-soft: #ede8df;
-  --accent: #185c54;
-  --accent-ink: #134a43;
-  --accent-soft: rgba(24, 92, 84, 0.08);
-  --accent-softer: rgba(24, 92, 84, 0.05);
+  --line-soft: #ece7dc;
+  --accent: #145950;
+  --accent-ink: #0e423b;
+  --accent-soft: rgba(20, 89, 80, 0.09);
+  --accent-softer: rgba(20, 89, 80, 0.045);
   --accent-contrast: #ffffff;
   --warn: #9e4515;
   --warn-soft: rgba(158, 69, 21, 0.09);
@@ -37,45 +41,52 @@
   --rank-2: var(--accent);
   --rank-3: var(--accent);
   --rank-rest: var(--ink-4);
-  --selection: rgba(24, 92, 84, 0.16);
+  --selection: rgba(20, 89, 80, 0.16);
   --prose-ink: #24211e;
-  --shadow-card: 0 1px 2px rgba(27, 25, 23, 0.04);
-  --shadow-card-hover: 0 4px 16px rgba(27, 25, 23, 0.07);
-  --shadow-overlay: 0 16px 40px rgba(27, 25, 23, 0.14);
+  --ease-silk: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-card: 0 1px 2px rgba(24, 22, 19, 0.04), 0 6px 18px -8px rgba(24, 22, 19, 0.06);
+  --shadow-card-hover: 0 14px 32px -12px rgba(20, 89, 80, 0.14), 0 2px 6px rgba(24, 22, 19, 0.05);
+  --shadow-overlay: 0 20px 50px -12px rgba(24, 22, 19, 0.18), 0 2px 8px rgba(24, 22, 19, 0.06);
   --shadow-soft: var(--shadow-overlay);
   --shadow-pop: var(--shadow-overlay);
+  --hero-daily-bg: linear-gradient(145deg, #103e38 0%, #17544c 58%, #0d332e 100%);
+  --hero-daily-border: rgba(20, 89, 80, 0.24);
+  --hero-daily-ink: #faf8f2;
+  --hero-daily-muted: rgba(250, 248, 242, 0.80);
+  --hero-daily-btn-bg: #faf8f2;
+  --hero-daily-btn-ink: #0e3b35;
   --radius-mark: 4px;
   --radius-control: 8px;
   --radius-tile: 12px;
-  --radius-card: 12px;
-  --radius-panel: 12px;
-  --radius-sheet: 16px;
+  --radius-card: 14px;
+  --radius-panel: 14px;
+  --radius-sheet: 18px;
 }
 
 :root[data-style="journal"][data-theme="dark"] {
-  --bg: #141311;
-  --bg-sunk: #1f1d19;
-  --bg-muted: rgba(95, 184, 170, 0.09);
-  --well: #1f1d19;
-  --surface: #1c1a17;
-  --surface-2: #22201c;
-  --raised: #22201c;
-  --sidebar: #171512;
-  --daybar: #141311;
-  --ink: #ece7de;
-  --ink-2: #cfc8bc;
-  --ink-3: #a49c90;
-  --ink-4: #a49c90;
-  --line: rgba(236, 231, 222, 0.10);
-  --line-strong: rgba(236, 231, 222, 0.18);
-  --line-soft: rgba(236, 231, 222, 0.06);
-  --accent: #5fb8aa;
-  --accent-ink: #79cabd;
-  --accent-soft: rgba(95, 184, 170, 0.13);
-  --accent-softer: rgba(95, 184, 170, 0.08);
-  --accent-contrast: #141311;
-  --warn: #e59d63;
-  --warn-soft: rgba(229, 157, 99, 0.14);
+  --bg: #0e100f;
+  --bg-sunk: #191c1b;
+  --bg-muted: rgba(84, 199, 182, 0.10);
+  --well: #191c1b;
+  --surface: #151817;
+  --surface-2: #1c201e;
+  --raised: #1c201e;
+  --sidebar: #121514;
+  --daybar: #0e100f;
+  --ink: #f0ece4;
+  --ink-2: #d2ccc1;
+  --ink-3: #9e978c;
+  --ink-4: #9e978c;
+  --line: rgba(240, 236, 228, 0.09);
+  --line-strong: rgba(240, 236, 228, 0.18);
+  --line-soft: rgba(240, 236, 228, 0.055);
+  --accent: #54c7b6;
+  --accent-ink: #7ae0d0;
+  --accent-soft: rgba(84, 199, 182, 0.14);
+  --accent-softer: rgba(84, 199, 182, 0.08);
+  --accent-contrast: #0c1413;
+  --warn: #e9a469;
+  --warn-soft: rgba(233, 164, 105, 0.14);
   --note: var(--ink-3);
   --hot: var(--accent);
   --hot-soft: var(--accent-soft);
@@ -89,31 +100,39 @@
   --rank-2: var(--accent);
   --rank-3: var(--accent);
   --rank-rest: var(--ink-4);
-  --selection: rgba(95, 184, 170, 0.22);
-  --prose-ink: #e2dcd2;
-  --shadow-card: none;
-  --shadow-card-hover: 0 6px 20px rgba(0, 0, 0, 0.28);
-  --shadow-overlay: 0 18px 44px rgba(0, 0, 0, 0.55);
+  --selection: rgba(84, 199, 182, 0.24);
+  --prose-ink: #e4dfd5;
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 2px 10px rgba(0, 0, 0, 0.25);
+  --shadow-card-hover: inset 0 1px 0 rgba(84, 199, 182, 0.20), 0 14px 32px -10px rgba(0, 0, 0, 0.55);
+  --shadow-overlay: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 22px 54px rgba(0, 0, 0, 0.65);
   --shadow-soft: var(--shadow-overlay);
   --shadow-pop: var(--shadow-overlay);
+  --hero-daily-bg: linear-gradient(145deg, rgba(20, 74, 67, 0.92) 0%, rgba(14, 46, 42, 0.96) 100%);
+  --hero-daily-border: rgba(84, 199, 182, 0.26);
+  --hero-daily-ink: #f4f1ea;
+  --hero-daily-muted: rgba(244, 241, 234, 0.80);
+  --hero-daily-btn-bg: #54c7b6;
+  --hero-daily-btn-ink: #0a1715;
 }
 
-/* Editorial typography on major headlines & section titles. */
-:root[data-style="journal"] :is([data-fi-title], [data-page-title], [data-home-rail] h2, [data-hot-cards] h2) {
+/* Soft radial atmospheric wash above the fold. */
+:root[data-style="journal"] body {
+  background-image: radial-gradient(ellipse 80% 420px at 50% -100px, rgba(20, 89, 80, 0.065), transparent 72%);
+  background-repeat: no-repeat;
+}
+
+:root[data-style="journal"][data-theme="dark"] body {
+  background-image: radial-gradient(ellipse 75% 420px at 50% -120px, rgba(84, 199, 182, 0.10), transparent 70%);
+  background-repeat: no-repeat;
+}
+
+/* Editorial serif typography on major headlines & section titles. */
+:root[data-style="journal"] :is([data-fi-title], [data-page-title], [data-home-rail] h2, [data-hot-cards] h2, [data-journal-hero] h2) {
   font-family: var(--font-serif);
 }
 
 :root[data-style="journal"] [data-page-title] {
   letter-spacing: -0.015em;
-}
-
-@media (min-width: 700px) {
-  :root[data-style="journal"] [data-masthead] {
-    margin-bottom: 1.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--line);
-    border-bottom: 3px double var(--ink);
-  }
 }
 
 /* Understated AI score chip on journal cards. */
@@ -130,7 +149,321 @@
   line-height: 1.45;
 }
 
-/* Home front page: single-column cards without empty 80px left time gutter. */
+/* ============================================================================
+   Desktop Floating Glass TopDeck Shell, Compact Masthead & Asymmetric Bento Hero
+   ============================================================================ */
+@media (min-width: 700px) {
+  :root[data-style="journal"] {
+    --bar-h: 64px;
+  }
+
+  :root[data-style="journal"] [data-site-shell] {
+    flex-direction: column;
+  }
+
+  :root[data-style="journal"] [data-shell-sidebar] {
+    display: none !important;
+  }
+
+  :root[data-style="journal"] [data-shell-top] {
+    display: block;
+    background: rgba(245, 242, 235, 0.80);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    backdrop-filter: blur(22px) saturate(180%);
+    border-bottom: 1px solid rgba(24, 22, 19, 0.08);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  :root[data-style="journal"][data-theme="dark"] [data-shell-top] {
+    background: rgba(14, 16, 15, 0.78);
+    border-bottom-color: rgba(240, 236, 228, 0.08);
+    box-shadow: 0 1px 16px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Match TopDeck's inner content edges to [data-shell-container] (1280px + main's horizontal padding). */
+  :root[data-style="journal"] [data-shell-top] > div {
+    max-width: calc(1280px + 2.5rem);
+  }
+
+  :root[data-style="journal"] [data-top-link] {
+    transition: background-color 180ms var(--ease-silk), color 180ms var(--ease-silk);
+  }
+
+  :root[data-style="journal"] [data-top-link-active] {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+
+  :root[data-style="journal"] [data-top-search] {
+    box-shadow: 0 1px 2px rgba(24, 22, 19, 0.04);
+    transition: border-color 180ms ease, background-color 180ms ease, box-shadow 200ms var(--ease-silk), color 180ms ease;
+  }
+
+  :root[data-style="journal"] [data-top-search]:hover {
+    border-color: var(--line-strong);
+    box-shadow: 0 4px 12px -4px rgba(20, 89, 80, 0.14);
+  }
+
+  :root[data-style="journal"][data-theme="dark"] [data-top-search] {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  :root[data-style="journal"][data-theme="dark"] [data-top-search]:hover {
+    box-shadow: inset 0 1px 0 rgba(84, 199, 182, 0.22), 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+
+  :root[data-style="journal"] [data-top-popover] {
+    background: var(--surface);
+  }
+
+  :root[data-style="journal"][data-theme="dark"] [data-top-popover] {
+    background: var(--raised);
+    border-color: var(--line-strong);
+  }
+
+  :root[data-style="journal"] [data-shell-main] {
+    padding-top: 1.5rem;
+  }
+
+  :root[data-style="journal"] [data-shell-container] {
+    max-width: 1280px;
+  }
+
+  :root[data-style="journal"] [data-journal-footer] {
+    display: block;
+  }
+
+  /* Keep every sticky sidebar, archive column & back-bar cleanly clear below the 64px TopDeck. */
+  :root[data-style="journal"] [data-site-shell] aside.side\:sticky,
+  :root[data-style="journal"] [data-site-shell] .sticky.top-6 {
+    top: 84px;
+  }
+
+  :root[data-style="journal"] [data-site-shell] .scrollbar-thin.sticky.top-6 {
+    max-height: calc(100dvh - 104px);
+  }
+
+  :root[data-style="journal"] [data-shell-main] .sticky.top-0.z-20 {
+    top: var(--bar-h);
+  }
+
+  :root[data-style="journal"] [data-site-shell] .report-shell {
+    margin-bottom: 0;
+    min-height: calc(100dvh - var(--bar-h));
+  }
+
+  :root[data-style="journal"] [data-site-shell] .report-shell > aside {
+    top: var(--bar-h);
+    height: calc(100dvh - var(--bar-h));
+  }
+
+  /* Translucent frosted sticky DayHeader & Story section bar on desktop. */
+  :root[data-style="journal"] [data-shell-main] .bleed.sticky.z-20 {
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+  }
+
+  :root[data-style="journal"] [data-shell-main] .bleed.sticky.z-20 > div.border-t {
+    border-top-color: var(--line-strong);
+  }
+
+  /* Compact single-row horizontal editorial Masthead (mobile < 700px stays untouched). */
+  :root[data-style="journal"] [data-masthead] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.5rem;
+    text-align: left;
+    border-top: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 0 0 0.875rem;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+  }
+
+  :root[data-style="journal"] [data-masthead] > p:first-child {
+    display: none;
+  }
+
+  :root[data-style="journal"] [data-masthead] p.font-serif {
+    margin-top: 0;
+    font-size: 1.625rem;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+  }
+
+  :root[data-style="journal"] [data-masthead] p:last-child {
+    margin-top: 0;
+    border-top: 0;
+    padding-top: 0;
+    justify-content: flex-end;
+    letter-spacing: 0.08em;
+    font-size: 0.8125rem;
+  }
+
+  /* Asymmetric Bento Hero visibility & feed deduplication. */
+  :root[data-style="journal"] [data-journal-hero] {
+    display: grid;
+  }
+
+  :root[data-style="journal"] [data-home-inline-search] {
+    display: none;
+  }
+
+  :root[data-style="journal"] [data-journal-hero] ~ [data-hot-topics] {
+    display: none;
+  }
+
+  :root[data-style="journal"] [data-home-main] [data-slot][data-lead-card] {
+    display: none;
+  }
+
+  :root[data-style="journal"] [data-home-main] [data-day-section]:has([data-slot][data-lead-card]):not(:has([data-slot]:not([data-lead-card]))) {
+    display: none;
+  }
+
+  :root[data-style="journal"] [data-journal-fallback-unread] {
+    display: inline-flex;
+  }
+
+  :root[data-style="journal"] [data-home-rail] [data-rail-daily],
+  :root[data-style="journal"] [data-home-rail] [data-rail-hot] {
+    display: none;
+  }
+
+  :root[data-style="journal"] [data-home-rail] [data-journal-radar] {
+    display: block;
+  }
+
+  /* Hero Lead Feature Card materiality. */
+  :root[data-style="journal"] [data-hero-lead] {
+    box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card);
+    transition:
+      transform 240ms var(--ease-silk),
+      border-color 180ms ease,
+      box-shadow 240ms var(--ease-silk);
+  }
+
+  :root[data-style="journal"] [data-hero-lead]:hover {
+    transform: translateY(-2px);
+    border-color: var(--line-strong);
+    box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card-hover);
+  }
+
+  :root[data-style="journal"] [data-hero-cta] {
+    transition: transform 220ms var(--ease-silk), color 160ms ease;
+  }
+
+  /* Hero Signature Deep-Jade Daily Card. */
+  :root[data-style="journal"] [data-hero-daily] {
+    background: var(--hero-daily-bg);
+    border: 1px solid var(--hero-daily-border);
+    color: var(--hero-daily-ink);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 12px 32px -12px rgba(16, 62, 56, 0.35),
+      0 2px 6px rgba(16, 62, 56, 0.10);
+    transition:
+      transform 240ms var(--ease-silk),
+      box-shadow 240ms var(--ease-silk),
+      border-color 180ms ease;
+  }
+
+  :root[data-style="journal"][data-theme="dark"] [data-hero-daily] {
+    box-shadow:
+      inset 0 1px 0 rgba(122, 224, 208, 0.22),
+      0 14px 36px -12px rgba(0, 0, 0, 0.60);
+  }
+
+  :root[data-style="journal"] [data-hero-daily]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle 220px at 96% 6%, rgba(122, 224, 208, 0.22), transparent 68%),
+      radial-gradient(circle 160px at 4% 100%, rgba(250, 248, 242, 0.08), transparent 70%);
+  }
+
+  :root[data-style="journal"] [data-hero-daily] > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  :root[data-style="journal"] [data-hero-daily]:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 18px 40px -12px rgba(16, 62, 56, 0.44),
+      0 3px 10px rgba(16, 62, 56, 0.14);
+  }
+
+  :root[data-style="journal"][data-theme="dark"] [data-hero-daily]:hover {
+    border-color: rgba(122, 224, 208, 0.38);
+    box-shadow:
+      inset 0 1px 0 rgba(122, 224, 208, 0.30),
+      0 20px 44px -12px rgba(0, 0, 0, 0.70);
+  }
+
+  :root[data-style="journal"] [data-hero-daily-pill] {
+    background: rgba(250, 248, 242, 0.14);
+    border: 1px solid rgba(250, 248, 242, 0.22);
+    color: var(--hero-daily-ink);
+  }
+
+  :root[data-style="journal"] [data-hero-daily-sub] {
+    color: var(--hero-daily-muted);
+  }
+
+  :root[data-style="journal"] [data-hero-daily-btn] {
+    background: var(--hero-daily-btn-bg);
+    color: var(--hero-daily-btn-ink);
+    box-shadow: 0 2px 10px rgba(8, 26, 23, 0.18);
+    transition:
+      transform 180ms var(--ease-silk),
+      box-shadow 180ms var(--ease-silk),
+      opacity 150ms ease;
+  }
+
+  :root[data-style="journal"] [data-hero-daily-btn]:hover {
+    box-shadow: 0 6px 16px rgba(8, 26, 23, 0.26);
+    opacity: 0.96;
+  }
+
+  :root[data-style="journal"] [data-hero-daily-link] {
+    color: var(--hero-daily-muted);
+    transition: color 150ms ease;
+  }
+
+  :root[data-style="journal"] [data-hero-daily-link]:hover {
+    color: var(--hero-daily-ink);
+  }
+
+  /* Hero Hot Pulse Card. */
+  :root[data-style="journal"] [data-hero-hot] {
+    box-shadow: var(--shadow-card);
+    transition: border-color 180ms ease, box-shadow 220ms var(--ease-silk);
+  }
+
+  :root[data-style="journal"] [data-hero-hot]:hover {
+    border-color: var(--line-strong);
+  }
+
+  :root[data-style="journal"] [data-hero-hot] ol a {
+    border-radius: 10px;
+    margin-inline: -0.5rem;
+    padding-inline: 0.5rem;
+    transition: background-color 160ms ease, color 160ms ease;
+  }
+
+  :root[data-style="journal"] [data-hero-hot] ol a:hover {
+    background: var(--accent-softer);
+  }
+}
+
+/* ============================================================================
+   Home Front Page Cards & Right Intelligence Rail
+   ============================================================================ */
 :root[data-style="journal"] [data-home-main] [data-slot] > div {
   grid-template-columns: minmax(0, 1fr);
   border-bottom: 0;
@@ -155,14 +488,18 @@
 :root[data-style="journal"] [data-home-main] [data-feed-card] {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-card);
+  border-radius: 14px;
   padding: 1rem 1.125rem;
   margin-bottom: 0.75rem;
   box-shadow: var(--shadow-card);
-  transition: border-color var(--duration-fast) var(--ease-enter), box-shadow var(--duration-fast) var(--ease-enter);
+  transition:
+    transform 220ms var(--ease-silk),
+    border-color 180ms ease,
+    box-shadow 220ms var(--ease-silk);
 }
 
 :root[data-style="journal"] [data-home-main] [data-feed-card]:hover {
+  transform: translateY(-2px);
   border-color: var(--line-strong);
   box-shadow: var(--shadow-card-hover);
 }
@@ -182,51 +519,47 @@
   color: var(--ink-2);
 }
 
-/* Lead Hero story: elevated card with flush pine top accent & pull-quote editorial reason. */
-:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] {
-  overflow: hidden;
-  padding: 1.125rem 1.25rem;
-  margin-bottom: 1rem;
-  box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card);
-}
+/* Mobile-only (< 700px) lead highlight where JournalHero is hidden. */
+@media (max-width: 699.98px) {
+  :root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] {
+    overflow: hidden;
+    padding: 1.125rem 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card);
+  }
 
-:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card]:hover {
-  border-color: var(--line-strong);
-  box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card-hover);
-}
+  :root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card]:hover {
+    border-color: var(--line-strong);
+    box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card-hover);
+  }
 
-:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-title] {
-  font-size: 1.1875rem;
-  font-weight: 700;
-  line-height: 1.4;
-}
+  :root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-title] {
+    font-size: 1.1875rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
 
-:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-summary] {
-  -webkit-line-clamp: 3;
-}
+  :root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-summary] {
+    -webkit-line-clamp: 3;
+  }
 
-:root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-reason] {
-  display: block;
-  margin-top: 0.75rem;
-  border-top: 0;
-  border-left: 2px solid var(--accent);
-  padding: 0.125rem 0 0.125rem 0.75rem;
-  color: var(--ink-3);
+  :root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-reason] {
+    display: block;
+    margin-top: 0.75rem;
+    border-top: 0;
+    border-left: 2px solid var(--accent);
+    padding: 0.125rem 0 0.125rem 0.75rem;
+    color: var(--ink-3);
+  }
 }
 
 @media (min-width: 700px) {
   :root[data-style="journal"] [data-home-main] [data-feed-card] {
     padding: 1.125rem 1.375rem;
   }
+
   :root[data-style="journal"] [data-home-main] [data-fi-title] {
     font-size: 1.125rem;
-  }
-  :root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] {
-    padding: 1.375rem 1.625rem;
-  }
-  :root[data-style="journal"] [data-home-main] section:first-of-type [data-slot]:first-of-type [data-feed-card] [data-fi-title] {
-    font-size: 1.4375rem;
-    line-height: 1.35;
   }
 }
 
@@ -235,31 +568,65 @@
   display: block;
 }
 
+@media (min-width: 941px) {
+  :root[data-style="journal"] [data-shell-top] > div {
+    max-width: calc(1280px + 3.5rem);
+  }
+}
+
 @media (min-width: 1176px) {
-  :root[data-style="journal"] [data-home-grid]:has(> [data-home-rail]) {
-    grid-template-columns: minmax(0, 1fr) 300px;
+  /* html:root beats layout.css's later :root:not([data-style="classic"]) at equal attribute count. */
+  html:root[data-style="journal"] [data-home-grid]:has(> [data-home-rail]) {
+    grid-template-columns: minmax(0, 1fr) 320px;
     gap: 36px;
   }
-  :root[data-style="journal"] [data-home-rail] {
+
+  html:root[data-style="journal"] [data-home-rail] {
+    top: 84px;
     margin-top: 0;
+  }
+
+  :root[data-style="journal"] .voices-rail {
+    top: 84px;
+    max-height: calc(100dvh - 104px);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
   }
 }
 
 :root[data-style="journal"] [data-rail-card] {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  padding: 1.125rem 1.25rem;
   box-shadow: var(--shadow-card);
 }
 
-/* Catalog pages (/companies, /policies): crisp grouped paper sheets. */
+:root[data-style="journal"] [data-journal-radar] a {
+  transition:
+    transform 180ms var(--ease-silk),
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+:root[data-style="journal"] [data-journal-radar] a:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  background: var(--accent-softer);
+}
+
+/* ============================================================================
+   Subpage Polish: /companies, /policies, /voices, /hot
+   ============================================================================ */
+
+/* Catalog pages (/companies, /policies): crisp grouped paper sheets with row hover tint. */
 :root[data-style="journal"] [data-catalog-list] ol {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-card);
+  border-radius: 14px;
   padding-inline: 1rem;
   box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
 :root[data-style="journal"] [data-catalog-list] [data-slot] > div {
@@ -278,14 +645,25 @@
 
 @media (min-width: 700px) {
   :root[data-style="journal"] [data-catalog-list] ol {
-    padding-inline: 1.375rem;
+    padding-inline: 0;
+    padding-top: 0;
   }
+
+  :root[data-style="journal"] [data-catalog-list] [data-slot] {
+    padding-inline: 1.375rem;
+    transition: background-color 160ms ease;
+  }
+
+  :root[data-style="journal"] [data-catalog-list] [data-slot]:hover {
+    background: var(--accent-softer);
+  }
+
   :root[data-style="journal"] [data-catalog-list] [data-slot] article {
     padding-block: 1.25rem;
   }
 }
 
-/* Community Voices: tactile paper cards instead of heavy dashed dividers. */
+/* Community Voices (/voices): tactile 14px paper cards with silky hover lift. */
 :root[data-style="journal"] .voices-grid {
   gap: 14px;
 }
@@ -301,13 +679,17 @@
 :root[data-style="journal"] .voices-grid > .voice-card:nth-child(2) {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-card);
+  border-radius: 14px;
   padding: 1.125rem 1.25rem;
   box-shadow: var(--shadow-card);
-  transition: border-color var(--duration-fast) var(--ease-enter), box-shadow var(--duration-fast) var(--ease-enter);
+  transition:
+    transform 220ms var(--ease-silk),
+    border-color 180ms ease,
+    box-shadow 220ms var(--ease-silk);
 }
 
 :root[data-style="journal"] .voice-card:hover {
+  transform: translateY(-2px);
   border-color: var(--line-strong);
   box-shadow: var(--shadow-card-hover);
 }
@@ -317,13 +699,63 @@
   line-height: 1.45;
 }
 
-:root[data-style="journal"] .voices-rail {
+/* Hot Board (/hot): elevated 16px architectural cards, clean hover without muddy teal wash. */
+:root[data-style="journal"] [data-hot-page] .card {
+  border-radius: 16px;
+  border-color: var(--line);
+  background-color: var(--surface);
   box-shadow: var(--shadow-card);
 }
 
+:root[data-style="journal"] [data-hot-page] .card-hover {
+  transition:
+    transform 220ms var(--ease-silk),
+    border-color 180ms ease,
+    box-shadow 220ms var(--ease-silk),
+    background-color 180ms ease;
+}
+
+:root[data-style="journal"] [data-hot-page] .card-hover:hover {
+  background-color: var(--surface);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+:root[data-style="journal"] [data-hot-page] [data-hot-cards] > div:first-child > article.card {
+  box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card);
+}
+
+:root[data-style="journal"] [data-hot-page] [data-hot-cards] > div:first-child > article.card:hover {
+  box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow-card-hover);
+}
+
+/* Respect prefers-reduced-motion: disable all transforms and transitions cleanly. */
 @media (prefers-reduced-motion: reduce) {
   :root[data-style="journal"] [data-home-main] [data-feed-card],
+  :root[data-style="journal"] [data-hero-lead],
+  :root[data-style="journal"] [data-hero-daily],
+  :root[data-style="journal"] [data-hero-daily-btn],
+  :root[data-style="journal"] [data-hero-hot],
+  :root[data-style="journal"] [data-hero-hot] ol a,
+  :root[data-style="journal"] [data-hero-cta],
+  :root[data-style="journal"] [data-journal-radar] a,
+  :root[data-style="journal"] [data-catalog-list] [data-slot],
+  :root[data-style="journal"] [data-hot-page] .card-hover,
+  :root[data-style="journal"] [data-top-link],
+  :root[data-style="journal"] [data-top-search],
   :root[data-style="journal"] .voice-card {
     transition: none;
+  }
+
+  :root[data-style="journal"] [data-home-main] [data-feed-card]:hover,
+  :root[data-style="journal"] [data-hero-lead]:hover,
+  :root[data-style="journal"] [data-hero-daily]:hover,
+  :root[data-style="journal"] [data-hero-daily-btn]:hover,
+  :root[data-style="journal"] [data-hero-hot] a:hover,
+  :root[data-style="journal"] [data-journal-radar] a:hover,
+  :root[data-style="journal"] [data-hot-page] .card-hover:hover,
+  :root[data-style="journal"] .voice-card:hover {
+    transform: none;
   }
 }
