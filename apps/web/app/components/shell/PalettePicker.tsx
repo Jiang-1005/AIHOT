@@ -22,7 +22,7 @@ export function PalettePicker({ compact = false }: { compact?: boolean }) {
             title={p.fullLabel}
             data-palette-option={p.id}
             onClick={() => setJournalPalette(p.id)}
-            className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border px-1 py-2 text-[0.75rem] leading-none transition-all duration-150 ${
+            className={`flex flex-col items-center justify-center gap-1.5 rounded-tile border px-1 py-2 text-[0.75rem] leading-none transition-all duration-150 ${
               compact ? "min-h-[52px]" : ""
             } ${
               active

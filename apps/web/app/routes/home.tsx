@@ -173,7 +173,7 @@ function HomeRail({ hot, issue, today, todayCount }: { hot: RailHot[]; issue: Ma
             <Link
               key={item.to}
               to={item.to}
-              className="group flex flex-col gap-1 rounded-xl border border-line-soft bg-bg/65 p-2.5 transition-all duration-200 hover:-translate-y-px hover:border-line-strong hover:bg-bg-muted"
+              className="group flex flex-col gap-1 rounded-tile border border-line-soft bg-bg/65 p-2.5 transition-all duration-200 hover:-translate-y-px hover:border-line-strong hover:bg-bg-muted"
             >
               <span className="flex items-center gap-1.5 text-[0.8125rem] font-semibold text-ink transition-colors group-hover:text-accent">
                 <item.icon size={15} className="shrink-0 text-accent" />

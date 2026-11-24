@@ -152,7 +152,7 @@ export function SearchOverlay() {
       className={`fixed inset-0 z-[75] flex flex-col bg-bg pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] transition-opacity duration-200 ease-[var(--ease-out-quart)] lg:items-center lg:justify-start lg:bg-black/45 lg:px-6 lg:pt-[11vh] ${shown ? "opacity-100 lg:backdrop-blur-[6px]" : "pointer-events-none opacity-0"}`}
     >
       <div
-        className={`flex min-h-0 flex-1 flex-col transition-transform duration-200 ease-[var(--ease-out-quart)] lg:max-h-[76vh] lg:w-full lg:max-w-[640px] lg:flex-initial lg:overflow-hidden lg:rounded-2xl lg:border lg:border-line lg:bg-surface lg:shadow-[var(--shadow-overlay)] ${shown ? "translate-y-0 lg:scale-100" : "-translate-y-1 lg:-translate-y-2 lg:scale-[0.98]"}`}
+        className={`flex min-h-0 flex-1 flex-col transition-transform duration-200 ease-[var(--ease-out-quart)] lg:max-h-[76vh] lg:w-full lg:max-w-[640px] lg:flex-initial lg:overflow-hidden lg:rounded-sheet lg:border lg:border-line lg:bg-surface lg:shadow-[var(--shadow-overlay)] ${shown ? "translate-y-0 lg:scale-100" : "-translate-y-1 lg:-translate-y-2 lg:scale-[0.98]"}`}
       >
         <Form
           method="get"
@@ -181,7 +181,7 @@ export function SearchOverlay() {
               maxLength={200}
               autoComplete="off"
               enterKeyHint="search"
-              className="h-10 w-full rounded-full bg-surface pl-10 pr-9 text-[1rem] text-ink outline-none ring-1 ring-inset ring-line-strong transition-shadow placeholder:text-ink-4 focus:ring-accent focus:shadow-[0_0_0_3px_var(--accent-soft)] lg:h-11 lg:rounded-xl lg:bg-transparent lg:pl-10 lg:pr-10 lg:ring-0 lg:focus:shadow-none [&::-webkit-search-cancel-button]:hidden"
+              className="h-10 w-full rounded-full bg-surface pl-10 pr-9 text-[1rem] text-ink outline-none ring-1 ring-inset ring-line-strong transition-shadow placeholder:text-ink-4 focus:ring-accent focus:shadow-[0_0_0_3px_var(--accent-soft)] lg:h-11 lg:rounded-control lg:bg-transparent lg:pl-10 lg:pr-10 lg:ring-0 lg:focus:shadow-none [&::-webkit-search-cancel-button]:hidden"
             />
             {hasText && (
               <button

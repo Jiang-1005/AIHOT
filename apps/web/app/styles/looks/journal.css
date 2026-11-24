@@ -711,7 +711,7 @@
   }
 
   :root[data-style="journal"] [data-hero-hot] ol a {
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     margin-inline: -0.5rem;
     padding-inline: 0.5rem;
     transition: background-color 160ms ease, color 160ms ease;
@@ -749,7 +749,7 @@
 :root[data-style="journal"] [data-home-main] [data-feed-card] {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-card);
   padding: 1rem 1.125rem;
   margin-bottom: 0.75rem;
   box-shadow: var(--shadow-card);
@@ -850,7 +850,7 @@
   :root[data-style="journal"] .voices-rail {
     top: 84px;
     max-height: calc(100dvh - 104px);
-    border-radius: 14px;
+    border-radius: var(--radius-panel);
     box-shadow: var(--shadow-card);
   }
 }
@@ -858,7 +858,7 @@
 :root[data-style="journal"] [data-rail-card] {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-card);
   padding: 1.125rem 1.25rem;
   box-shadow: var(--shadow-card);
 }
@@ -884,7 +884,7 @@
 :root[data-style="journal"] [data-catalog-list] ol {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   padding-inline: 1rem;
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -940,7 +940,7 @@
 :root[data-style="journal"] .voices-grid > .voice-card:nth-child(2) {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-card);
   padding: 1.125rem 1.25rem;
   box-shadow: var(--shadow-card);
   transition:
@@ -960,9 +960,9 @@
   line-height: 1.45;
 }
 
-/* Hot Board (/hot): elevated 16px architectural cards, clean hover without muddy wash. */
+/* Hot Board (/hot): elevated cards, clean hover without muddy wash. */
 :root[data-style="journal"] [data-hot-page] .card {
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   border-color: var(--line);
   background-color: var(--surface);
   box-shadow: var(--shadow-card);
