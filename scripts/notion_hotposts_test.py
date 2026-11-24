@@ -477,6 +477,46 @@ class ViewBodiesAndMerge(unittest.TestCase):
         self.assertTrue(fresh["verified"])
         self.assertEqual(fresh_note["content_type"], "unmapped")
 
+    def test_later_snapshot_can_accept_a_newer_sample_without_moving_the_migration(self):
+        previous = {
+            "platform": "X",
+            "url": "https://x.com/a/status/2",
+            "title": "旧标题",
+            "summary": "旧摘要",
+            "day": "2026-11-01",
+            "published_at": "2026-11-01",
+            "verified": True,
+            "author": "@a",
+            "metrics": {"likes": 10, "captured_at": "2026-11-10"},
+            "tags": {"topic": "教学实践", "content_type": "用户自述", "subject": "待定", "form": "待定", "companies": []},
+        }
+        projected = {
+            "platform": "X", "url": previous["url"], "title": "新标题", "summary": "新摘要",
+            "day": "2026-11-01", "published_at": "2026-11-01", "verified": False, "author": "@a",
+            "brief": "", "quote": "新摘要",
+            "metrics": {"likes": 40, "captured_at": "2026-11-20"},
+            "tags": {"topic": "待定", "content_type": "待定", "subject": "待定", "form": "待定", "companies": []},
+        }
+        notion = {"post_key": "x:2", "verified": False, "published_on": "2026-11-01", "captured_on": "2026-11-20", "notion_content_type": "教程", "verification_status": []}
+        held, held_note = nh.merge_catalog_item(previous, projected, notion, {"source": {"update_policy": "migration-hold"}})
+        self.assertEqual(held["title"], "旧标题")
+        self.assertEqual(held["summary"], "旧摘要")
+        self.assertEqual(held["metrics"]["likes"], 40)
+        self.assertTrue(held["verified"])
+        self.assertEqual(held["tags"]["content_type"], "用户自述")
+        self.assertEqual(held_note["text"], "baseline")
+        updated, updated_note = nh.merge_catalog_item(previous, projected, notion, {"source": {"update_policy": "accept-newer-sample"}})
+        self.assertEqual(updated["title"], "新标题")
+        self.assertEqual(updated["summary"], "新摘要")
+        self.assertEqual(updated["metrics"]["likes"], 40)
+        self.assertTrue(updated["verified"])
+        self.assertEqual(updated["tags"]["content_type"], "用户自述")
+        self.assertEqual(updated_note["text"], "notion-newer-sample")
+        again, again_note = nh.merge_catalog_item(updated, projected, notion, {"source": {"update_policy": "accept-newer-sample"}})
+        self.assertEqual(again["title"], "新标题")
+        self.assertEqual(again["summary"], "新摘要")
+        self.assertEqual(again_note["text"], "same")
+
 
 class RealFreeze(unittest.TestCase):
     def test_prewrite_freeze_is_not_importable_and_matches_known_counts(self):

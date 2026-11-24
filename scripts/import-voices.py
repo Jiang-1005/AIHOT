@@ -827,7 +827,7 @@ def run_notion_import(args) -> int:
     seen_urls = set()
     for row, item in projected:
         previous = by_url.get(item["url"])
-        merged, note = merge_catalog_item(previous, item, post_by_url.get(item["url"]) or {})
+        merged, note = merge_catalog_item(previous, item, post_by_url.get(item["url"]) or {}, snapshot)
         if note.get("published") == "filled-from-notion":
             keys["publish_date_kept"].append(row.get("post_key") or item["url"])
         origin = row.get("post_key") or item["url"]

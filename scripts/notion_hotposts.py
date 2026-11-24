@@ -530,6 +530,7 @@ def seal_view_response_bodies(bodies: list[dict], provenance: dict, body_sha256:
             "view": VIEW,
             "query": {"mode": "view", "archive_status": "all", "page_size": page_size},
             "fetched_at": fetched,
+            "update_policy": provenance.get("update_policy") or "migration-hold",
             "provenance": {
                 "response_bodies": "view-json-dumps",
                 "requests": requests_kind,
@@ -572,9 +573,21 @@ def content_type_for_card(notion_value: str | None, review: dict, previous: dict
     return "待定", "missing"
 
 
-def merge_catalog_item(previous: dict | None, projected: dict, notion: dict) -> tuple[dict, dict]:
-    """已有卡片不以较旧的 Notion 库存覆盖正文、互动和核验。新帖才用快照。"""
-    note = {"post_key": notion.get("post_key"), "action": "added" if previous is None else "kept-baseline"}
+def update_policy_of(snapshot: dict | None) -> str:
+    policy = ((snapshot or {}).get("source") or {}).get("update_policy") or "migration-hold"
+    if policy not in {"migration-hold", "accept-newer-sample"}:
+        raise GateError("update_policy 只能是 migration-hold 或 accept-newer-sample")
+    return policy
+
+
+def merge_catalog_item(previous: dict | None, projected: dict, notion: dict, snapshot: dict | None = None) -> tuple[dict, dict]:
+    """已有卡片不以较旧的 Notion 库存覆盖正文、互动和核验。新帖才用快照。
+
+    migration-hold（默认，本次 817 迁移）不改已有正文。accept-newer-sample 只在采集日
+    严格变晚时接收同 URL 的正文和互动，同一天再跑不会再改。
+    """
+    policy = update_policy_of(snapshot)
+    note = {"post_key": notion.get("post_key"), "action": "added" if previous is None else "kept-baseline", "update_policy": policy}
     if previous is None:
         item = json.loads(json.dumps(projected))
         review = resolve_content_type(notion.get("notion_content_type"))
@@ -591,7 +604,17 @@ def merge_catalog_item(previous: dict | None, projected: dict, notion: dict) -> 
         return item, note
     item = json.loads(json.dumps(previous))
     note["action"] = "kept-baseline"
-    if (previous.get("title") or "") != (projected.get("title") or "") or (previous.get("summary") or "") != (projected.get("summary") or ""):
+    text_differs = (previous.get("title") or "") != (projected.get("title") or "") or (previous.get("summary") or "") != (projected.get("summary") or "")
+    prev_day_for_text = _capture_day((previous.get("metrics") or {}).get("captured_at"))
+    new_day_for_text = _capture_day(notion.get("captured_on"))
+    if policy == "accept-newer-sample" and text_differs and new_day_for_text and prev_day_for_text and new_day_for_text > prev_day_for_text:
+        item["title"] = projected.get("title") or ""
+        item["summary"] = projected.get("summary") or ""
+        item["brief"] = projected.get("brief") or ""
+        item["quote"] = projected.get("quote") or ""
+        note["text"] = "notion-newer-sample"
+        note["action"] = "text-updated"
+    elif text_differs:
         note["text"] = "baseline"
     else:
         note["text"] = "same"
@@ -660,6 +683,7 @@ def main(argv: list[str] | None = None) -> int:
     view.add_argument("--fetched-at", required=True)
     view.add_argument("--page-size", type=int, default=100)
     view.add_argument("--declared-n", type=int)
+    view.add_argument("--update-policy", choices=["migration-hold", "accept-newer-sample"], default="migration-hold")
     view.add_argument("--out")
     view.add_argument("--dry-run", action="store_true")
     check = sub.add_parser("check")
@@ -704,6 +728,7 @@ def main(argv: list[str] | None = None) -> int:
                 "view": VIEW,
                 "query": {"mode": "view", "archive_status": "all", "page_size": args.page_size},
                 "fetched_at": args.fetched_at,
+                "update_policy": args.update_policy,
                 "requests": requests_kind,
                 "declared_n": args.declared_n,
                 "pages": chain_pages,
