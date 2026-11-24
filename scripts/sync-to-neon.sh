@@ -29,6 +29,14 @@ if [[ -n "${-:-}" && "${-}" == *x* ]]; then
 fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Refuse before reading any database URL. A failed or incomplete hot-post import must not sync.
+if ! python3 "$ROOT/scripts/notion-hotposts-snapshot.py" gate-sync \
+    --snapshot "$ROOT/.data/notion-hotposts/snapshot.json" \
+    --stamp "$ROOT/.data/notion-hotposts/import-stamp.json"
+then
+  echo "热帖导入未通过，已停止同步。没有读取数据库连接。" >&2
+  exit 1
+fi
 # Host deps first: migrate.ts and sync-site-blobs.ts import @aihot/backend from node_modules.
 "$ROOT/scripts/ensure-host-deps.sh"
 NEON_ENV="${NEON_ENV:-$ROOT/.secrets/neon.env}"

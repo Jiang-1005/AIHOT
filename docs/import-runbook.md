@@ -3,6 +3,8 @@
 C J 2026-11-13 10:40 确认：从今晚 20:30 那轮起导入由「教育AIHOT 导入员」接手；Grok Bot 的导入定时任务已暂停（未删除）。
 下面是 Grok Bot 定时任务里原样的步骤，已按实际跑过的经验整理。
 
+C J 2026-11-24 14:07 在教育AIHOT群决定：以后用 Notion 导入，飞书就算了。14:10：我们的 X 上的帖子也放进 Notion。14:11：为了方便同步，避免小红书和 X 割裂。从这一版起，X 和小红书的权威来源只有 Notion 热帖快照。字段协议和命令见 `docs/notion-hotposts.md`。本仓库不改 9:30 / 20:30 的 routine，由 C J 自己挂。导入员仍是唯一写生产库的人；日常把 X 写入 Notion 的仍是内容雷达，不是导入脚本。
+
 ## 环境
 - 项目目录 /workspace/edu-hot，Docker 项目 xintian-edu-hot，`DOCKER_HOST=tcp://127.0.0.1:2375`，API 容器 xintian-edu-hot-api-1。
 - 线上：Vercel 项目 edu-ai-hot（https://edu-ai-hot.vercel.app），数据库 Neon 新加坡；用法看 /workspace/edu-hot/DEPLOY-VERCEL.md。
@@ -11,7 +13,7 @@ C J 2026-11-13 10:40 确认：从今晚 20:30 那轮起导入由「教育AIHOT �
 
 ## 判断有没有新内容
 每一路输入和它自己的产物比，不能拿 Neon 同步时间代替（11-10 曾因此漏导 30 条）。
-- 社区热帖：数 /workspace/edu-radar/grok-posts.json 里有多少 url 不在 /workspace/edu-hot/.data/voices.json，>0 就跑第 3 步；小红书文件在 /workspace/research/feishu-edu/。
+- 社区热帖：先核对 `/workspace/edu-hot/.data/notion-hotposts/snapshot.json`（`notion-hotposts-snapshot.py check` 退出码 0）。不要再数 grok-posts.json，也不要读 `/workspace/research/feishu-edu/`。快照不完整、哈希不符、或会丢掉 baseline 里已有的帖又没加 `--retain-baseline-union`，就不要导入，也不要同步。
 - 拿不准就照常跑，脚本都可重复跑、按原文链接去重。
 
 ## 每轮步骤（9:30 / 20:30 北京时间；晚轮只导早上之后新增的）
@@ -24,18 +26,20 @@ C J 2026-11-13 10:40 确认：从今晚 20:30 那轮起导入由「教育AIHOT �
      docker cp xintian-edu-hot-api-1:/data/content-tags.json /workspace/edu-hot/.data/content-tags.json
    - 竞品库 /workspace/research/edu-ai-map/products.csv。
 2. 媒体按 docs/selection.md：网站统一打分，门槛 60；7 天内进首页精选，7–30 天进往期，更早不进；原链接要 200；没打开原文标「未查到原文」。不凑数不降门槛。
-3. 社区热帖（全收，每条标来源；小红书只放标题、摘要、链接，不配图不显示作者，去掉孩子姓名和校名），依次：
+3. 社区热帖（全收，每条标来源；小红书只放标题、摘要、链接，不配图不显示作者，去掉孩子姓名和校名）。X / 小红书只读 Notion 快照；知乎、微博、即刻、豆瓣、B 站仍走中文社区收件箱。快照必须已经由上游封好。依次：
    python3 /workspace/edu-hot/scripts/collect-cn-community.py --daily   （DeepSeek 搜索，每轮最多 15 次检索；别把整页读进上下文）
-   python3 /workspace/edu-hot/scripts/scrub-xhs.py
-   python3 /workspace/edu-hot/scripts/import-voices.py
+   python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py check --snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json
+   python3 /workspace/edu-hot/scripts/scrub-xhs.py --snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json
+   python3 /workspace/edu-hot/scripts/import-voices.py --notion-snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json --baseline /workspace/edu-hot/.data/voices.json --retain-baseline-union --cn /workspace/edu-hot/.data/cn-community-inbox.json --dry-run
+   python3 /workspace/edu-hot/scripts/import-voices.py --notion-snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json --baseline /workspace/edu-hot/.data/voices.json --retain-baseline-union --cn /workspace/edu-hot/.data/cn-community-inbox.json
    python3 /workspace/edu-hot/scripts/tag-content.py
-   核对：voices.json 里 X 条数 = grok-posts.json 去重 url 数（rejected 为空时）。
+   任何一条退出码不是 0，就停，不要跑下面的 sync-to-neon.sh。`--dry-run` 不写 voices.json，也不写出允许同步的戳记。正式导入成功后才会写 `.data/notion-hotposts/import-stamp.json`。核对：同一原帖 URL 不重复；baseline 里有、快照里没有的帖还在；缺发布日期的帖，day 仍是空的，不能变成采集日期。
 4. 全部写完库后再同步（不要和导入同时写库）：
    set -a; . /workspace/edu-hot/.secrets/neon.env; set +a; /workspace/edu-hot/scripts/sync-to-neon.sh
    然后确认首页、/voices、/topics、/companies、/companies?view=company&company=心田花开、/policies 返回 200，/api/site/voices?ts= 的 total、generatedAt 与本地一致。
    泄漏检查：公开页不得出现「与心田花开相关」、xintianRelevance、代码/元数据里的 xintian；心田花开、花啦啦作为普通公司名出现在 /companies 可以，不置顶。线上无密码、保持 noindex。
 5. 本地站：127.0.0.1:3080 无口令应返回 401；确认 gate-proxy 和隧道（deploy/tunnel.pid）还在。不要动这两个进程，只有断了才按 deploy/ 的方法重开；新链接只私下告诉 C J，口令绝不进群。
-6. 小红书表：/workspace/research/feishu-edu/xhs-inbox.csv 按原帖链接去重，只统计待写条数；写飞书要 C J 在场逐条确认，导入员不写。
+6. 飞书小红书表不再刷新，`scripts/sync-xhs-feishu.py` 会直接退出。导入员不写 Notion。Notion 里缺的 X 由内容雷达补，补完并重新封存快照之后，导入员才把新快照导进来。
 
 ## 打分 + 出刊（2026-11-17 起，worker 关着）
 worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打分、归事件、出日报都要靠这一条命令补上。
@@ -59,7 +63,7 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 - `HEALTH FAIL`：原样贴那一行，不报完成，按下面各组的说明处理。
 - `HEALTH PENDING`：还不能报完成，只会因为 cdn 组（见下面「CDN 两步核对」），这一行里写着「复查时间 HH:MM」。必须做完第二步、拿到 `HEALTH OK` 或 `HEALTH FAIL` 才能报。没拿到这两行之一，就不算这轮完成。
 - FAIL 在 scoring / issue：先再跑一次 score-and-compose.sh 和 sync-to-neon.sh，再查一次；还 FAIL 就在群里叫 Grok Bot。
-- FAIL 在 inputs：只报告清单里该有、且已过截止时间仍缺的文件（雷达早 8:25 / 晚 19:20，脚本在 8:40 / 19:35 才升为 FAIL；行业早 8:50 / 晚 19:50，脚本在 9:05 / 20:05 才升为 FAIL）。目录里多出来的、名字不合约定的雷达文件只 WARN，不算缺件，不替别的 bot 改名或补抓。行业目录里的非正式 items 文件（如 items-noon.csv、items.dedup.csv）同样只 WARN，因为 import-brief-items.ts 不会自动读它们；只有「会被读进来、且含有不在正式 items 里的条目」才升为 FAIL。
+- FAIL 在 inputs：只报告清单里该有、且已过截止时间仍缺的文件（热帖 Notion 快照与导入戳记跟原来的雷达截止时刻相同：早 8:25 / 晚 19:20，脚本在 8:40 / 19:35 才升为 FAIL；行业早 8:50 / 晚 19:50，脚本在 9:05 / 20:05 才升为 FAIL）。快照文件在，但分页不完整或哈希不符，不用等截止时间，直接 FAIL。`x-posts-feishu-new-*.csv` 还在目录里只 WARN，热帖导入不读它。行业目录里的非正式 items 文件（如 items-noon.csv、items.dedup.csv）同样只 WARN，因为 import-brief-items.ts 不会自动读它们；只有「会被读进来、且含有不在正式 items 里的条目」才升为 FAIL。
 - FAIL 在 db：停，不同步，叫 Grok Bot。
 - FAIL 在 deps（宿主机 node_modules 不在，盒子重启后会出现）：在 /workspace/edu-hot 跑 `npm ci` 再查。sync-to-neon.sh 和 score-and-compose.sh 开头会自动补装，npm ci 失败就退出非 0，这轮停下叫 Grok Bot。
 - FAIL 在 fresh：某一项超过失败阈值没更新。热点榜：看 score-and-compose.sh 输出有没有 hot 字段、sync-to-neon.sh 有没有跑完，补跑这两条再查；热帖：查 import-voices.py 这轮跑没跑；日报、周报：再跑一次 score-and-compose.sh。还 FAIL 就在群里叫 Grok Bot。
@@ -125,7 +129,7 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 
 | 输出 | 数据从哪来 | 新鲜度阈值（告警 / FAIL） | 出问题叫谁 |
 |---|---|---|---|
-| 热帖 | 📡 AI 教育内容雷达（grok-posts.json、x-posts-feishu-new-*.csv）+ collect-cn-community.py | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot；信源由 C J 定 |
+| 热帖 | Notion 热帖快照（X 与小红书）+ collect-cn-community.py（知乎/微博/即刻/豆瓣/B站）。不读 grok-posts.json，不读飞书 | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot；信源由 C J 定 |
 | 日报 | 🔭 AI 教培行业观察的公司、政策、媒体条目（约定的 items.csv / items-pm.csv，别名 items-evening.csv）+ 热帖，score-and-compose.sh 出刊 | 13 小时 / 25 小时 | 群里 @🤖 Grok Bot |
 | 周报 | 同日报，score-and-compose.sh 按周出刊 | 8 天 / 9 天 | 群里 @🤖 Grok Bot |
 | 热点榜 | 已归事件的稿件，score-and-compose.sh 第 4 步重算 | 13 小时 / 25 小时；0 条默认提示，候选≥1 且过了一轮该刷新的同步则失败 | 群里 @🤖 Grok Bot；上榜门槛由 C J 定 |

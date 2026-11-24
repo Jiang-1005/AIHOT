@@ -1,0 +1,14 @@
+{
+  "grok_content_types": ["新闻快讯", "官方发布", "深度分析", "测评体验", "研究报告", "观点评论", "教程与提示词", "用户自述"],
+  "rule": "Notion「内容类型」和 grok content_type 不是同一套选项。只有 review 为 accepted 且 site_content_type 属于 grok_content_types 时，导入才写入站点 tags.content_type。未审、未列出、以及 X 采集标注里的内容类型一律保持待定，不自动改写。",
+  "notion_content_types": {
+    "经验分享": {"site_content_type": null, "review": "unreviewed", "note": "不是用户自述"},
+    "教程": {"site_content_type": null, "review": "unreviewed", "note": "不是教程与提示词"},
+    "行业资讯": {"site_content_type": null, "review": "unreviewed", "note": "不是新闻快讯"},
+    "项目展示": {"site_content_type": null, "review": "unreviewed", "note": "站点词表没有同名项"},
+    "产品介绍": {"site_content_type": null, "review": "unreviewed", "note": "不是官方发布"},
+    "观点讨论": {"site_content_type": null, "review": "unreviewed", "note": "不是观点评论"},
+    "工具测评": {"site_content_type": null, "review": "unreviewed", "note": "不是测评体验"},
+    "选购讨论": {"site_content_type": null, "review": "unreviewed", "note": "不是测评体验"}
+  }
+}

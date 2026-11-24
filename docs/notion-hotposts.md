@@ -1,0 +1,144 @@
+# Notion 热帖快照
+
+2026-11-24 起，X 和小红书的正式内容源是 Notion 数据库「AI 教育热帖」。飞书目录和 `grok-posts.json` 不再覆盖站点热帖。导入员仍是唯一把热帖写入生产库的人。内容雷达仍是唯一把日常 X 写入 Notion 的人。本文件不改 9:30 / 20:30 的定时任务。
+
+这里有两份文件，不要混成一份：
+
+1. **连接器分页**（`notion-connector-pagination-v1`）。上游用本 bot 的官方 Notion 连接器，对下面这个视图做全量分页后，把每一页的行原样收进一个 JSON。行的形状以连接器实际返回为准（扁平属性名，见 `scripts/fixtures/notion-hotposts/connector-pages.json`）。本仓库不调用 Notion 的私有 API，也不读取令牌。
+2. **站点快照**（`edu-hot-notion-hotposts-snapshot-v1`）。`notion-hotposts-snapshot.py seal` 检查分页完整之后写出。导入只读这份快照。
+
+库：<https://app.notion.com/p/42234f5efb6e81ed86dcf9223807d9d4>
+
+- database_id：`42234f5e-fb6e-81ed-86dc-f9223807d9d4`
+- data_source：`collection://42234f5e-fb6e-8142-814f-000b742fd940`
+- 视图：`view://42234f5e-fb6e-81b6-bb70-000c6b7060aa`
+- 查询必须是 `mode=view`、`archive_status=all`。默认视图的筛选不能当成全表。
+
+官方 SQL / rows 查询的额度会用完。额度用完时继续用视图分页，不要为了 SQL 额度去购买 Notion 升级。分页文件本身不消耗 SQL 额度。
+
+## 给上游：封存
+
+连接器每一页收成：
+
+```json
+{
+  "protocol": "notion-connector-pagination-v1",
+  "data_source": "collection://42234f5e-fb6e-8142-814f-000b742fd940",
+  "database_url": "https://app.notion.com/p/42234f5efb6e81ed86dcf9223807d9d4",
+  "database_id": "42234f5e-fb6e-81ed-86dc-f9223807d9d4",
+  "view": "view://42234f5e-fb6e-81b6-bb70-000c6b7060aa",
+  "query": {"mode": "view", "archive_status": "all"},
+  "fetched_at": "2026-11-24T14:18:35+08:00",
+  "declared_n": 541,
+  "pages": [
+    {"index": 1, "page_size": 100, "has_more": true, "results": []},
+    {"index": 2, "page_size": 100, "has_more": false, "results": []}
+  ]
+}
+```
+
+`results[]` 里每个对象是连接器的一行。`url` 是 Notion 页面地址，不是原帖。原帖在 `原帖`，去重键在 `原帖键`（`x:<status id>` 或 `xhs:<笔记 id>`）。
+
+最后一页必须 `has_more=false`，页码从 1 连续，前面每一页的行数等于 `page_size`。中间缺页、最后一页仍 `has_more=true`、原帖键重复、原帖和原帖键对不上，都拒绝封存。只有 `results`、没有 `pages` 的合并文件（包括 2026-11-24 14:16 那份 541 条预写冻结）不能封存，也不能导入。
+
+```bash
+python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py seal \
+  --pages /workspace/edu-hot/.data/notion-hotposts/connector-pages.json \
+  --dry-run
+
+python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py seal \
+  --pages /workspace/edu-hot/.data/notion-hotposts/connector-pages.json \
+  --out /workspace/edu-hot/.data/notion-hotposts/snapshot.json
+
+python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py check \
+  --snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json
+```
+
+`--dry-run` 只打印行数和 `rows_sha256`，不写文件。哈希是帖子列表按原帖键排序后的 SHA-256。快照写在 `.data/notion-hotposts/`，不放进 `feishu-edu`，也不伪装成 `xhs-*.json`。
+
+## 字段
+
+| 连接器列 | 快照 / 站点 | 规则 |
+|---|---|---|
+| 来源平台 | platform | 只收 `X` 和 `小红书` |
+| 原帖 + 原帖键 | canonical_url、post_key | 两者的 id 必须一致。查询串丢掉。站点不使用 Notion 的 `url` |
+| 笔记标题、讨论要点 | title、summary | 小红书再经 `scrub-xhs.py`。公开页没有作者、封面、查看入口 |
+| date:发布日期:start | published_on、day | 只有这一列。没有就留空 |
+| date:采集日期:start | metrics.captured_at | 不拿来填发布日。页面时间、createdTime 都不是发布日 |
+| 点赞、收藏、评论、转发 | metrics 里的同名数字 | 列缺失是 null，不写成 0。0 只有列里真是 0 才保留 |
+| 互动来源 | metrics.interaction_source | 只留方括号里的来源名，去掉带跟踪参数的链接 |
+| 互动口径 | metrics.caption | 原文保留，里面的采样时间不另造 |
+| 核验状态、访问状态 | metrics.verification_status、access_status、verified | 见下 |
+| 内容类型 | 不直接进 tags.content_type | 见对照表 |
+| X 话题 | tags.topic | 只有和站点主题词表完全相同才写入；否则保持待定。方向、主形态不写入主题 |
+| X 采集标注 | 只留在快照的 radar_content_type | 不写入站点内容类型 |
+| 人群、信源 | source | 原样作来源标签，不改写成另一套身份 |
+| 作者、封面、查看入口 | 小红书公开字段里没有 | 作者和图片不进站点 |
+
+已核只在同时满足这四条时为 true：核验状态含「原帖已核」、不含「部分待核」、不含「推断」、访问状态是「原帖已打开」「图文已打开」或「视频已播放」之一。其余都保持未核，原始状态仍写在 metrics 里。`--skip-verify` 不会把未核改成已核，导入也不打开原帖。
+
+内容类型对照在 `scripts/notion-hotposts-content-types.json`。当前每一项都是 `review: unreviewed`，站点类型是 null，导入后 `tags.content_type` 保持待定；如果这条帖在 baseline 里已经有类型，空的待定不会把它擦掉。对照表改成 `accepted` 之后才会写入，并且站点类型必须属于：新闻快讯、官方发布、深度分析、测评体验、研究报告、观点评论、教程与提示词、用户自述。Notion 的「教程」不是「教程与提示词」，「行业资讯」不是「新闻快讯」，「观点讨论」不是「观点评论」，「工具测评」不是「测评体验」。
+
+小红书公开样例（发布日为空，采集日不补上）：
+
+```json
+{
+  "platform": "小红书",
+  "url": "https://www.xiaohongshu.com/explore/6b044b670000000018029cc5",
+  "author": "",
+  "published_at": null,
+  "day": null,
+  "verified": true,
+  "metrics": {
+    "likes": null,
+    "collects": 2,
+    "captured_at": "2026-11-24",
+    "interaction_source": "原帖底栏",
+    "verification_status": ["原帖已核"],
+    "access_status": "图文已打开"
+  },
+  "tags": {"content_type": "待定"}
+}
+```
+
+这条在 2026-11-24 预写冻结里发布日期列不存在，采集日期是 2026-11-24。`verified: true` 是因为表内写了「原帖已核」且访问状态是「图文已打开」，不是导入时重新打开了原帖。
+
+## 给导入员
+
+先有上游封好的快照，再跑。`--baseline` 是当前 `.data/voices.json`。快照里没有、baseline 里有的帖，必须加 `--retain-baseline-union` 才会原样保留；不加就失败，不写文件。这个开关不读取 grok-posts，也不读取飞书。它留着，是因为 Notion 里的 X 还没有盖住站点已有的 430 条；雷达把缺的帖补进 Notion 并重新封存之后，下一次导入会从快照更新这些帖，不会另存一份。
+
+```bash
+python3 /workspace/edu-hot/scripts/scrub-xhs.py \
+  --snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json
+
+python3 /workspace/edu-hot/scripts/import-voices.py \
+  --notion-snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json \
+  --baseline /workspace/edu-hot/.data/voices.json \
+  --retain-baseline-union \
+  --cn /workspace/edu-hot/.data/cn-community-inbox.json \
+  --dry-run
+
+python3 /workspace/edu-hot/scripts/import-voices.py \
+  --notion-snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json \
+  --baseline /workspace/edu-hot/.data/voices.json \
+  --retain-baseline-union \
+  --cn /workspace/edu-hot/.data/cn-community-inbox.json
+```
+
+标准输出是一行 JSON：`added`、`changed`、`skipped`、`retained_baseline`、`duplicates`。`duplicates` 必须是 0。退出码不是 0 时不写 `voices.json`。非 dry-run 的失败会把导入戳记写成 `ok: false`。`sync-to-neon.sh` 在读数据库连接之前调用 `gate-sync`，戳记不是 ok 就不连库。
+
+同一条原帖再跑一次：`added=0`、`changed=0`、`duplicates=0`，URL 集合不变。快照里同一条帖的标题、互动数以快照为准；发布日如果快照是空的，而 baseline 里已经有日期，就留下 baseline 的日期，仍然不用采集日去填。
+
+知乎、微博、即刻、豆瓣、B 站不在这个 Notion 库里，继续用 `--cn`。baseline 里已有的这些帖同样靠 `--retain-baseline-union` 保留。
+
+## 健康检查
+
+`check-pipeline-health.py` 的 inputs 组在传入热帖路径时检查两件事：快照能通过 `check`，导入戳记的哈希等于快照哈希。文件还没到，跟原来的雷达截止时刻一样（早 8:40 / 晚 19:35 之后才 FAIL）。文件在但不完整或哈希不符，直接 FAIL。`x-posts-feishu-new-*.csv` 只提示「已不读」。
+
+## 这次还没有做的
+
+- 没有连接 Notion，没有读密钥，没有写生产库，没有跑 Neon 或 Docker 上的导入。
+- 2026-11-24 14:16 的 541 条（小红书 381、X 160）是测试用的历史冻结。按 status id 和当时的 grok/站点 430 条比：重合 154、站点有而冻结没有 276、冻结独有 6。那 276 条当时还没全部写入 Notion。这份合并 JSON 被 seal 拒绝。不能用 160 覆盖站点的 430，也不能把 381−245 当成净新增。
+- 内容类型对照表全部未审，所以新帖的 `content_type` 是待定。
+- 小红书脱敏沿用 `scrub-xhs.py`。学校名替换原先读了不存在的正则分组，碰到校名会中断；已改成读当前这一个分组。公开字段仍只有标题、摘要、链接。
+- 导入不重新打开原帖。表内没写成已核的，站点上也不是已核。

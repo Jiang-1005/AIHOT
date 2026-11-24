@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 """Import X, 小红书, and Chinese-community voices into the 「社区热帖」 catalog.
 
-Idempotent: dedupes by canonical original-post URL. Does not log into any site.
-Admit-all: unverified posts stay in the section with a 未查到原文 badge.
+X and 小红书 come only from a sealed Notion snapshot. grok-posts.json and the
+Feishu directory are not authorities and cannot be passed back in. Idempotent:
+dedupes by canonical original-post URL. Does not log into any site. Admit-all:
+unverified posts stay in the section with a 未查到原文 badge.
 
-Daily rerun (on the box, Asia/Shanghai):
+  python3 /workspace/edu-hot/scripts/import-voices.py \\
+    --notion-snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json \\
+    --baseline /workspace/edu-hot/.data/voices.json \\
+    --retain-baseline-union \\
+    --cn /workspace/edu-hot/.data/cn-community-inbox.json \\
+    --dry-run
 
-  python3 /workspace/edu-hot/scripts/import-voices.py
-
-This writes .data/voices.json and, when Docker is available, copies it to the
-API volume at /data/voices.json so the live page updates without a restart.
+A non-zero exit does not write voices.json and does not authorize sync.
 """
 from __future__ import annotations
 
-import argparse, csv, hashlib, html, json, os, re, subprocess, sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import argparse, hashlib, html, json, os, re, subprocess, sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from facets import (
-    resolve_x_tags, load_bak_tags, display_subject, normalize_tag_set, empty_tags,
-    clean_companies,
-)
+from facets import empty_tags
 
 
 BJ = timezone(timedelta(hours=8))
@@ -179,8 +178,6 @@ def canon_url(url: str) -> str:
 
 
 X_STATUS_RE = re.compile(r"^https://x\.com/[A-Za-z0-9_]{1,15}/status/\d+$", re.I)
-X_PROFILE_RE = re.compile(r"^https://x\.com/[A-Za-z0-9_]{1,15}/?$", re.I)
-BAK_TAGS_PATH = Path("/workspace/edu-radar/grok-posts.bak-20261110f-tags.json")
 
 
 def is_x_status_url(url: str) -> bool:
@@ -382,138 +379,15 @@ def is_ad(title: str, summary: str, content_type=None) -> bool:
 # --- source loaders ---
 
 def load_x(path: Path) -> list[dict]:
-    data = load_json(path)
-    posts = data["posts"] if isinstance(data, dict) else data
-    out = []
-    for p in posts:
-        raw_url = p.get("url")
-        if not raw_url:
-            continue
-        url = coerce_x_status_url(raw_url, p)
-        if not url:
-            # keep the row so it can be rejected as 未查到原文
-            url = canon_url(raw_url)
-            status_ok = False
-        else:
-            status_ok = True
-        metrics = p.get("metrics") or {}
-        out.append({
-            "platform": "X",
-            "url": url,
-            "title": p.get("title") or "",
-            "summary": p.get("summary") or "",
-            "author": p.get("author") or "",
-            "published_at": p.get("published_at"),
-            "day": parse_day(p.get("published_at")),
-            "source_label": p.get("source") or "",
-            "poster": POSTER_X.get(p.get("source") or "", None),
-            "age_range": p.get("age_raw") or ("、".join(p.get("age_group") or []) if p.get("age_group") else "未标注"),
-            "country": "、".join(p.get("country") or []) or "未标注",
-            "brief": (p.get("brief") or "").strip(),
-            "metrics": {
-                "likes": metrics.get("likes"),
-                "reposts": metrics.get("reposts"),
-                "replies": metrics.get("replies"),
-                "quotes": metrics.get("quotes"),
-                "bookmarks": metrics.get("bookmarks"),
-                "views": metrics.get("views"),
-                "captured_at": metrics.get("captured_at"),
-                "metrics_fetched_at": p.get("metrics_fetched_at") or metrics.get("metrics_fetched_at"),
-            },
-            "origin": str(path),
-            "status_ok": status_ok,
-            "topic": p.get("topic"),
-            "subject": p.get("subject"),
-            "companies": p.get("companies"),
-            "form": p.get("form"),
-            "content_type": p.get("content_type"),
-            "raw_post": p,
-        })
-    return out
+    raise SystemExit("X 热帖不再从 grok-posts.json 导入。使用已封存的 Notion 快照。")
 
 
 def load_xhs_table(path: Path) -> list[dict]:
-    data = load_json(path)
-    payload = data.get("data") or {}
-    fields = payload.get("fields") or []
-    if "原帖" not in fields or "笔记标题" not in fields:
-        return []  # aggregate tables, not notes
-    rows = []
-    for rec in payload.get("data") or []:
-        row = dict(zip(fields, rec))
-        url = extract_url(row.get("原帖"))
-        if not url:
-            continue
-        url = canon_url(url)
-        crowd = row.get("人群")
-        if isinstance(crowd, list):
-            crowd = crowd[0] if crowd else ""
-        status = row.get("核验状态")
-        if isinstance(status, list):
-            status = status[0] if status else ""
-        likes, collects, comments = row.get("点赞"), row.get("收藏"), row.get("评论")
-        captured = row.get("采集日期") or row.get("页面时间")
-        rows.append({
-            "platform": "小红书",
-            "url": url,
-            "title": row.get("笔记标题") or "",
-            "summary": row.get("讨论要点") or "",
-            "author": row.get("作者") or "",
-            "published_at": row.get("发布日期"),
-            "day": parse_day(row.get("发布日期") or row.get("页面时间")),
-            "source_label": crowd or "",
-            "poster": POSTER_XHS.get(crowd or "", None),
-            "age_range": row.get("学生年龄段") or "未标注",
-            "country": row.get("国家") or "中国",
-            "content_type": row.get("内容类型"),
-            "xhs_status": status,
-            "metrics": {
-                "likes": likes,
-                "collects": collects,
-                "comments": comments,
-                "captured_at": captured,
-                "caption": row.get("互动口径") or None,
-            },
-            "origin": str(path),
-        })
-    return rows
+    raise SystemExit("飞书矩阵不再是小红书来源。")
 
 
 def load_xhs_csv(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
-    text = path.read_text(encoding="utf-8-sig")
-    rows = list(csv.DictReader(text.splitlines()))
-    out = []
-    for row in rows:
-        url = extract_url(row.get("原帖"))
-        if not url:
-            continue
-        url = canon_url(url)
-        crowd = (row.get("人群") or "").strip()
-        out.append({
-            "platform": "小红书",
-            "url": url,
-            "title": row.get("笔记标题") or "",
-            "summary": row.get("讨论要点") or "",
-            "author": row.get("作者") or "",
-            "published_at": row.get("发布日期"),
-            "day": parse_day(row.get("发布日期") or row.get("页面时间")),
-            "source_label": crowd,
-            "poster": POSTER_XHS.get(crowd, None),
-            "age_range": row.get("学生年龄段") or "未标注",
-            "country": row.get("国家") or "中国",
-            "content_type": row.get("内容类型"),
-            "xhs_status": row.get("核验状态") or "",
-            "metrics": {
-                "likes": row.get("点赞") or None,
-                "collects": row.get("收藏") or None,
-                "comments": row.get("评论") or None,
-                "captured_at": row.get("采集日期") or row.get("页面时间"),
-            },
-            "origin": str(path),
-        })
-    return out
+    raise SystemExit("飞书 xhs-inbox.csv 不再是小红书来源。")
 
 
 def load_xhs_scrub_map() -> dict[str, dict]:
@@ -636,15 +510,10 @@ def verify_cn(url: str) -> tuple[bool, str]:
 
 
 def load_all_xhs(directory: Path) -> list[dict]:
-    found: dict[str, dict] = {}
-    # Notes tables first, then inbox rows (inbox can add new URLs).
-    for path in sorted(directory.glob("xhs-*.json")):
-        for row in load_xhs_table(path):
-            found[row["url"]] = row
-    csv_path = directory / "xhs-inbox.csv"
-    for row in load_xhs_csv(csv_path):
-        found[row["url"]] = row  # inbox wins on the same URL (newer row)
-    return list(found.values())
+    raise SystemExit(
+        "小红书不再从飞书目录读取。"
+        "先封存 Notion 快照，再跑 scrub-xhs.py --snapshot 和 import-voices.py --notion-snapshot。"
+    )
 
 
 def reject(row: dict, reason: str, rejected: dict):
@@ -749,214 +618,317 @@ def count_report(total: int, verified_n: int, admitted: list, rejected: dict) ->
     }
 
 
-def main():
-    ap = argparse.ArgumentParser(description="Import X / 小红书 / 中文社区 voices (idempotent, no login).")
-    ap.add_argument("--x", default="/workspace/edu-radar/grok-posts.json")
-    ap.add_argument("--xhs-dir", default="/workspace/research/feishu-edu")
-    ap.add_argument("--cn", default=str(REPO / ".data" / "cn-community-inbox.json"))
-    ap.add_argument("--out", default=str(REPO / ".data" / "voices.json"))
-    ap.add_argument("--report", default=str(REPO / ".data" / "voices-import-report.json"))
-    ap.add_argument("--skip-verify", action="store_true", help="dev only")
-    args = ap.parse_args()
+def _fail_import(message: str, stamp: Path | None, dry_run: bool) -> int:
+    print(json.dumps({"ok": False, "error": message}, ensure_ascii=False), file=sys.stderr)
+    if stamp is not None and not dry_run:
+        from notion_hotposts import write_json
+        write_json(stamp, {"ok": False, "error": message, "written_at": now_bj()})
+    return 2
 
-    x_posts = load_x(Path(args.x))
-    xhs_posts = [apply_xhs_privacy(r, load_xhs_scrub_map()) for r in load_all_xhs(Path(args.xhs_dir))]
-    cn_posts = load_cn_community(Path(args.cn))
+
+def _contract(item: dict) -> tuple:
+    metrics = item.get("metrics") or {}
+    tags = item.get("tags") or {}
+    return (
+        item.get("url"),
+        item.get("platform"),
+        item.get("title"),
+        item.get("summary"),
+        item.get("day"),
+        item.get("published_at"),
+        bool(item.get("verified")),
+        item.get("author") or "",
+        metrics.get("likes"),
+        metrics.get("captured_at"),
+        metrics.get("interaction_source"),
+        tuple(metrics.get("verification_status") or []),
+        tags.get("content_type"),
+        tags.get("topic"),
+    )
+
+
+def _guard_existing(item: dict, previous: dict | None) -> list[str]:
+    """Notion wins on fields it actually has. A missing publish date does not erase a known day, and 待定 does not erase a tag already on the site."""
+    if not previous:
+        return []
+    notes = []
+    if not item.get("day") and previous.get("day"):
+        item["day"] = previous.get("day")
+        item["published_at"] = previous.get("published_at") or previous.get("day")
+        item["slot"] = slot_of(parse_day(item["day"])) or "archive"
+        item["age_days"] = age_days(parse_day(item["day"]))
+        notes.append("publish_date_kept_from_baseline")
+    old_tags = previous.get("tags") or {}
+    new_tags = item.get("tags") or empty_tags()
+    for key in ("topic", "subject", "form", "content_type"):
+        old = old_tags.get(key)
+        new = new_tags.get(key)
+        if old not in (None, "", "待定") and new in (None, "", "待定"):
+            new_tags[key] = old
+            notes.append(f"kept_{key}")
+    if old_tags.get("companies") and not new_tags.get("companies"):
+        new_tags["companies"] = old_tags.get("companies")
+    item["tags"] = new_tags
+    return notes
+
+
+def _notion_row(post: dict, content: dict) -> dict:
+    from notion_hotposts import topic_for_site
+    tags = empty_tags()
+    topic = topic_for_site(post.get("notion_topic"))
+    if topic:
+        tags["topic"] = topic
+    if content.get("site_content_type"):
+        tags["content_type"] = content["site_content_type"]
+    metrics = {
+        "likes": post.get("likes"),
+        "collects": post.get("collects"),
+        "comments": post.get("comments"),
+        "reposts": post.get("reposts"),
+        "replies": post.get("comments"),
+        "bookmarks": post.get("collects"),
+        "captured_at": post.get("captured_on"),
+        "caption": post.get("interaction_caption") or None,
+        "interaction_source": post.get("interaction_source") or None,
+        "verification_status": post.get("verification_status") or [],
+        "access_status": post.get("access_status") or "",
+    }
+    platform = post["platform"]
+    return {
+        "platform": platform,
+        "url": post["canonical_url"],
+        "title": post.get("title") or "",
+        "summary": post.get("summary") or "",
+        "author": "" if platform == "小红书" else (post.get("author") or ""),
+        "published_at": post.get("published_on"),
+        "day": parse_day(post.get("published_on")),
+        "source_label": (post.get("crowd") or post.get("source_name") or "") if platform == "小红书" else (post.get("source_name") or ""),
+        "poster": None,
+        "age_range": post.get("age_range") or "未标注",
+        "country": post.get("country") or "未标注",
+        "brief": "",
+        "metrics": metrics,
+        "status_ok": True,
+        "tags": tags,
+        "tags_source": "notion-snapshot" if topic or content.get("site_content_type") else None,
+        "post_key": post["post_key"],
+        "content_review": content,
+    }
+
+
+def run_notion_import(args) -> int:
+    from notion_hotposts import GateError, load_snapshot, resolve_content_type, write_json
+    dry_run = bool(args.dry_run)
+    out = Path(args.out or (REPO / ".data" / "voices.json"))
+    report_path = Path(args.report or (out.parent / "voices-import-report.json"))
+    stamp = Path(args.stamp) if args.stamp else (REPO / ".data" / "notion-hotposts" / "import-stamp.json")
+    scrubbed = Path(args.scrubbed or (REPO / ".data" / "xhs-scrubbed.json"))
+    if args.x or args.xhs_dir:
+        return _fail_import("旧来源回退已禁用：不要把 grok-posts.json 或 feishu-edu 当作热帖权威。", None if dry_run else stamp, dry_run)
+    if not args.notion_snapshot:
+        return _fail_import("热帖 X/小红书 只从 Notion 快照导入。请传 --notion-snapshot。飞书目录不再是来源。", None if dry_run else stamp, dry_run)
+    if not args.baseline:
+        return _fail_import("必须提供 --baseline（当前 voices.json）。缺了它就不能判断哪些历史帖要保留。", None if dry_run else stamp, dry_run)
+    try:
+        snapshot = load_snapshot(Path(args.notion_snapshot))
+        baseline_file = json.loads(Path(args.baseline).read_text(encoding="utf-8"))
+    except GateError as exc:
+        return _fail_import(str(exc), None if dry_run else stamp, dry_run)
+    except FileNotFoundError:
+        return _fail_import("快照或 baseline 文件不存在", None if dry_run else stamp, dry_run)
+    except json.JSONDecodeError:
+        return _fail_import("快照或 baseline 不是 JSON", None if dry_run else stamp, dry_run)
+    baseline_items = baseline_file.get("items") if isinstance(baseline_file, dict) else baseline_file
+    if not isinstance(baseline_items, list):
+        return _fail_import("baseline 没有 items 列表", None if dry_run else stamp, dry_run)
+    by_url = {}
+    for item in baseline_items:
+        url = canon_url(item.get("url") or "")
+        if not url:
+            continue
+        if url in by_url:
+            return _fail_import(f"baseline 里原帖 URL 重复：{url}", None if dry_run else stamp, dry_run)
+        cloned = dict(item)
+        cloned["url"] = url
+        by_url[url] = cloned
+    posts = []
+    reviews = []
+    for post in snapshot["posts"]:
+        content = resolve_content_type(post.get("notion_content_type"))
+        if post.get("radar_content_type"):
+            content = dict(content)
+            content["radar_content_type"] = post["radar_content_type"]
+            content["radar_not_applied"] = True
+        row = _notion_row(post, content)
+        reviews.append({"post_key": post["post_key"], "review": content["review"], "notion": content.get("notion"), "site_content_type": content.get("site_content_type")})
+        posts.append(row)
+    xhs_posts = [row for row in posts if row["platform"] == "小红书"]
+    scrub_map = {}
+    if xhs_posts:
+        if not scrubbed.exists():
+            return _fail_import("缺少小红书清洗副本。先跑 scrub-xhs.py --snapshot，再导入。", None if dry_run else stamp, dry_run)
+        try:
+            scrub_map = {it["url"]: it for it in json.loads(scrubbed.read_text(encoding="utf-8")).get("items") or [] if it.get("url")}
+        except json.JSONDecodeError:
+            return _fail_import("小红书清洗副本不是 JSON", None if dry_run else stamp, dry_run)
+        missing_scrub = [row["url"] for row in xhs_posts if row["url"] not in scrub_map]
+        if missing_scrub:
+            return _fail_import(f"清洗副本缺 {len(missing_scrub)} 条小红书，拒绝导入", None if dry_run else stamp, dry_run)
+    prepared = []
+    for row in posts:
+        if row["platform"] == "小红书":
+            row = apply_xhs_privacy(row, scrub_map)
+            row["author"] = ""
+            row.pop("image", None)
+            row.pop("images", None)
+            row.pop("cover", None)
+        prepared.append(row)
+    if args.cn:
+        cn_path = Path(args.cn)
+        if not cn_path.exists():
+            return _fail_import("中文社区收件箱不存在", None if dry_run else stamp, dry_run)
+        cn_posts = load_cn_community(cn_path)
+    else:
+        cn_posts = []
     for row in cn_posts:
         row["title"] = sanitize(row.get("title") or "")
         row["summary"] = sanitize(row.get("summary") or "")
         row["author"] = ""
-    bak_by_url = load_bak_tags(BAK_TAGS_PATH)
-    x_need_deepseek = []
-    for row in x_posts:
-        tags, src = resolve_x_tags(row.get("raw_post") or row, bak_by_url)
-        if tags:
-            # display rule: 政策/融资/泛 AI + 全科通用 → 不涉及 (topic in 政策与合规/公司与资本/观点与趋势)
-            tags["subject"] = display_subject(tags.get("topic"), tags.get("subject_raw") or tags.get("subject"))
-            tags["companies"] = clean_companies(tags.get("companies"))
-            row["tags"] = tags
-            row["tags_source"] = src
-        else:
-            row["tags"] = empty_tags()
-            row["tags_source"] = None
-            x_need_deepseek.append(row)
-    # 小红书: use precomputed content-tags.json if present; otherwise leave empty for tag-content.py
-    tag_store_path = REPO / ".data" / "content-tags.json"
-    tag_store = {}
-    if tag_store_path.exists():
-        try:
-            tag_store = json.loads(tag_store_path.read_text()).get("items") or {}
-        except Exception:
-            tag_store = {}
-    for row in xhs_posts:
-        rec = tag_store.get(row["url"]) or tag_store.get((row.get("url") or "").rstrip("/"))
-        if rec and rec.get("topic"):
-            row["tags"] = normalize_tag_set(rec) or empty_tags()
-            row["tags_source"] = rec.get("source") or "deepseek"
-        else:
-            row["tags"] = empty_tags()
-            row["tags_source"] = None
-    print(f"loaded X={len(x_posts)} 小红书={len(xhs_posts)} 中文社区={len(cn_posts)} as_of={TODAY.isoformat()} X_untagged={len(x_need_deepseek)}", flush=True)
-    if x_need_deepseek:
-        print("X posts without radar/bak tags (will stay 待定 until DeepSeek backfill):", len(x_need_deepseek), flush=True)
+        row["tags"] = empty_tags()
+        row["status_ok"] = True
+    # --skip-verify must not mark a row verified. The sheet status is the only source.
+    verified_by_url = {post["canonical_url"]: bool(post.get("verified")) for post in snapshot["posts"]}
+    verdicts = {row["url"]: (verified_by_url.get(row["url"], False), "") for row in prepared}
+    for row in cn_posts:
+        verdicts[row["url"]] = (False, "")
 
-    # Verify
-    x_verdict: dict[str, tuple[bool, str]] = {}
-    xhs_verdict: dict[str, tuple[bool, str]] = {}
-    cn_verdict: dict[str, tuple[bool, str]] = {}
-    cache_path = REPO / ".data" / "voices-verify-cache.json"
-    cache = {}
-    if cache_path.exists():
-        try:
-            cache = json.loads(cache_path.read_text())
-        except Exception:
-            cache = {}
-    if not args.skip_verify:
-        x_verdict = {u: (bool(v[0]), v[1]) for u, v in cache.get("X", {}).items() if u in {p["url"] for p in x_posts}}
-        xhs_verdict = {u: (bool(v[0]), v[1]) for u, v in cache.get("小红书", {}).items() if u in {p["url"] for p in xhs_posts}}
-        cn_verdict = {u: (bool(v[0]), v[1]) for u, v in cache.get("中文社区", {}).items() if u in {p["url"] for p in cn_posts}}
-        # Prefer a fresh open_ok hint from the collector for URLs not yet cached.
-        for row in cn_posts:
-            if row["url"] not in cn_verdict and row.get("open_ok_hint") is True:
-                cn_verdict[row["url"]] = (True, "ok")
-        x_need = [p["url"] for p in x_posts if p["url"] not in x_verdict]
-        xhs_need = [p["url"] for p in xhs_posts if p["url"] not in xhs_verdict]
-        print(f"verify cache hit X={len(x_posts)-len(x_need)}/{len(x_posts)} 小红书={len(xhs_posts)-len(xhs_need)}/{len(xhs_posts)}", flush=True)
-        with ThreadPoolExecutor(max_workers=8) as pool:
-            futs = {pool.submit(verify_x, url): url for url in x_need}
-            for i, fut in enumerate(as_completed(futs), 1):
-                url = futs[fut]
-                try:
-                    x_verdict[url] = fut.result()
-                except Exception:
-                    x_verdict[url] = (False, "未查到原文")
-                if i % 20 == 0 or i == len(futs):
-                    print(f"  verified X {i}/{len(futs)}", flush=True)
-        with ThreadPoolExecutor(max_workers=6) as pool:
-            futs = {pool.submit(verify_xhs, url): url for url in xhs_need}
-            for i, fut in enumerate(as_completed(futs), 1):
-                url = futs[fut]
-                try:
-                    xhs_verdict[url] = fut.result()
-                except Exception:
-                    xhs_verdict[url] = (False, "未查到原文")
-                if i % 30 == 0 or i == len(futs):
-                    print(f"  checked 小红书 {i}/{len(futs)}", flush=True)
-        cn_need = [p["url"] for p in cn_posts if p["url"] not in cn_verdict]
-        print(f"verify cache hit 中文社区={len(cn_posts)-len(cn_need)}/{len(cn_posts)}", flush=True)
-        with ThreadPoolExecutor(max_workers=6) as pool:
-            futs = {pool.submit(verify_cn, url): url for url in cn_need}
-            for i, fut in enumerate(as_completed(futs), 1):
-                url = futs[fut]
-                try:
-                    cn_verdict[url] = fut.result()
-                except Exception:
-                    cn_verdict[url] = (False, "未查到原文")
-                if i % 20 == 0 or i == len(futs):
-                    print(f"  checked 中文社区 {i}/{len(futs)}", flush=True)
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(json.dumps({"X": x_verdict, "小红书": xhs_verdict, "中文社区": cn_verdict}, ensure_ascii=False, indent=2))
-    else:
-        x_verdict = {p["url"]: (True, "ok") for p in x_posts}
-        xhs_verdict = {p["url"]: (False, "未查到原文") for p in xhs_posts}
-        cn_verdict = {p["url"]: (False, "未查到原文") for p in cn_posts}
-
-    def run(rows, verdicts):
-        admitted, rejected = [], {}
-        verified_n = 0
+    def project(rows):
+        admitted = []
         seen = set()
         for row in rows:
             if row["url"] in seen:
-                reject(row, "重复 URL", rejected)
-                continue
+                return None, row["url"]
             seen.add(row["url"])
-            ok, _ = verdicts.get(row["url"], (False, "未查到原文"))
-            if ok:
-                verified_n += 1
-            item = decide(row, ok, rejected)
+            ok, _ = verdicts.get(row["url"], (False, ""))
+            item = decide(row, ok, {})
             if item:
-                admitted.append(item)
-        admitted.sort(key=lambda it: (0 if it["slot"] == "featured" else 1, it.get("day") or "", it["id"]), reverse=True)
-        # sort featured first then by day desc — the reverse above messes featured/archive.
-        admitted.sort(key=lambda it: (0 if it["slot"] == "featured" else 1, it.get("day") or ""), reverse=False)
-        admitted.sort(key=lambda it: ((0 if it["slot"] == "featured" else 1), -(age_days(parse_day(it.get("day"))) or 0) if False else 0, it.get("day") or ""), reverse=False)
-        admitted.sort(key=lambda it: (0 if it["slot"] == "featured" else 1, it.get("day") or ""), reverse=True)
-        return admitted, rejected, verified_n
+                admitted.append((row, item))
+        return admitted, None
 
-    x_adm, x_rej, x_ver = run(x_posts, x_verdict)
-    xhs_adm, xhs_rej, xhs_ver = run(xhs_posts, xhs_verdict)
-    cn_adm, cn_rej, cn_ver = run(cn_posts, cn_verdict)
-
-    def likes_of(it):
-        try:
-            return int(str((it.get("metrics") or {}).get("likes") or 0).replace(",", "") or 0)
-        except Exception:
-            return 0
-
-    def published_key(it):
-        return it.get("published_at") or it.get("day") or ""
-
-    items = x_adm + xhs_adm + cn_adm
-    # Global URL dedupe across platforms; first occurrence wins (X, then 小红书, then 中文社区).
-    deduped, seen_all = [], set()
-    for it in items:
-        if it["url"] in seen_all:
-            continue
-        seen_all.add(it["url"])
-        deduped.append(it)
-    items = deduped
-    # Default catalog order = 最新: calendar day desc, same-day by likes desc, then timestamp.
-    items.sort(key=lambda it: (it.get("day") or "", likes_of(it), published_key(it), it["id"]), reverse=True)
-    featured = [i for i in items if i["slot"] == "featured"]
-    archive = [i for i in items if i["slot"] == "archive"]
-
+    projected, duplicate = project(prepared + cn_posts)
+    if duplicate:
+        return _fail_import(f"原帖 URL 重复：{duplicate}", None if dry_run else stamp, dry_run)
+    stats = {"added": 0, "changed": 0, "skipped": 0, "retained_baseline": 0, "duplicates": 0}
+    keys = {"added": [], "changed": [], "skipped": [], "retained": [], "publish_date_kept": []}
+    output = []
+    seen_urls = set()
+    for row, item in projected:
+        previous = by_url.get(item["url"])
+        notes = _guard_existing(item, previous)
+        if "publish_date_kept_from_baseline" in notes:
+            keys["publish_date_kept"].append(row.get("post_key") or item["url"])
+        origin = row.get("post_key") or item["url"]
+        if previous is None:
+            stats["added"] += 1
+            keys["added"].append(origin)
+        elif _contract(item) == _contract(previous):
+            stats["skipped"] += 1
+            keys["skipped"].append(origin)
+        else:
+            stats["changed"] += 1
+            keys["changed"].append(origin)
+        output.append(item)
+        seen_urls.add(item["url"])
+    missing = [item for url, item in by_url.items() if url not in seen_urls]
+    if missing and not args.retain_baseline_union:
+        return _fail_import(
+            f"快照加上中文社区之后仍少 {len(missing)} 条已在站点的帖。加上 --retain-baseline-union 才会保留并集；不会改用 grok-posts 或飞书把它们补回来。",
+            None if dry_run else stamp,
+            dry_run,
+        )
+    if args.retain_baseline_union:
+        for item in missing:
+            output.append(item)
+            seen_urls.add(item["url"])
+            stats["retained_baseline"] += 1
+            keys["retained"].append(item.get("url"))
+    if len(output) != len(seen_urls):
+        stats["duplicates"] = len(output) - len(seen_urls)
+        return _fail_import("输出里有重复原帖，拒绝写入", None if dry_run else stamp, dry_run)
+    fresh = [item for item in output if item["url"] not in {m.get("url") for m in missing}]
+    fresh.sort(key=lambda it: (it.get("day") or "", it.get("id") or ""), reverse=True)
+    retained = [item for item in output if item["url"] in {m.get("url") for m in missing}]
+    output = fresh + retained
+    featured = [item for item in output if item.get("slot") == "featured"]
+    archive = [item for item in output if item.get("slot") == "archive"]
     catalog = {
         "generatedAt": now_bj(),
         "asOf": TODAY.isoformat(),
         "section": "社区热帖",
-        "items": items,
+        "source": "notion-hotposts-snapshot",
+        "items": output,
         "counts": {
             "featured": len(featured),
             "archive": len(archive),
-            "total": len(items),
-            "by_platform": {k: sum(1 for i in items if i["platform"] == k) for k in sorted({i["platform"] for i in items})},
-            "by_source": {k: sum(1 for i in items if i.get("source") == k) for k in sorted({i.get("source") or "身份未确认" for i in items})},
+            "total": len(output),
+            "by_platform": {name: sum(1 for item in output if item.get("platform") == name) for name in sorted({item.get("platform") for item in output})},
         },
-        "report": {
-            "X": count_report(len(x_posts), x_ver, x_adm, x_rej),
-            "小红书": count_report(len(xhs_posts), xhs_ver, xhs_adm, xhs_rej),
-            "中文社区": count_report(len(cn_posts), cn_ver, cn_adm, cn_rej),
-        },
+        "report": {"stats": stats, "content_type_review": reviews},
     }
-    out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n")
-    report = {
-        "generatedAt": catalog["generatedAt"],
-        "asOf": catalog["asOf"],
-        "report": catalog["report"],
-        "admitted": [{"platform": i["platform"], "slot": i["slot"], "source": i.get("source"), "poster": i["poster"], "verified": i.get("verified"), "day": i["day"], "title": i["title"], "url": i["url"]} for i in items],
-        "rejected": {
-            "X": {k: v for k, v in x_rej.items()},
-            "小红书": {k: v for k, v in xhs_rej.items()},
-            "中文社区": {k: v for k, v in cn_rej.items()},
-        },
+    payload = {
+        "ok": True,
+        "dry_run": dry_run,
+        "stats": stats,
+        "keys": keys,
+        "snapshot_sha256": snapshot["integrity"]["rows_sha256"],
+        "skip_verify_ignored": bool(args.skip_verify),
+        "verification": "notion-status-only",
     }
-    Path(args.report).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
-    print("WROTE", out, "featured", len(featured), "archive", len(archive))
-    print(json.dumps(catalog["report"], ensure_ascii=False, indent=2))
+    print(json.dumps(payload, ensure_ascii=False))
+    if dry_run:
+        return 0
+    write_json(out, catalog)
+    write_json(report_path, payload)
+    write_json(stamp, {
+        "ok": True,
+        "snapshot_sha256": snapshot["integrity"]["rows_sha256"],
+        "stats": stats,
+        "retain_baseline_union": bool(args.retain_baseline_union),
+        "written_at": catalog["generatedAt"],
+        "note": "ok 表示这一轮导入可以同步，不表示已经同步。",
+    })
+    if out.resolve() == (REPO / ".data" / "voices.json").resolve():
+        host = os.environ.get("DOCKER_HOST", "tcp://127.0.0.1:2375")
+        try:
+            subprocess.run(
+                ["docker", "cp", str(out), "xintian-edu-hot-api-1:/data/voices.json"],
+                check=True, capture_output=True, text=True, env={**os.environ, "DOCKER_HOST": host},
+            )
+            print("copied to xintian-edu-hot-api-1:/data/voices.json")
+        except Exception as exc:
+            print("docker cp skipped:", exc, file=sys.stderr)
+    return 0
 
-    # Copy into the API data volume when Docker is up, so /api/site/voices sees it.
-    host = os.environ.get("DOCKER_HOST", "tcp://127.0.0.1:2375")
-    try:
-        subprocess.run(
-            ["docker", "cp", str(out), "xintian-edu-hot-api-1:/data/voices.json"],
-            check=True, capture_output=True, text=True, env={**os.environ, "DOCKER_HOST": host},
-        )
-        print("copied to xintian-edu-hot-api-1:/data/voices.json")
-    except Exception as e:
-        print("docker cp skipped:", e, file=sys.stderr)
+
+def main():
+    ap = argparse.ArgumentParser(description="Import Notion 热帖 / 中文社区 voices (idempotent, no login).")
+    ap.add_argument("--notion-snapshot")
+    ap.add_argument("--baseline")
+    ap.add_argument("--retain-baseline-union", action="store_true")
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--cn", default=None)
+    ap.add_argument("--scrubbed", default=None)
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--report", default=None)
+    ap.add_argument("--stamp", default=None)
+    ap.add_argument("--x", default=None, help=argparse.SUPPRESS)
+    ap.add_argument("--xhs-dir", default=None, help=argparse.SUPPRESS)
+    ap.add_argument("--skip-verify", action="store_true", help="ignored; sheet status is the only verification")
+    args = ap.parse_args()
+    return run_notion_import(args)
+
+
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
