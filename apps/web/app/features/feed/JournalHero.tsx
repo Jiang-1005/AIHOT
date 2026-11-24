@@ -16,6 +16,7 @@ import { rowDates } from "../../lib/format";
 import { publicCopy } from "../../lib/public-copy";
 import { rememberPreview } from "../item/preview";
 import type { MastheadIssue } from "./Masthead";
+import { GroupSources } from "./ReadingGroup";
 import { SourceLine, StarButton } from "./parts";
 
 export interface HeroHotItem {
@@ -115,16 +116,16 @@ export function JournalHero({
         </div>
 
         <footer className="mt-5 flex items-center justify-between gap-3 border-t border-line-soft pt-4 text-[0.8125rem]">
-          {lead.group && lead.group.reportCount > 1 ? (
-            <span className="text-ink-3">
-              共 <span className="num font-semibold text-ink">{lead.group.reportCount}</span> 篇相关报道
-            </span>
+          {lead.group && (lead.group.additionalSourceCount > 0 || lead.group.reportCount > 1) ? (
+            <div className="min-w-0 flex-1">
+              <GroupSources group={lead.group} parentId={lead.item.id} placement="hero" />
+            </div>
           ) : (
             <span className="text-ink-4">编辑部每日精选</span>
           )}
           <span
             data-hero-cta=""
-            className="inline-flex items-center gap-1 font-semibold text-accent transition-transform duration-200 group-hover:translate-x-1"
+            className="inline-flex shrink-0 items-center gap-1 font-semibold text-accent transition-transform duration-200 group-hover:translate-x-1"
           >
             阅读全文 <IconArrowRight size={14} />
           </span>

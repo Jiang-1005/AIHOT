@@ -12,7 +12,8 @@ startTransition(() => {
   hydrateRoot(
     document,
     <StrictMode>
-      <HydratedRouter />
+      {/* Commit cached returns promptly, even while WebKit is running a view transition. */}
+      <HydratedRouter useTransitions={false} />
     </StrictMode>,
     { onCaughtError: onError },
   );

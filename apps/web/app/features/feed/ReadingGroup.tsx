@@ -93,9 +93,9 @@ function LoadState({ loading, error, onRetry, empty }: { loading: boolean; error
 }
 
 /** "另外 N 家也报道了": the other reports of the fact the card stands for, behind a toggle. */
-export function GroupSources({ group, filters, parentId }: { group: GroupInfo; filters?: TimelineFilters; parentId: string }) {
+export function GroupSources({ group, filters, parentId, placement }: { group: GroupInfo; filters?: TimelineFilters; parentId: string; placement?: "hero" }) {
   const entry = useLocation().key;
-  const key = `${group.factId}|${parentId}`;
+  const key = `${group.factId}|${parentId}${placement ? `|${placement}` : ""}`;
   const saved = openGroups.peek(entry)?.groups[key];
   const [open, setOpen] = useState(saved !== undefined);
   const reports = useReports(reportsUrl(group.factId, filters), saved);
