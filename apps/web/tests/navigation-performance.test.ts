@@ -306,6 +306,8 @@ test('reader enhancements wait for visible code and update only the picture that
 test('deep reading returns to its anchor, including folded dates',async()=>{
   const context=await safari.newContext({viewport:{width:390,height:844}});
   const page=await context.newPage();
+  const errors:string[]=[];
+  page.on('pageerror',error=>errors.push(error.message));
   try{
     await visit(page,origin+'/?tag=long-reading');
     await expect(page.locator('[data-card-key]')).toHaveCount(180);
@@ -318,9 +320,23 @@ test('deep reading returns to its anchor, including folded dates',async()=>{
     });
     await page.getByRole('link',{name:'长列表文章 160',exact:true}).click();
     await expect(page.getByText('固定正文',{exact:true})).toBeVisible();
+    const expectRestored=async()=>{
+      await expect(page.locator('[data-card-key]')).toHaveCount(120);
+      await expect.poll(()=>page.locator(`[data-card-key="${before.key}"]`).evaluate((e,top)=>Math.abs(e.getBoundingClientRect().top-top),before.top)).toBeLessThan(2);
+      await expect(page.getByRole('button',{name:'展开10月4日',exact:true})).toBeVisible();
+    };
     await page.goBack();
-    await expect(page.locator('[data-card-key]')).toHaveCount(120);
-    await expect.poll(()=>page.locator(`[data-card-key="${before.key}"]`).evaluate((e,top)=>Math.abs(e.getBoundingClientRect().top-top),before.top)).toBeLessThan(2);
-    await expect(page.getByRole('button',{name:'展开10月4日',exact:true})).toBeVisible();
+    await expectRestored();
+    await page.goForward();
+    await expect(page.getByText('固定正文',{exact:true})).toBeVisible();
+    await page.getByRole('button',{name:'精选',exact:true}).click();
+    await expectRestored();
+    await page.goForward();
+    await expect(page.getByText('固定正文',{exact:true})).toBeVisible();
+    // Returning after the saved list expires renders the fresh, unfolded list.
+    await page.clock.setFixedTime(new Date(Date.now()+24*60*60*1000));
+    await page.goBack();
+    await expect(page.locator('[data-card-key]')).toHaveCount(180);
+    assert.deepEqual(errors,[]);
   }finally{await context.close();}
 });
