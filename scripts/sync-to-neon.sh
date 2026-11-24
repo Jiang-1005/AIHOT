@@ -29,13 +29,17 @@ if [[ -n "${-:-}" && "${-}" == *x* ]]; then
 fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# Refuse before reading any database URL. A failed or incomplete hot-post import must not sync.
-if ! python3 "$ROOT/scripts/notion-hotposts-snapshot.py" gate-sync \
-    --snapshot "$ROOT/.data/notion-hotposts/snapshot.json" \
-    --stamp "$ROOT/.data/notion-hotposts/import-stamp.json"
-then
-  echo "热帖导入未通过，已停止同步。没有读取数据库连接。" >&2
-  exit 1
+# Only a hot-post import that already wrote a stamp can block sync. Media, company,
+# and policy rounds do not create that stamp, and a missing stamp is not a failure.
+HOTPOST_STAMP="$ROOT/.data/notion-hotposts/import-stamp.json"
+if [[ -f "$HOTPOST_STAMP" ]]; then
+  if ! python3 "$ROOT/scripts/notion-hotposts-snapshot.py" gate-sync \
+      --snapshot "$ROOT/.data/notion-hotposts/snapshot.json" \
+      --stamp "$HOTPOST_STAMP"
+  then
+    echo "热帖导入戳记未通过，已停止同步。没有读取数据库连接。" >&2
+    exit 1
+  fi
 fi
 # Host deps first: migrate.ts and sync-site-blobs.ts import @aihot/backend from node_modules.
 "$ROOT/scripts/ensure-host-deps.sh"

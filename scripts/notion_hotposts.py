@@ -401,6 +401,252 @@ def topic_for_site(notion_topic: str | None) -> str | None:
     return None
 
 
+def _cursor_sha(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def seal_view_response_bodies(bodies: list[dict], provenance: dict, body_sha256: list[str] | None = None) -> dict:
+    """封存官方 view 响应正文的 dumps。
+
+    最后一页可以没有 next_cursor 字段。provenance 里的请求参数若标明 reconstructed，
+    只用来核对上一页正文里的游标，不当成当时的请求原文。
+    """
+    if not isinstance(bodies, list) or not bodies:
+        raise GateError("没有 view 响应正文，拒绝封存")
+    if not isinstance(provenance, dict):
+        raise GateError("缺少分页来源说明")
+    if provenance.get("data_source") != DATA_SOURCE or provenance.get("database_id") != DATABASE_ID:
+        raise GateError("data_source 或 database_id 与 AI 教育热帖库不一致")
+    if provenance.get("database_url") != DATABASE_URL or provenance.get("view") != VIEW:
+        raise GateError("数据库 URL 或视图与约定的全量视图不一致")
+    query = provenance.get("query") if isinstance(provenance.get("query"), dict) else {}
+    if query.get("mode") != "view" or query.get("archive_status") != "all":
+        raise GateError("分页必须是 mode=view 且 archive_status=all，避免默认视图把行滤掉")
+    page_size = query.get("page_size")
+    if not isinstance(page_size, int) or page_size < 1:
+        raise GateError("query.page_size 必须是正整数")
+    fetched = provenance.get("fetched_at") or ""
+    if not isinstance(fetched, str) or not re.search(r"(Z|[+-]\d{2}:\d{2})$", fetched):
+        raise GateError("fetched_at 需要带时区")
+    requests_kind = provenance.get("requests") or "not-provided"
+    if requests_kind not in {"not-provided", "reconstructed-not-original"}:
+        raise GateError("请求来源只能是 not-provided 或 reconstructed-not-original，不能把还原参数当成原始请求")
+    chain = provenance.get("pages") if isinstance(provenance.get("pages"), list) else None
+    if requests_kind == "reconstructed-not-original":
+        if not chain or len(chain) != len(bodies):
+            raise GateError("还原的游标链页数和响应正文页数不一致")
+    elif chain and len(chain) != len(bodies):
+        raise GateError("游标链页数和响应正文页数不一致")
+    if body_sha256 is not None and len(body_sha256) != len(bodies):
+        raise GateError("正文哈希个数和页数不一致")
+
+    posts = []
+    seen_keys = set()
+    page_keys = []
+    cursor_chain = []
+    seen_cursors = set()
+    for index, body in enumerate(bodies, start=1):
+        if not isinstance(body, dict) or "results" not in body or "has_more" not in body:
+            raise GateError(f"第 {index} 页不是 view 响应正文")
+        if set(body) - {"results", "has_more", "next_cursor"}:
+            raise GateError(f"第 {index} 页带了 view 正文以外的字段")
+        results = body.get("results")
+        has_more = body.get("has_more")
+        if not isinstance(results, list) or not results:
+            raise GateError(f"第 {index} 页没有行，拒绝断点快照")
+        if not isinstance(has_more, bool):
+            raise GateError(f"第 {index} 页缺少 has_more")
+        is_last = index == len(bodies)
+        cursor_present = "next_cursor" in body
+        cursor = body.get("next_cursor") if cursor_present else None
+        if not is_last:
+            if has_more is not True:
+                raise GateError(f"第 {index} 页 has_more 不是 true，后面却还有页")
+            if not isinstance(cursor, str) or not cursor:
+                raise GateError(f"第 {index} 页缺少 next_cursor，分页在这里断开")
+            if len(results) != page_size:
+                raise GateError(f"第 {index} 页行数不是 page_size，像是中途断开")
+            if cursor in seen_cursors:
+                raise GateError(f"第 {index} 页游标与前面的页重复")
+            seen_cursors.add(cursor)
+        else:
+            if has_more is not False:
+                raise GateError("最后一页必须 has_more=false")
+            if cursor_present and cursor not in (None, ""):
+                raise GateError("最后一页还有 next_cursor，快照停早了")
+            if len(results) > page_size:
+                raise GateError("最后一页行数超过 page_size")
+        if chain:
+            declared = chain[index - 1]
+            if declared.get("page") not in (None, index):
+                raise GateError(f"游标链页码不连续，停在第 {index} 页")
+            if declared.get("has_more_from_response_body") not in (None, has_more):
+                raise GateError(f"第 {index} 页游标链的 has_more 与正文不一致")
+            if declared.get("result_count_from_response_body") not in (None, len(results)):
+                raise GateError(f"第 {index} 页游标链的行数与正文不一致")
+            if declared.get("next_cursor_key_present_in_response_body") not in (None, cursor_present):
+                raise GateError(f"第 {index} 页游标链对 next_cursor 是否存在的记录与正文不一致")
+            if body_sha256 and declared.get("response_sha256") not in (None, body_sha256[index - 1]):
+                raise GateError(f"第 {index} 页正文哈希与游标链不一致")
+            request = declared.get("reconstructed_request") if isinstance(declared.get("reconstructed_request"), dict) else None
+            if requests_kind == "reconstructed-not-original":
+                if not request:
+                    raise GateError(f"第 {index} 页缺少标明为还原的请求参数")
+                start = request.get("data.start_cursor")
+                if index == 1:
+                    if start not in (None, ""):
+                        raise GateError("首页的还原请求不应带 start_cursor")
+                else:
+                    prev = bodies[index - 2].get("next_cursor")
+                    if start != prev:
+                        raise GateError(f"第 {index} 页还原的 start_cursor 与上一页正文 next_cursor 不一致")
+        keys = []
+        for raw in results:
+            post = normalize_connector_row(raw)
+            if post["post_key"] in seen_keys:
+                raise GateError(f"原帖键重复：{post['post_key']}")
+            seen_keys.add(post["post_key"])
+            posts.append(post)
+            keys.append(post["post_key"])
+        page_keys.append(keys)
+        cursor_chain.append({
+            "index": index,
+            "rows": len(results),
+            "has_more": has_more,
+            "next_cursor": "absent" if not cursor_present else ("null" if cursor in (None, "") else "present"),
+            "next_cursor_sha256": None if not isinstance(cursor, str) or not cursor else _cursor_sha(cursor),
+        })
+    declared_n = provenance.get("declared_n")
+    if declared_n is not None and declared_n != len(posts):
+        raise GateError(f"declared_n={declared_n} 与行数 {len(posts)} 不一致")
+    posts.sort(key=lambda item: item["post_key"])
+    snapshot = {
+        "protocol": PROTOCOL,
+        "source": {
+            "kind": "notion-official-connector",
+            "data_source": DATA_SOURCE,
+            "database_url": DATABASE_URL,
+            "database_id": DATABASE_ID,
+            "view": VIEW,
+            "query": {"mode": "view", "archive_status": "all", "page_size": page_size},
+            "fetched_at": fetched,
+            "provenance": {
+                "response_bodies": "view-json-dumps",
+                "requests": requests_kind,
+                "final_page_next_cursor": cursor_chain[-1]["next_cursor"],
+            },
+            "note": "连接器行的 url 是 Notion 页面。canonical_url 只来自原帖，查询串已去掉。还原的请求参数没有当作原始请求。",
+        },
+        "pagination": {
+            "complete": True,
+            "page_count": len(bodies),
+            "has_more_final": False,
+            "declared_n": len(posts),
+            "row_count": len(posts),
+            "page_post_keys": page_keys,
+            "cursor_chain": cursor_chain,
+        },
+        "integrity": {"rows_sha256": posts_sha256(posts)},
+        "posts": posts,
+    }
+    verify_snapshot(snapshot)
+    return snapshot
+
+
+def _capture_day(value) -> str | None:
+    if value in (None, ""):
+        return None
+    match = re.match(r"(\d{4}-\d{2}-\d{2})", str(value))
+    return match.group(1) if match else None
+
+
+def content_type_for_card(notion_value: str | None, review: dict, previous: dict | None) -> tuple[str, str]:
+    """已有站点分类不降级。没有站点分类时保留 Notion 原文，并标明未映射。"""
+    old = ((previous or {}).get("tags") or {}).get("content_type")
+    if old not in (None, "", "待定"):
+        return old, "baseline"
+    if review.get("site_content_type"):
+        return review["site_content_type"], "accepted"
+    if notion_value:
+        return notion_value, "unmapped"
+    return "待定", "missing"
+
+
+def merge_catalog_item(previous: dict | None, projected: dict, notion: dict) -> tuple[dict, dict]:
+    """已有卡片不以较旧的 Notion 库存覆盖正文、互动和核验。新帖才用快照。"""
+    note = {"post_key": notion.get("post_key"), "action": "added" if previous is None else "kept-baseline"}
+    if previous is None:
+        item = json.loads(json.dumps(projected))
+        review = resolve_content_type(notion.get("notion_content_type"))
+        ctype, status = content_type_for_card(notion.get("notion_content_type"), review, None)
+        tags = dict(item.get("tags") or {})
+        tags["content_type"] = ctype
+        tags["content_type_status"] = status
+        item["tags"] = tags
+        item["verified"] = bool(notion.get("verified"))
+        if item.get("platform") == "小红书":
+            item["author"] = ""
+        note["content_type"] = status
+        note["verified"] = "sheet" if notion.get("verified") else "not-verified"
+        return item, note
+    item = json.loads(json.dumps(previous))
+    note["action"] = "kept-baseline"
+    if (previous.get("title") or "") != (projected.get("title") or "") or (previous.get("summary") or "") != (projected.get("summary") or ""):
+        note["text"] = "baseline"
+    else:
+        note["text"] = "same"
+    prev_metrics = dict(previous.get("metrics") or {})
+    new_metrics = dict(projected.get("metrics") or {})
+    prev_day = _capture_day(prev_metrics.get("captured_at"))
+    new_day = _capture_day(new_metrics.get("captured_at") or notion.get("captured_on"))
+    if new_day and (not prev_day or new_day > prev_day):
+        merged = dict(prev_metrics)
+        for key, value in new_metrics.items():
+            if value not in (None, ""):
+                merged[key] = value
+        item["metrics"] = merged
+        note["metrics"] = "notion-newer-sample"
+        note["action"] = "metrics-updated"
+    else:
+        item["metrics"] = prev_metrics
+        note["metrics"] = "baseline" if not new_day or (prev_day and new_day < prev_day) else "baseline-not-older"
+    if previous.get("verified") is False and notion.get("verified") is True:
+        note["verified"] = "not-lifted"
+    elif notion.get("verification_status") and previous.get("verified") is True and notion.get("verified") is False:
+        note["verified"] = "sheet-not-applied"
+    else:
+        note["verified"] = "unchanged"
+    item["verified"] = bool(previous.get("verified"))
+    if not previous.get("day") and notion.get("published_on"):
+        item["day"] = notion.get("published_on")
+        item["published_at"] = notion.get("published_on")
+        note["published"] = "filled-from-notion"
+        note["action"] = "filled-empty-publish-date"
+    else:
+        note["published"] = "baseline" if previous.get("day") else "still-empty"
+    old_topic = ((previous.get("tags") or {}).get("topic"))
+    new_topic = ((projected.get("tags") or {}).get("topic"))
+    tags = dict(previous.get("tags") or {})
+    if old_topic in (None, "", "待定") and new_topic not in (None, "", "待定"):
+        tags["topic"] = new_topic
+        note["topic"] = "filled-exact-vocab"
+    elif old_topic not in (None, "", "待定") and new_topic not in (None, "", "待定", old_topic):
+        note["topic"] = "baseline-kept"
+    else:
+        note["topic"] = "unchanged"
+    review = resolve_content_type(notion.get("notion_content_type"))
+    ctype, status = content_type_for_card(notion.get("notion_content_type"), review, previous)
+    note["content_type"] = status
+    if status != "baseline" or note.get("topic") == "filled-exact-vocab":
+        if status != "baseline":
+            tags["content_type"] = ctype
+            tags["content_type_status"] = status
+        item["tags"] = tags
+    if item.get("platform") == "小红书":
+        item["author"] = ""
+    return item, note
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="封存或核对 Notion 热帖快照。不访问 Notion，不读密钥。")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -408,6 +654,14 @@ def main(argv: list[str] | None = None) -> int:
     seal.add_argument("--pages", required=True)
     seal.add_argument("--out")
     seal.add_argument("--dry-run", action="store_true")
+    view = sub.add_parser("seal-view-pages")
+    view.add_argument("--body", action="append", required=True)
+    view.add_argument("--cursor-chain")
+    view.add_argument("--fetched-at", required=True)
+    view.add_argument("--page-size", type=int, default=100)
+    view.add_argument("--declared-n", type=int)
+    view.add_argument("--out")
+    view.add_argument("--dry-run", action="store_true")
     check = sub.add_parser("check")
     check.add_argument("--snapshot", required=True)
     gate = sub.add_parser("gate-sync")
@@ -428,6 +682,44 @@ def main(argv: list[str] | None = None) -> int:
             if not args.dry_run:
                 if not args.out:
                     raise GateError("seal 写文件时需要 --out")
+                write_json(Path(args.out), snapshot)
+            return 0
+        if args.cmd == "seal-view-pages":
+            bodies = []
+            digests = []
+            for path in args.body:
+                raw = Path(path).read_bytes()
+                digests.append(hashlib.sha256(raw).hexdigest())
+                bodies.append(json.loads(raw.decode("utf-8")))
+            chain = json.loads(Path(args.cursor_chain).read_text(encoding="utf-8")) if args.cursor_chain else None
+            requests_kind = "not-provided"
+            chain_pages = None
+            if isinstance(chain, dict) and isinstance(chain.get("pages"), list):
+                requests_kind = "reconstructed-not-original"
+                chain_pages = chain["pages"]
+            provenance = {
+                "data_source": DATA_SOURCE,
+                "database_url": DATABASE_URL,
+                "database_id": DATABASE_ID,
+                "view": VIEW,
+                "query": {"mode": "view", "archive_status": "all", "page_size": args.page_size},
+                "fetched_at": args.fetched_at,
+                "requests": requests_kind,
+                "declared_n": args.declared_n,
+                "pages": chain_pages,
+            }
+            snapshot = seal_view_response_bodies(bodies, provenance, digests if chain_pages else None)
+            print(json.dumps({
+                "ok": True,
+                "dry_run": bool(args.dry_run),
+                "rows": snapshot["pagination"]["row_count"],
+                "rows_sha256": snapshot["integrity"]["rows_sha256"],
+                "requests": snapshot["source"]["provenance"]["requests"],
+                "final_page_next_cursor": snapshot["source"]["provenance"]["final_page_next_cursor"],
+            }, ensure_ascii=False))
+            if not args.dry_run:
+                if not args.out:
+                    raise GateError("seal-view-pages 写文件时需要 --out")
                 write_json(Path(args.out), snapshot)
             return 0
         if args.cmd == "check":

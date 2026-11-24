@@ -41,18 +41,32 @@
 
 最后一页必须 `has_more=false`，页码从 1 连续，前面每一页的行数等于 `page_size`。中间缺页、最后一页仍 `has_more=true`、原帖键重复、原帖和原帖键对不上，都拒绝封存。只有 `results`、没有 `pages` 的合并文件（包括 2026-11-24 14:16 那份 541 条预写冻结）不能封存，也不能导入。
 
+写后实读的页是官方 view 响应正文的 JSON dumps，不是 MCP 信封。第 1–8 页有 `results`、`has_more: true` 和 `next_cursor`。第 9 页只有 `results` 和 `has_more: false`，没有 `next_cursor` 字段。不要把 meta 里后来整理的 `next_cursor: null` 写回页正文。`cursor-chain.json` 里的请求参数标明为 reconstructed，只用来核对「下一页还原的 start_cursor 等于上一页正文的 next_cursor」，不能称作原始请求。
+
 ```bash
-python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py seal \
-  --pages /workspace/edu-hot/.data/notion-hotposts/connector-pages.json \
+python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py seal-view-pages \
+  --body pages/view-p01.txt --body pages/view-p02.txt --body pages/view-p03.txt \
+  --body pages/view-p04.txt --body pages/view-p05.txt --body pages/view-p06.txt \
+  --body pages/view-p07.txt --body pages/view-p08.txt --body pages/view-p09.txt \
+  --cursor-chain cursor-chain.json \
+  --fetched-at 2026-11-24T14:34:48+08:00 \
+  --page-size 100 --declared-n 817 \
   --dry-run
 
-python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py seal \
-  --pages /workspace/edu-hot/.data/notion-hotposts/connector-pages.json \
+python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py seal-view-pages \
+  --body pages/view-p01.txt --body pages/view-p02.txt --body pages/view-p03.txt \
+  --body pages/view-p04.txt --body pages/view-p05.txt --body pages/view-p06.txt \
+  --body pages/view-p07.txt --body pages/view-p08.txt --body pages/view-p09.txt \
+  --cursor-chain cursor-chain.json \
+  --fetched-at 2026-11-24T14:34:48+08:00 \
+  --page-size 100 --declared-n 817 \
   --out /workspace/edu-hot/.data/notion-hotposts/snapshot.json
 
 python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py check \
   --snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json
 ```
+
+非最后一页缺游标、行数不够 `page_size`、页码不连续、原帖键重复、还原游标和上一页正文冲突，都拒绝。最后一页 `has_more` 仍为 true，或还带着非空 `next_cursor`，也拒绝。最后一页没有 `next_cursor` 字段是正常终页，不失败。只有合并行、没有逐页正文的文件仍然不能封存。
 
 `--dry-run` 只打印行数和 `rows_sha256`，不写文件。哈希是帖子列表按原帖键排序后的 SHA-256。快照写在 `.data/notion-hotposts/`，不放进 `feishu-edu`，也不伪装成 `xhs-*.json`。
 
@@ -105,7 +119,9 @@ python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py check \
 
 ## 给导入员
 
-先有上游封好的快照，再跑。`--baseline` 是当前 `.data/voices.json`。快照里没有、baseline 里有的帖，必须加 `--retain-baseline-union` 才会原样保留；不加就失败，不写文件。这个开关不读取 grok-posts，也不读取飞书。它留着，是因为 Notion 里的 X 还没有盖住站点已有的 430 条；雷达把缺的帖补进 Notion 并重新封存之后，下一次导入会从快照更新这些帖，不会另存一份。
+先有上游封好的快照，再跑。`--baseline` 是当前 `.data/voices.json`。快照里没有、baseline 里有的帖，必须加 `--retain-baseline-union` 才会原样保留；不加就失败，不写文件。这个开关不读取 grok-posts，也不读取飞书。
+
+已经在站点上的帖不被 Notion 整页覆盖。正文保留站点版本，因为库存里的「讨论要点」比站点摘要短。互动数只在 Notion 的采集日严格晚于站点采样日时更新；更旧的点赞不覆盖。已有卡片的 `verified` 不改：表里写成已核、但站点仍是未核的，不抬升；表里没有核验状态，也不把站点已核抹掉。已有主题和内容类型不降级。快照里新出现的帖才用 Notion 正文；内容类型对不上 grok 词表时，保留 Notion 原文并写 `content_type_status: unmapped`，不改成另一个 grok 类型。发布日仍然只来自发布日期列，缺失就留空。
 
 ```bash
 python3 /workspace/edu-hot/scripts/scrub-xhs.py \
@@ -125,7 +141,7 @@ python3 /workspace/edu-hot/scripts/import-voices.py \
   --cn /workspace/edu-hot/.data/cn-community-inbox.json
 ```
 
-标准输出是一行 JSON：`added`、`changed`、`skipped`、`retained_baseline`、`duplicates`。`duplicates` 必须是 0。退出码不是 0 时不写 `voices.json`。非 dry-run 的失败会把导入戳记写成 `ok: false`。`sync-to-neon.sh` 在读数据库连接之前调用 `gate-sync`，戳记不是 ok 就不连库。
+标准输出是一行 JSON：`added`、`changed`、`skipped`、`retained_baseline`、`duplicates`。`duplicates` 必须是 0。退出码不是 0 时不写 `voices.json`。非 dry-run 的失败会把导入戳记写成 `ok: false`。`sync-to-neon.sh` 只在这个戳记文件已经存在时才核对它；没有戳记的媒体、公司或政策同步不会被热帖门挡住。戳记存在但不是 ok，或哈希和当前快照不一致，才在读取数据库连接之前停下。
 
 同一条原帖再跑一次：`added=0`、`changed=0`、`duplicates=0`，URL 集合不变。快照里同一条帖的标题、互动数以快照为准；发布日如果快照是空的，而 baseline 里已经有日期，就留下 baseline 的日期，仍然不用采集日去填。
 

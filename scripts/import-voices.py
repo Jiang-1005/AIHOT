@@ -818,27 +818,32 @@ def run_notion_import(args) -> int:
     projected, duplicate = project(prepared + cn_posts)
     if duplicate:
         return _fail_import(f"原帖 URL 重复：{duplicate}", None if dry_run else stamp, dry_run)
+    from notion_hotposts import merge_catalog_item
+    post_by_url = {post["canonical_url"]: post for post in snapshot["posts"]}
     stats = {"added": 0, "changed": 0, "skipped": 0, "retained_baseline": 0, "duplicates": 0}
     keys = {"added": [], "changed": [], "skipped": [], "retained": [], "publish_date_kept": []}
+    field_notes = []
     output = []
     seen_urls = set()
     for row, item in projected:
         previous = by_url.get(item["url"])
-        notes = _guard_existing(item, previous)
-        if "publish_date_kept_from_baseline" in notes:
+        merged, note = merge_catalog_item(previous, item, post_by_url.get(item["url"]) or {})
+        if note.get("published") == "filled-from-notion":
             keys["publish_date_kept"].append(row.get("post_key") or item["url"])
         origin = row.get("post_key") or item["url"]
         if previous is None:
             stats["added"] += 1
             keys["added"].append(origin)
-        elif _contract(item) == _contract(previous):
+        elif _contract(merged) == _contract(previous):
             stats["skipped"] += 1
             keys["skipped"].append(origin)
         else:
             stats["changed"] += 1
             keys["changed"].append(origin)
-        output.append(item)
-        seen_urls.add(item["url"])
+        if note.get("text") == "baseline" or note.get("metrics") in {"baseline", "notion-newer-sample"} or note.get("verified") in {"not-lifted", "sheet-not-applied"} or note.get("topic") == "baseline-kept" or note.get("content_type") in {"baseline", "unmapped"}:
+            field_notes.append(note)
+        output.append(merged)
+        seen_urls.add(merged["url"])
     missing = [item for url, item in by_url.items() if url not in seen_urls]
     if missing and not args.retain_baseline_union:
         return _fail_import(
@@ -875,20 +880,26 @@ def run_notion_import(args) -> int:
         },
         "report": {"stats": stats, "content_type_review": reviews},
     }
+    field_policy = {}
+    for note in field_notes:
+        for key in ("text", "metrics", "verified", "published", "topic", "content_type"):
+            label = f"{key}:{note.get(key)}"
+            field_policy[label] = field_policy.get(label, 0) + 1
     payload = {
         "ok": True,
         "dry_run": dry_run,
         "stats": stats,
-        "keys": keys,
+        "keys": {name: values for name, values in keys.items() if name != "skipped"},
+        "field_policy": field_policy,
         "snapshot_sha256": snapshot["integrity"]["rows_sha256"],
         "skip_verify_ignored": bool(args.skip_verify),
-        "verification": "notion-status-only",
+        "verification": "existing-card-not-lifted; new-post-uses-sheet",
     }
     print(json.dumps(payload, ensure_ascii=False))
     if dry_run:
         return 0
     write_json(out, catalog)
-    write_json(report_path, payload)
+    write_json(report_path, {**payload, "field_notes": field_notes})
     write_json(stamp, {
         "ok": True,
         "snapshot_sha256": snapshot["integrity"]["rows_sha256"],

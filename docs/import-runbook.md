@@ -33,7 +33,7 @@ C J 2026-11-24 14:07 在教育AIHOT群决定：以后用 Notion 导入，飞书�
    python3 /workspace/edu-hot/scripts/import-voices.py --notion-snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json --baseline /workspace/edu-hot/.data/voices.json --retain-baseline-union --cn /workspace/edu-hot/.data/cn-community-inbox.json --dry-run
    python3 /workspace/edu-hot/scripts/import-voices.py --notion-snapshot /workspace/edu-hot/.data/notion-hotposts/snapshot.json --baseline /workspace/edu-hot/.data/voices.json --retain-baseline-union --cn /workspace/edu-hot/.data/cn-community-inbox.json
    python3 /workspace/edu-hot/scripts/tag-content.py
-   任何一条退出码不是 0，就停，不要跑下面的 sync-to-neon.sh。`--dry-run` 不写 voices.json，也不写出允许同步的戳记。正式导入成功后才会写 `.data/notion-hotposts/import-stamp.json`。核对：同一原帖 URL 不重复；baseline 里有、快照里没有的帖还在；缺发布日期的帖，day 仍是空的，不能变成采集日期。
+   任何一条退出码不是 0，就停，不要跑下面的 sync-to-neon.sh。`--dry-run` 不写 voices.json，也不写出允许同步的戳记。正式导入成功后才会写 `.data/notion-hotposts/import-stamp.json`。已有热帖的标题、摘要、互动、核验和分类不被较旧的 Notion 行覆盖；只有快照里新出现的帖写入卡片。核对：同一原帖 URL 不重复；baseline 里有、快照里没有的帖还在；缺发布日期的帖，day 仍是空的，不能变成采集日期。上游封存用 `notion-hotposts-snapshot.py seal-view-pages`，页正文和命令见 `docs/notion-hotposts.md`。
 4. 全部写完库后再同步（不要和导入同时写库）：
    set -a; . /workspace/edu-hot/.secrets/neon.env; set +a; /workspace/edu-hot/scripts/sync-to-neon.sh
    然后确认首页、/voices、/topics、/companies、/companies?view=company&company=心田花开、/policies 返回 200，/api/site/voices?ts= 的 total、generatedAt 与本地一致。

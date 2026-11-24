@@ -118,7 +118,7 @@ VERCEL_TOKEN=...
 
 把这条接到每天约 9:30 和约 20:30（北京时间）两轮导入之后即可。本仓库不改 routine，由 C J 自行挂上。每轮 sync-to-neon.sh 会先在本地重写当天日报（可用 SKIP_DAILY_REFRESH=1 跳过），再把「数据截至」写成这一轮实际同步的北京时间。不要和仍在写库的导入同时跑。
 
-2026-11-24 起，`sync-to-neon.sh` 在读取任何数据库连接之前先看 `.data/notion-hotposts/import-stamp.json`。戳记不是 ok，或哈希和当前快照不一致，脚本退出，不连 Neon。导入失败或只跑了 `--dry-run` 都不会留下 ok 戳记。
+2026-11-24 起，热帖导入失败会把 `.data/notion-hotposts/import-stamp.json` 写成 `ok: false`。`sync-to-neon.sh` 只有在这个文件已经存在时才核对它：不是 ok，或哈希和当前快照不一致，就在读取数据库连接之前退出。文件不存在时，媒体、公司动态和政策同步照常进行，不因为还没有热帖戳记而停。只跑了 `--dry-run` 不会留下 ok 戳记。
 
 应急整库覆盖仍可用 `export-to-neon.sh`（`pg_restore --clean`），日常同步不要走这条路径。
 

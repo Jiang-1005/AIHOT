@@ -309,7 +309,7 @@ class ImportUnion(unittest.TestCase):
         self.assertGreater(stats["stats"]["retained_baseline"], 0)
         self.assertGreater(stats["stats"]["added"], 0)
         self.assertGreater(stats["stats"]["changed"], 0)
-        self.assertEqual(stats["verification"], "notion-status-only")
+        self.assertEqual(stats["verification"], "existing-card-not-lifted; new-post-uses-sheet")
         self.assertTrue(stats["skip_verify_ignored"])
         catalog = json.loads(self.out.read_text(encoding="utf-8"))
         blob = self.out.read_text(encoding="utf-8")
@@ -354,8 +354,10 @@ class ImportUnion(unittest.TestCase):
         self.assertNotEqual(conflict["tags"]["content_type"], "新闻快讯")
         self.assertNotEqual(conflict["tags"]["content_type"], "行业资讯")
         unverified = by_url[UNVERIFIED]
-        self.assertFalse(unverified["verified"])
-        self.assertIn("部分待核", unverified["metrics"]["verification_status"])
+        self.assertTrue(unverified["verified"])
+        privacy_tags = privacy["tags"]
+        self.assertEqual(privacy_tags["content_type"], "经验分享")
+        self.assertEqual(privacy_tags["content_type_status"], "unmapped")
         reviews = {row["post_key"]: row for row in catalog["report"]["content_type_review"]}
         self.assertIsNone(reviews["x:2117738486036148624"]["site_content_type"])
         self.assertEqual(reviews["x:2117738486036148624"]["review"], "unreviewed")
@@ -389,6 +391,91 @@ class ImportUnion(unittest.TestCase):
         rerun = json.loads(second_out.read_text(encoding="utf-8"))
         self.assertEqual([item["url"] for item in rerun["items"]], urls)
         self.assertEqual(len(rerun["items"]), len({item["url"] for item in rerun["items"]}))
+
+
+class ViewBodiesAndMerge(unittest.TestCase):
+    def test_final_page_without_next_cursor_seals_and_cursor_conflict_fails(self):
+        bundle = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        bodies = []
+        for page in bundle["pages"]:
+            body = {"results": page["results"], "has_more": page["has_more"]}
+            if page["has_more"]:
+                body["next_cursor"] = f"cursor-{page['index']}"
+            bodies.append(body)
+        provenance = {
+            "data_source": nh.DATA_SOURCE,
+            "database_url": nh.DATABASE_URL,
+            "database_id": nh.DATABASE_ID,
+            "view": nh.VIEW,
+            "query": {"mode": "view", "archive_status": "all", "page_size": 4},
+            "fetched_at": "2026-11-24T14:18:35+08:00",
+            "requests": "reconstructed-not-original",
+            "declared_n": 6,
+            "pages": [
+                {"page": 1, "reconstructed_request": {"data.start_cursor": None}},
+                {"page": 2, "reconstructed_request": {"data.start_cursor": "cursor-1"}},
+            ],
+        }
+        sealed = nh.seal_view_response_bodies(bodies, provenance)
+        self.assertEqual(sealed["pagination"]["row_count"], 6)
+        self.assertEqual(sealed["source"]["provenance"]["final_page_next_cursor"], "absent")
+        self.assertEqual(sealed["source"]["provenance"]["requests"], "reconstructed-not-original")
+        broken = json.loads(json.dumps(bodies))
+        broken[-1]["next_cursor"] = "should-not-continue"
+        with self.assertRaises(nh.GateError) as extra:
+            nh.seal_view_response_bodies(broken, provenance)
+        self.assertIn("next_cursor", str(extra.exception))
+        mismatch = json.loads(json.dumps(provenance))
+        mismatch["pages"][1]["reconstructed_request"]["data.start_cursor"] = "other"
+        with self.assertRaises(nh.GateError) as conflict:
+            nh.seal_view_response_bodies(bodies, mismatch)
+        self.assertIn("start_cursor", str(conflict.exception))
+        short = json.loads(json.dumps(bodies))
+        short[0]["results"] = short[0]["results"][:2]
+        with self.assertRaises(nh.GateError) as gap:
+            nh.seal_view_response_bodies(short, provenance)
+        self.assertIn("page_size", str(gap.exception))
+
+    def test_older_notion_metrics_do_not_replace_baseline_and_verified_is_not_lifted(self):
+        previous = {
+            "platform": "X",
+            "url": "https://x.com/a/status/1",
+            "title": "站点标题",
+            "summary": "站点上较长的摘要，不应被库存短句盖掉。",
+            "day": "2026-11-04",
+            "published_at": "2026-11-04T00:00:00+08:00",
+            "verified": False,
+            "author": "@a",
+            "metrics": {"likes": 958, "captured_at": "2026-11-17T00:00:00+08:00", "views": 10},
+            "tags": {"topic": "教学实践", "content_type": "观点评论", "subject": "待定", "form": "待定", "companies": []},
+        }
+        projected = {
+            "platform": "X",
+            "url": previous["url"],
+            "title": "较短标题",
+            "summary": "短",
+            "day": "2026-11-04",
+            "published_at": "2026-11-04",
+            "verified": True,
+            "author": "@other",
+            "metrics": {"likes": 79, "captured_at": "2026-11-10", "interaction_source": "X 公开数据"},
+            "tags": {"topic": "政策与合规", "content_type": "待定", "subject": "待定", "form": "待定", "companies": []},
+        }
+        notion = {"post_key": "x:1", "verified": True, "published_on": "2026-11-04", "captured_on": "2026-11-10", "notion_content_type": "行业资讯", "verification_status": ["原帖已核"]}
+        merged, note = nh.merge_catalog_item(previous, projected, notion)
+        self.assertEqual(merged["summary"], previous["summary"])
+        self.assertEqual(merged["title"], previous["title"])
+        self.assertEqual(merged["metrics"]["likes"], 958)
+        self.assertEqual(merged["metrics"]["views"], 10)
+        self.assertFalse(merged["verified"])
+        self.assertEqual(note["verified"], "not-lifted")
+        self.assertEqual(merged["tags"]["content_type"], "观点评论")
+        self.assertEqual(merged["tags"]["topic"], "教学实践")
+        fresh, fresh_note = nh.merge_catalog_item(None, projected, notion)
+        self.assertEqual(fresh["tags"]["content_type"], "行业资讯")
+        self.assertEqual(fresh["tags"]["content_type_status"], "unmapped")
+        self.assertTrue(fresh["verified"])
+        self.assertEqual(fresh_note["content_type"], "unmapped")
 
 
 class RealFreeze(unittest.TestCase):
