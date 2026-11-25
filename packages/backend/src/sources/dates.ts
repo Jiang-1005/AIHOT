@@ -1,5 +1,6 @@
 // Published dates as list pages, articles and JSON lists print them, read the same on every host.
 import { beijingDate, beijingTime } from "@aihot/contracts/time";
+import { parseOriginalDateline } from "@aihot/industry/dateline";
 import type { SourceRow } from "./types.ts";
 
 /** The offset a source's article pages print their dates in: its detail rules' own, else its listing's. */
@@ -92,6 +93,8 @@ export function describePublicationTime(at: Date | null, source: string | null |
   if (!at) return "未知";
   if (!source) return `${beijingDate(at)} ${beijingTime(at)}（历史记录，原始精度未知）`;
   if (/^\d{4}-\d{2}-\d{2}$/.test(source)) return `${source}（原文仅有日期，时刻未知）`;
+  const evidence = parseOriginalDateline(source);
+  if (evidence) return `${evidence.evidence}（落款原文；原发日 ${evidence.day}，钟点与括注不是发现时间）`;
   return `${beijingDate(at)} ${beijingTime(at)}（北京时间）`;
 }
 

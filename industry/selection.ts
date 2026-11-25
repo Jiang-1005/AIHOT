@@ -4,6 +4,7 @@
 // 所有信源共用一个门槛；不再按分级或类别分档。
 // 改了门槛或评分提示词，用 scripts/eval-selection.ts 在你自己标注的样本上重跑一遍，再决定上线（见 docs/selection.md）。
 import { beijingDate } from "@aihot/contracts/time";
+import { parseOriginalDateline } from "./dateline.ts";
 
 export const SELECTION = {
   /**
@@ -96,6 +97,10 @@ export function featuredDatelineDay(input: { url?: string | null; publicationTim
   if (fromUrl) return `${fromUrl[1]}-${fromUrl[2]}-${fromUrl[3]}`;
   const pub = (input.publicationTime ?? "").trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(pub)) return pub;
+  // Brief evidence keeps its leading calendar day. Date.parse reads "2026-11-24 19:55" as UTC and
+  // can land on the next Beijing day, so that form is not parsed as an instant. ISO timestamps still are.
+  const original = pub ? parseOriginalDateline(pub) : null;
+  if (original) return original.day;
   const at = pub ? new Date(pub) : input.publishedAt ? new Date(input.publishedAt) : null;
   if (at && Number.isFinite(at.getTime())) return beijingCalendarDay(at);
   return null;

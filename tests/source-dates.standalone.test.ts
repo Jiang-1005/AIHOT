@@ -150,6 +150,10 @@ test('real midnight keeps its precision; date-only and missing source precision 
   assert.equal(describePublicationTime(new Date('2026-10-13T07:00:00Z'), '2026-10-13'), '2026-10-13（原文仅有日期，时刻未知）');
   assert.equal(describePublicationTime(new Date('2026-10-13T07:00:00Z'), null), '2026-10-13 15:00（历史记录，原始精度未知）');
   assert.equal(describePublicationTime(null, null), '未知');
+  assert.equal(
+    describePublicationTime(new Date('2026-11-23T16:00:00Z'), '2026-11-24 19:55（北京时间）'),
+    '2026-11-24 19:55（北京时间）（落款原文；原发日 2026-11-24，钟点与括注不是发现时间）',
+  );
 });
 
 test('grouping distinguishes a publication day from an exact instant', () => {

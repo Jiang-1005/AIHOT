@@ -138,6 +138,25 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 - 怎么确认它还在工作：健康检查的「本机库备份」一行，最新 local-*.dump 超过 13 小时告警，超过 25 小时 HEALTH FAIL。
 - 本机库丢了：空库时跑 `/home/box/edu-hot-local/restore-from-neon.sh`，它只读 Neon；也可以从最新的 local-*.dump 恢复，方法见 /home/box/edu-hot-local/README.md。
 
+## 落款日期（2026-11-25）
+
+三个日子不要混写：
+
+- **原发日**：CSV「落款日期」开头的真实日历日。纯 `YYYY-MM-DD`、后面带钟点（如 `2026-11-24 19:55（北京时间）`）、或带括注（如 `2026-11-24（RSS 21:30 北京时间）`）都取这一天。写入 `published_at` 为那天北京时间 00:00，整格原文写入 `publication_time`。钟点和括注是证据，不把原发日改成另一天。
+- **发现日**：`discovered_at`，稿子第一次入库的时刻。订正脚本不改它。48 小时内的新闻，时间线仍用发现日，这是原有规则。
+- **导入日**：`import-brief-items.ts --date` 的那天，只出现在回补标签 `brief-导入日` 或 `brief-导入日-undated` 里。不能写进 `published_at`。
+
+`2月30日`、`2月29日`（非闰年）、13 月、乱码、空单元格仍然无日期，不编造。已存在的原文链接再导一次不会改旧行。没有数据库迁移，打分、入选门槛、以及「窗口里没有已评判稿就拒绝出刊」都没有改。
+
+今早 4 条已经入库，要改它们只能跑一次性订正（默认只打印，不加 `--apply` 不写库）。白名单就是这 4 个 id 和 URL；行必须仍是旧错误（`published_at` 空、`publication_time` 空、`brief-YYYY-MM-DD-undated`）才改。昨晚 5 条和豆神 PDF 不在白名单里，脚本不查询它们。
+
+```bash
+node scripts/correct-brief-undated.ts
+node scripts/correct-brief-undated.ts --apply
+```
+
+在已经包含这次提交的检出里跑，数据库用本机库，不要对着生产库。日常导入脚本会把 `brief-dateline.ts` 拷进 API 容器，落款解析本身在镜像里的 `industry/dateline.ts`；容器仍是旧镜像时，只拷脚本会找不到这个文件，要等这次提交进运行中的 API 再导入。`--apply` 之后照常跑 `score-and-compose.sh`，出刊失败就停下，不要跳过 compose，也不要先同步。输出里每条的 `before` 是恢复依据。
+
 ## 红线
 - 不打印任何密钥、口令、连接串；不 pkill qodercli（只杀自己的 PID）。
 - 不写 /workspace/edu-radar/grok-posts.json（那是内容雷达的产物）。
