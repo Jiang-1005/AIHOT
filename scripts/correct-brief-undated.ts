@@ -14,7 +14,7 @@ import { LEGACY_EXACT_DATELINE, parseOriginalDateline } from "@aihot/industry/da
 import { closeDb, sql, type Sql, type Tx } from "@aihot/backend/db";
 import { stopBoss } from "@aihot/backend/jobs/queue";
 import { decideTimeline, type TimelineDecision } from "@aihot/backend/content/materials";
-import { republishTx } from "@aihot/backend/publication/publish";
+import { RepresentativeBoundaryError, republishTx } from "@aihot/backend/publication/publish";
 
 export const MORNING_20261125 = [
   {
@@ -87,18 +87,20 @@ type PublicationRow = {
   score: number | null;
   eligible: boolean;
   selected: boolean;
+  seat: boolean;
+  fact_id: number | null;
 };
 
 export interface CorrectionItem {
   id: string;
   url: string;
-  action: "would-update" | "updated" | "would-republish" | "republished" | "unchanged" | "skipped";
+  action: "would-update" | "updated" | "would-republish" | "republished" | "unchanged" | "skipped" | "refused";
   reason: string;
   dates: { originalDay: string | null; discoveredAt: string | null; importDay: string | null };
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
-  publicationBefore: { published_at: string | null; timeline_at: string; backfill: boolean; score: number | null; eligible: boolean; selected: boolean } | null;
-  publicationAfter: { published_at: string | null; timeline_at: string; backfill: boolean; score: number | null; eligible: boolean; selected: boolean } | null;
+  publicationBefore: { published_at: string | null; timeline_at: string; backfill: boolean; score: number | null; eligible: boolean; selected: boolean; seat: boolean; fact_id: number | null } | null;
+  publicationAfter: { published_at: string | null; timeline_at: string; backfill: boolean; score: number | null; eligible: boolean; selected: boolean; seat: boolean; fact_id: number | null } | null;
 }
 
 export interface CorrectionReport {
@@ -113,20 +115,20 @@ export interface CorrectionReport {
 const RECOVERY = "Restore only from each item's before snapshot: the article date columns, that article's publication columns, and its own selected_ledger/selected_state rows. Do not copy discovered_at or the import day into published_at. This script does not restore and does not change scores.";
 
 /**
- * Normal publish (republishTx) also reseats every other report of the same fact, appends their
- * selected-sync ledger rows, and, when a backfill becomes selected, enqueues notifySelected and
- * prepareMedia. Those steps can write or notify outside the four rows. This correction does not
- * take them. It writes the whitelist article and that article's own publication (and its own
- * pool_search row). Another report's seat, ledger, and every queue stay as they were. A later
- * ordinary publish is what reseats a fact and sends a notification.
+ * Normal publish (republishTx) also reseats every other report of the same fact and can enqueue
+ * notifySelected and prepareMedia. This correction does not do those. It writes the whitelist
+ * article, that article's publication and pool_search row, and that article's own
+ * selected_ledger/selected_state when it is the sole representative. If keeping the current seat
+ * would create a second ordinary representative, or would select the article and leave it out of
+ * the ledger, the item is refused and nothing is written. Peer seats stay as they were.
  */
 export const CORRECTION_BOUNDARY = {
-  republish: "bounded: own publication and own ledger only",
+  republish: "bounded: own publication and own ledger only; a same-fact representative conflict is refused before any write",
   notifySelected: "not enqueued; a later ordinary republish does not enqueue either, because selected is already true",
   prepareMedia: "not enqueued",
-  otherPublications: "not updated",
-  selectedLedger: "own article only, so the sync row matches the publication",
-  productionFacts: "not read; this run has no production fact snapshot",
+  otherPublications: "not updated; a conflicting peer is left untouched because the correction is refused",
+  selectedLedger: "own article only, and only when that article is the sole representative; otherwise the item is refused",
+  productionFacts: "not read and not written; a local snapshot is an isolated fixture, not a live query",
 } as const;
 
 function instant(value: Date | null | undefined): string | null {
@@ -166,6 +168,8 @@ function publicationSnapshot(row: PublicationRow | undefined) {
     score: row.score,
     eligible: row.eligible,
     selected: row.selected,
+    seat: row.seat,
+    fact_id: row.fact_id,
   };
 }
 
@@ -193,6 +197,57 @@ function publicationMatches(row: PublicationRow | undefined, decision: TimelineD
     && row.backfill === decision.backfill;
 }
 
+async function writeCorrectedArticle(
+  tx: Tx,
+  entry: { id: string; url: string },
+  decision: TimelineDecision,
+  evidence: string,
+): Promise<number> {
+  const updated = await tx<{ id: string }[]>`
+    UPDATE articles SET
+      published_at = ${decision.publishedAt},
+      published_at_claim = ${decision.publishedAt},
+      publication_time = ${evidence},
+      timeline_at = ${decision.timelineAt},
+      backfill = ${decision.backfill},
+      backfill_reason = ${decision.backfillReason},
+      updated_at = now()
+    WHERE id = ${entry.id}
+      AND url = ${entry.url}
+      AND published_at IS NULL
+      AND publication_time IS NULL
+      AND backfill IS TRUE
+      AND backfill_reason ~ '^brief-[0-9]{4}-[0-9]{2}-[0-9]{2}-undated$'
+    RETURNING id`;
+  return updated.length;
+}
+
+/** Applies the date change and bounded republish, then rolls them back. Returns a refusal, or null when the write would be in bounds. */
+async function probeBounded(
+  tx: Tx,
+  entry: { id: string; url: string },
+  decision: TimelineDecision,
+  evidence: string,
+  writeDates: boolean,
+): Promise<string | null> {
+  await tx`SAVEPOINT brief_boundary`;
+  try {
+    if (writeDates) {
+      const updated = await writeCorrectedArticle(tx, entry, decision, evidence);
+      if (updated !== 1) throw new Error(`refused to update ${entry.id}: it no longer matches the old undated error`);
+    }
+    await republishTx(tx, entry.id, { bounded: true });
+    await tx`ROLLBACK TO SAVEPOINT brief_boundary`;
+    await tx`RELEASE SAVEPOINT brief_boundary`;
+    return null;
+  } catch (err) {
+    await tx`ROLLBACK TO SAVEPOINT brief_boundary`;
+    await tx`RELEASE SAVEPOINT brief_boundary`;
+    if (err instanceof RepresentativeBoundaryError) return err.message;
+    throw err;
+  }
+}
+
 const ARTICLE_COLUMNS = sql`id, url, published_at, published_at_claim, publication_time, discovered_at, timeline_at, backfill, backfill_reason, updated_at`;
 
 async function loadArticles(tx: Tx, ids: readonly string[], lock: boolean): Promise<ArticleRow[]> {
@@ -210,7 +265,7 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql;
     const articles = await loadArticles(tx, ids, options.apply);
     const byId = new Map(articles.map((row) => [row.id, row]));
     const publications = await tx<PublicationRow[]>`
-      SELECT article_id, published_at, timeline_at, backfill, score, eligible, selected
+      SELECT article_id, published_at, timeline_at, backfill, score, eligible, selected, seat, fact_id
       FROM publications WHERE article_id = ANY(${ids}::text[])`;
     const pubById = new Map(publications.map((row) => [row.article_id, row]));
     const items: CorrectionItem[] = [];
@@ -244,11 +299,17 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql;
         continue;
       }
       if (plannedArticle && !plannedPublication) {
+        const refusal = await probeBounded(tx, entry, decision, parsed.evidence, false);
+        if (refusal) {
+          if (options.apply) throw new Error(refusal);
+          items.push(item(entry, "refused", refusal, dates, before, before, publication, publication));
+          continue;
+        }
         if (options.apply) await republishTx(tx, entry.id, { bounded: true });
         items.push(item(
           entry,
           options.apply ? "republished" : "would-republish",
-          "article already has the original day; own publication projected, no peer or notification",
+          "article already has the original day; own publication and own ledger projected, no peer or notification",
           dates, before, before, publication, options.apply ? null : publication,
         ));
         continue;
@@ -257,24 +318,15 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql;
         items.push({ ...skipped(entry, "not the old undated error", before, publication), dates });
         continue;
       }
+      const refusal = await probeBounded(tx, entry, decision, parsed.evidence, true);
+      if (refusal) {
+        if (options.apply) throw new Error(refusal);
+        items.push(item(entry, "refused", refusal, dates, before, before, publication, publication));
+        continue;
+      }
       if (options.apply) {
-        const updated = await tx<{ id: string }[]>`
-          UPDATE articles SET
-            published_at = ${decision.publishedAt},
-            published_at_claim = ${decision.publishedAt},
-            publication_time = ${parsed.evidence},
-            timeline_at = ${decision.timelineAt},
-            backfill = ${decision.backfill},
-            backfill_reason = ${decision.backfillReason},
-            updated_at = now()
-          WHERE id = ${entry.id}
-            AND url = ${entry.url}
-            AND published_at IS NULL
-            AND publication_time IS NULL
-            AND backfill IS TRUE
-            AND backfill_reason ~ '^brief-[0-9]{4}-[0-9]{2}-[0-9]{2}-undated$'
-          RETURNING id`;
-        if (updated.length !== 1) throw new Error(`refused to update ${entry.id}: it no longer matches the old undated error`);
+        const updated = await writeCorrectedArticle(tx, entry, decision, parsed.evidence);
+        if (updated !== 1) throw new Error(`refused to update ${entry.id}: it no longer matches the old undated error`);
         await republishTx(tx, entry.id, { bounded: true });
         if (options.injectFailureAfter !== undefined && items.filter((row) => row.action === "updated").length + 1 === options.injectFailureAfter) {
           throw new Error("injected failure before commit");
@@ -290,7 +342,7 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql;
     if (options.apply) {
       const afterArticles = await loadArticles(tx, ids, false);
       const afterPubs = await tx<PublicationRow[]>`
-        SELECT article_id, published_at, timeline_at, backfill, score, eligible, selected
+        SELECT article_id, published_at, timeline_at, backfill, score, eligible, selected, seat, fact_id
         FROM publications WHERE article_id = ANY(${ids}::text[])`;
       const afterById = new Map(afterArticles.map((row) => [row.id, row]));
       const afterPubById = new Map(afterPubs.map((row) => [row.article_id, row]));

@@ -65,6 +65,7 @@ interface PublicationRow {
   visibility: string;
   eligible: boolean;
   selected: boolean;
+  seat: boolean;
   selection_candidate: boolean;
   title: string;
   original_title: string | null;
@@ -115,8 +116,18 @@ export interface PublishOptions {
    * Date correction. Still writes this article's publication and its own selected-sync ledger row,
    * so a later ordinary republish sees it as already selected and does not enqueue a push.
    * Does not reseat other reports of the fact, emit hooks, or enqueue notifySelected/prepareMedia.
+   * Refuses before writing when keeping the current seat would make two ordinary representatives,
+   * or would select this article and leave it out of the ledger.
    */
   bounded?: boolean;
+}
+
+/** Bounded correction stopped because writing would break the one-representative ledger. */
+export class RepresentativeBoundaryError extends Error {
+  constructor(detail: string) {
+    super(`representative boundary: ${detail}`);
+    this.name = "RepresentativeBoundaryError";
+  }
 }
 
 export interface PublishResult {
@@ -220,6 +231,39 @@ async function settleSeats(tx: Tx, factId: number | null, self: string | null, n
     if (m.article_id === self) own = change;
   }
   return own;
+}
+
+/**
+ * Bounded correction keeps every other seat. That is only safe when this article's resulting
+ * selected/seat pair is already the unique ordinary representative, or the article is not selected.
+ * Otherwise the caller must refuse the item. A no-fact article keeps its own seat.
+ */
+async function refuseBoundedRepresentative(
+  tx: Tx,
+  articleId: string,
+  sourceId: string,
+  selected: boolean,
+  seat: boolean,
+  factId: number | null,
+  visibility: string,
+): Promise<void> {
+  if (!selected || visibility !== "public" || isIndependentSelectedSource(sourceId)) return;
+  if (factId === null) {
+    if (!seat) throw new RepresentativeBoundaryError("no fact and selected, but the seat is false; refusing so the ledger is not omitted");
+    return;
+  }
+  const others = await tx<Array<{ article_id: string; seat: boolean; source_id: string; holds: boolean }>>`
+    SELECT p.article_id, p.seat, p.source_id,
+      (p.selected AND p.visibility = 'public' AND ${ownFactEvidenceCondition()}) AS holds
+    FROM publications p
+    WHERE p.fact_id = ${factId} AND p.article_id <> ${articleId} AND p.visibility = 'public'`;
+  const holders = others.filter((row) => row.holds && row.seat && !isIndependentSelectedSource(row.source_id));
+  if (seat && holders.length > 0) {
+    throw new RepresentativeBoundaryError(`fact ${factId} already has representative ${holders.map((row) => row.article_id).join(",")}; refusing a second seat`);
+  }
+  if (!seat && holders.length === 0) {
+    throw new RepresentativeBoundaryError("selected but the seat is false and no other representative holds the fact; refusing a missing ledger");
+  }
 }
 
 /** Brings one article's place in the selected sync ledger in line with its publication. */
@@ -395,6 +439,12 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
   const initial = (admission || firstAnalysis || firstIdentity) && !(await tx`SELECT 1 FROM selected_state WHERE article_id = ${articleId}`).length;
   const changeKind = initial ? "detail" : "content";
   const revision = previous ? previous.revision + (changed ? 1 : 0) : 1;
+
+  if (options.bounded) {
+    await refuseBoundedRepresentative(
+      tx, articleId, source.id, selected, previous?.seat ?? true, membership?.fact_id ?? null, visibility,
+    );
+  }
 
   await tx`
     INSERT INTO publications (article_id, analysis_id, revision, visibility, eligible, selected, selection_candidate, title, original_title, summary,

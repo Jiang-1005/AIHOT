@@ -3,7 +3,10 @@
 // check fails these samples; the new parser accepts them. Impossible days stay undated.
 import { tag } from "./setup.ts";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { after, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { beijingMidnight } from "@aihot/contracts/time";
 import { LEGACY_EXACT_DATELINE, parseOriginalDateline } from "@aihot/industry/dateline";
 import { publishArticle } from "@aihot/backend/publication/publish";
@@ -23,6 +26,38 @@ const IMPORT_DAY = "2026-11-25";
 const ORIGINAL_DAY = "2026-11-24";
 const DISCOVERED = new Date("2026-11-25T01:49:00.000Z");
 const ORIGINAL_AT = beijingMidnight(ORIGINAL_DAY);
+const RELATIONS = JSON.parse(readFileSync(new URL("./fixtures/morning-20261125-relations.json", import.meta.url), "utf8")) as {
+  collected_at_bj: string;
+  items: Array<{
+    article: { id: string; url: string; published_at: null; publication_time: null; discovered_at: string; timeline_at: string; backfill: boolean; backfill_reason: string };
+    publication: { fact_id: null; selected: boolean; seat: boolean; eligible: boolean; score: number; published_at: null };
+    selected_ledger: unknown[];
+    selected_state: null;
+  }>;
+  fact_membership: { fact_articles_by_article_id: unknown[] };
+  replay_placeholders_not_in_snapshot: {
+    note: string;
+    body: string;
+    title_prefix: string;
+    summary: string;
+    analysis_selected: Record<string, boolean>;
+  };
+};
+
+function runCli(args: string[]): { status: number; stdout: string; stderr: string } {
+  try {
+    const stdout = execFileSync(process.execPath, [fileURLToPath(new URL("../scripts/correct-brief-undated.ts", import.meta.url)), ...args], {
+      encoding: "utf8",
+      env: process.env,
+      cwd: fileURLToPath(new URL("..", import.meta.url)),
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    return { status: 0, stdout, stderr: "" };
+  } catch (error) {
+    const err = error as { status?: number | null; stdout?: string; stderr?: string };
+    return { status: err.status ?? 1, stdout: String(err.stdout ?? ""), stderr: String(err.stderr ?? "") };
+  }
+}
 
 after(async () => {
   await stopBoss();
@@ -165,16 +200,35 @@ test("only the four morning rows are corrected, then the window can be composed"
   assert.equal(wrongUrl!.url, "https://example.com/not-the-whitelisted-url");
   await sql`DELETE FROM articles WHERE id = ${MORNING_20261125[0]!.id}`;
 
-  const scores = [60, 50, 40, 22];
-  for (const [index, row] of MORNING_20261125.entries()) {
+  const placeholders = RELATIONS.replay_placeholders_not_in_snapshot;
+  assert.equal(RELATIONS.collected_at_bj, "2026-11-25 11:13:21");
+  assert.equal(RELATIONS.fact_membership.fact_articles_by_article_id.length, 0);
+  for (const snap of RELATIONS.items) {
+    const row = MORNING_20261125.find((entry) => entry.id === snap.article.id)!;
+    assert.equal(snap.article.url, row.url);
+    assert.equal(snap.article.published_at, null);
+    assert.equal(snap.article.publication_time, null);
+    assert.equal(snap.publication.fact_id, null);
+    assert.equal(snap.publication.selected, false);
+    assert.equal(snap.publication.eligible, false);
+    assert.equal(snap.publication.seat, true);
+    assert.equal(snap.selected_ledger.length, 0);
+    assert.equal(snap.selected_state, null);
+    const discovered = new Date(snap.article.discovered_at);
     const created = await upsertMaterial({
-      id: row.id, sourceId: SOURCE, url: row.url, title: `今早 ${index} ${T}`, via: "import", publishedAt: null,
-      backfill: `brief-${IMPORT_DAY}-undated`, discoveredAt: DISCOVERED, bodyText: `正文 ${T} ${index}`, bodyStatus: "ok",
+      id: row.id, sourceId: SOURCE, url: row.url, title: `${placeholders.title_prefix} ${row.id}`, via: "import",
+      publishedAt: null, backfill: snap.article.backfill_reason, discoveredAt: discovered,
+      bodyText: placeholders.body, bodyStatus: "ok",
     });
     await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, score, selected)
-      VALUES (${created.articleId}, 1, 'rule', 'pass', 'industry', ${`标题-${index}-${T}`}, ${`摘要-${index}-${T}`}, ${scores[index]!}, ${index === 0})`;
-    await sql`UPDATE articles SET grouping_status = 'complete', grouped_at = ${DISCOVERED} WHERE id = ${created.articleId}`;
-    await publishArticle(created.articleId, { releasedAt: DISCOVERED });
+      VALUES (${created.articleId}, 1, 'rule', 'pass', 'industry', ${`${placeholders.title_prefix} ${row.id}`}, ${placeholders.summary}, ${snap.publication.score}, ${placeholders.analysis_selected[row.id]})`;
+    await sql`UPDATE articles SET grouping_status = 'complete', grouped_at = ${discovered} WHERE id = ${created.articleId}`;
+    await publishArticle(created.articleId, { releasedAt: discovered });
+    await sql`UPDATE articles SET published_at = NULL, published_at_claim = NULL, publication_time = NULL, discovered_at = ${discovered}, timeline_at = ${discovered}, backfill = true, backfill_reason = ${snap.article.backfill_reason} WHERE id = ${row.id}`;
+    await sql`UPDATE publications SET published_at = NULL, timeline_at = ${discovered}, backfill = true, selected = false, eligible = false, seat = true, score = ${snap.publication.score}, fact_id = NULL, story_id = NULL WHERE article_id = ${row.id}`;
+    await sql`DELETE FROM selected_ledger WHERE article_id = ${row.id}`;
+    await sql`DELETE FROM selected_state WHERE article_id = ${row.id}`;
+    await sql`DELETE FROM fact_articles WHERE article_id = ${row.id}`;
   }
 
   const historical = [
@@ -207,22 +261,6 @@ test("only the four morning rows are corrected, then the window can be composed"
   await sql`UPDATE articles SET grouping_status = 'complete' WHERE id = ${outsider}`;
   await publishArticle(outsider, { releasedAt: outsiderAt });
 
-  const peer = `peerfactoutside${T.slice(0, 12)}`;
-  await upsertMaterial({
-    id: peer, sourceId: SOURCE, url: `https://example.com/brief-dateline/${T}/peer`, title: "同事实范围外",
-    via: "import", publishedAt: beijingMidnight("2026-11-20"), discoveredAt: new Date("2026-11-20T02:00:00.000Z"),
-    bodyText: "范围外同事实", bodyStatus: "ok",
-  });
-  await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, score, selected)
-    VALUES (${peer}, 1, 'rule', 'pass', 'industry', '范围外同事实', '摘要', 70, true)`;
-  await sql`UPDATE articles SET grouping_status = 'complete' WHERE id = ${peer}`;
-  await publishArticle(peer, { releasedAt: new Date("2026-11-20T02:00:00.000Z") });
-  const [fact] = await sql<{ id: number }[]>`
-    INSERT INTO facts (public_id, title) VALUES (${`isolated-fixture-${T}`}, 'ISOLATED FIXTURE not a production fact') RETURNING id`;
-  await sql`INSERT INTO fact_articles (fact_id, article_id, role) VALUES (${fact!.id}, ${MORNING_20261125[0]!.id}, 'primary'), (${fact!.id}, ${peer}, 'report')`;
-  await sql`UPDATE publications SET fact_id = ${fact!.id}, selected = true, seat = true, eligible = true WHERE article_id = ${peer}`;
-  await sql`UPDATE publications SET fact_id = ${fact!.id} WHERE article_id = ${MORNING_20261125[0]!.id}`;
-
   await assert.rejects(composeDaily(IMPORT_DAY, "featured-updated"), /nothing judged/);
   await assert.rejects(composeDaily("2098-08-01", "featured-updated"), /nothing judged/);
   await assert.rejects(composeDaily("2098-08-02", "featured-updated"), /nothing judged/);
@@ -246,45 +284,152 @@ test("only the four morning rows are corrected, then the window can be composed"
   assert.equal(preview.mode, "dry-run");
   assert.equal(preview.items.filter((item) => item.action === "would-update").length, 4);
   for (const item of preview.items) {
+    const snap = RELATIONS.items.find((entry) => entry.article.id === item.id)!;
     assert.equal(item.dates.originalDay, ORIGINAL_DAY);
-    assert.equal(item.dates.discoveredAt, DISCOVERED.toISOString());
+    assert.equal(item.dates.discoveredAt, new Date(snap.article.discovered_at).toISOString());
     assert.equal(item.dates.importDay, IMPORT_DAY);
     assert.equal(item.after?.published_at, ORIGINAL_AT.toISOString());
     assert.equal(item.after?.publication_time, MORNING_20261125.find((row) => row.id === item.id)!.evidence);
-    assert.equal(item.after?.timeline_at, DISCOVERED.toISOString());
+    assert.equal(item.after?.timeline_at, new Date(snap.article.discovered_at).toISOString());
     assert.equal(item.after?.backfill, false);
-    assert.equal(item.after?.discovered_at, DISCOVERED.toISOString());
+    assert.equal(item.after?.discovered_at, new Date(snap.article.discovered_at).toISOString());
   }
   const [untouched] = await sql<{ published_at: Date | null }[]>`SELECT published_at FROM articles WHERE id = ${MORNING_20261125[0]!.id}`;
   assert.equal(untouched!.published_at, null);
+  const cliDry = runCli([]);
+  assert.equal(cliDry.status, 0, cliDry.stderr);
+  assert.equal(JSON.parse(cliDry.stdout).mode, "dry-run");
+  assert.deepEqual(await watched(), before, "default CLI writes nothing");
+  const cliUnknown = runCli(["--nope"]);
+  assert.notEqual(cliUnknown.status, 0);
+  assert.match(cliUnknown.stderr, /unknown argument/);
+  assert.deepEqual(await watched(), before, "an unknown CLI argument writes nothing");
 
-  const applied = await correctMorningUndated({ apply: true });
+  const target = MORNING_20261125[0]!;
+  const peer = "fakerepnotsnapshot0001";
+  await upsertMaterial({
+    id: peer, sourceId: SOURCE, url: `https://example.invalid/fake-representative/${T}`, title: "FAKE peer not from the 11:13 snapshot",
+    via: "import", publishedAt: beijingMidnight("2026-11-20"), discoveredAt: new Date("2026-11-20T02:00:00.000Z"),
+    bodyText: "FAKE body not from the 11:13 snapshot", bodyStatus: "ok",
+  });
+  await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, score, selected)
+    VALUES (${peer}, 1, 'rule', 'pass', 'industry', 'FAKE peer', 'FAKE summary not from the snapshot', 70, true)`;
+  await sql`UPDATE articles SET grouping_status = 'complete' WHERE id = ${peer}`;
+  await publishArticle(peer, { releasedAt: new Date("2026-11-20T02:00:00.000Z") });
+  const [fact] = await sql<{ id: number }[]>`
+    INSERT INTO facts (public_id, title) VALUES (${`fake-conflict-not-snapshot-${T}`}, 'FAKE fact not from the 11:13 snapshot') RETURNING id`;
+  await sql`INSERT INTO fact_articles (fact_id, article_id, role) VALUES (${fact!.id}, ${target.id}, 'primary'), (${fact!.id}, ${peer}, 'report')`;
+  await sql`UPDATE publications SET fact_id = ${fact!.id}, selected = true, seat = true, eligible = true WHERE article_id = ${peer}`;
+  await sql`UPDATE publications SET fact_id = ${fact!.id} WHERE article_id = ${target.id}`;
+  const conflictBefore = await watched();
+  const conflictDry = runCli([]);
+  assert.equal(conflictDry.status, 0, conflictDry.stderr);
+  const conflictPreview = JSON.parse(conflictDry.stdout) as { items: Array<{ id: string; action: string; reason: string }> };
+  const refused = conflictPreview.items.find((item) => item.id === target.id)!;
+  assert.equal(refused.action, "refused");
+  assert.match(refused.reason, /representative boundary: fact .* refusing a second seat/);
+  assert.deepEqual(await watched(), conflictBefore, "dry-run of a representative conflict writes nothing");
+  const conflictApply = runCli(["--apply"]);
+  assert.notEqual(conflictApply.status, 0);
+  assert.match(conflictApply.stderr, /representative boundary: fact .* refusing a second seat/);
+  assert.deepEqual(await watched(), conflictBefore, "apply of a representative conflict rolls back");
+  const [peerSeat] = await sql<{ seat: boolean; selected: boolean }[]>`SELECT seat, selected FROM publications WHERE article_id = ${peer}`;
+  assert.equal(peerSeat!.seat, true);
+  assert.equal(peerSeat!.selected, true);
+  const [stillUndated] = await sql<{ published_at: Date | null }[]>`SELECT published_at FROM articles WHERE id = ${target.id}`;
+  assert.equal(stillUndated!.published_at, null);
+  const dual = await sql<{ n: number }[]>`
+    SELECT count(*)::int AS n FROM publications
+    WHERE fact_id = ${fact!.id} AND selected AND seat AND visibility = 'public'`;
+  assert.equal(dual[0]!.n, 1, "the refusal leaves a single representative");
+
+  await sql`DELETE FROM fact_articles WHERE fact_id = ${fact!.id}`;
+  await sql`UPDATE publications SET fact_id = NULL WHERE article_id = ${target.id}`;
+  await sql`DELETE FROM selected_ledger WHERE article_id = ${peer}`;
+  await sql`DELETE FROM selected_state WHERE article_id = ${peer}`;
+  await sql`DELETE FROM publications WHERE article_id = ${peer}`;
+  await sql`DELETE FROM articles WHERE id = ${peer}`;
+  await sql`DELETE FROM facts WHERE id = ${fact!.id}`;
+  await sql`UPDATE publications SET seat = false WHERE article_id = ${target.id}`;
+  const missingBefore = await watched();
+  const missingApply = runCli(["--apply"]);
+  assert.notEqual(missingApply.status, 0);
+  assert.match(missingApply.stderr, /representative boundary: no fact and selected, but the seat is false/);
+  assert.deepEqual(await watched(), missingBefore, "a selected article with no seat is refused instead of omitting the ledger");
+  const [missingSeat] = await sql<{ seat: boolean; published_at: Date | null }[]>`
+    SELECT p.seat, a.published_at FROM publications p JOIN articles a ON a.id = p.article_id WHERE p.article_id = ${target.id}`;
+  assert.equal(missingSeat!.seat, false);
+  assert.equal(missingSeat!.published_at, null);
+  await sql`UPDATE publications SET seat = true WHERE article_id = ${target.id}`;
+  assert.deepEqual(await watched(), before, "the fake conflict is gone and the snapshot rows are unchanged");
+
+  const cliApply = runCli(["--apply"]);
+  assert.equal(cliApply.status, 0, cliApply.stderr);
+  const applied = JSON.parse(cliApply.stdout) as { mode: string; items: Array<{ id: string; action: string; publicationAfter: { score: number; selected: boolean; seat: boolean; eligible: boolean; fact_id: number | null } | null }> };
   assert.equal(applied.mode, "apply");
-  for (const [index, row] of MORNING_20261125.entries()) {
+  const replay: unknown[] = [];
+  for (const row of MORNING_20261125) {
+    const snap = RELATIONS.items.find((entry) => entry.article.id === row.id)!;
     const item = applied.items.find((entry) => entry.id === row.id)!;
     assert.equal(item.action, "updated");
+    const discovered = new Date(snap.article.discovered_at);
     const [article] = await sql<{ published_at: Date; publication_time: string; discovered_at: Date; timeline_at: Date; backfill: boolean; backfill_reason: string | null }[]>`
       SELECT published_at, publication_time, discovered_at, timeline_at, backfill, backfill_reason FROM articles WHERE id = ${row.id}`;
     assert.equal(article!.published_at.toISOString(), ORIGINAL_AT.toISOString());
     assert.equal(article!.publication_time, row.evidence);
-    assert.equal(article!.discovered_at.toISOString(), DISCOVERED.toISOString());
-    assert.equal(article!.timeline_at.toISOString(), DISCOVERED.toISOString());
+    assert.equal(article!.discovered_at.getTime(), discovered.getTime());
+    assert.equal(article!.timeline_at.getTime(), discovered.getTime());
     assert.equal(article!.backfill, false);
     assert.equal(article!.backfill_reason, null);
     const [analysis] = await sql<{ score: number; selected: boolean }[]>`SELECT score, selected FROM analyses WHERE article_id = ${row.id}`;
-    assert.equal(analysis!.score, scores[index]);
-    assert.equal(analysis!.selected, index === 0);
-    const [publication] = await sql<{ published_at: Date; timeline_at: Date; backfill: boolean; eligible: boolean; score: number; selected: boolean }[]>`
-      SELECT published_at, timeline_at, backfill, eligible, score, selected FROM publications WHERE article_id = ${row.id}`;
+    assert.equal(Number(analysis!.score), snap.publication.score);
+    assert.equal(analysis!.selected, placeholders.analysis_selected[row.id]);
+    const [publication] = await sql<{ published_at: Date; timeline_at: Date; backfill: boolean; eligible: boolean; score: number; selected: boolean; seat: boolean; fact_id: number | null }[]>`
+      SELECT published_at, timeline_at, backfill, eligible, score, selected, seat, fact_id FROM publications WHERE article_id = ${row.id}`;
     assert.equal(publication!.published_at.toISOString(), ORIGINAL_AT.toISOString());
-    assert.equal(publication!.timeline_at.toISOString(), DISCOVERED.toISOString());
+    assert.equal(publication!.timeline_at.getTime(), discovered.getTime());
     assert.equal(publication!.backfill, false);
     assert.equal(publication!.eligible, true);
-    assert.equal(publication!.score, scores[index]);
+    assert.equal(Number(publication!.score), snap.publication.score);
+    assert.equal(publication!.seat, true);
+    assert.equal(publication!.fact_id, null);
     const dateline = featuredDatelineDay({ url: row.url, publicationTime: row.evidence, publishedAt: publication!.published_at });
     assert.equal(dateline, ORIGINAL_DAY);
-    assert.equal(publication!.selected, index === 0 && featuredSlot(dateline) !== "无");
-    assert.equal(item.publicationAfter?.score, scores[index]);
+    const expectSelected = placeholders.analysis_selected[row.id] === true && featuredSlot(dateline) !== "无";
+    assert.equal(publication!.selected, expectSelected);
+    assert.equal(item.publicationAfter?.score, snap.publication.score);
+    assert.equal(item.publicationAfter?.selected, expectSelected);
+    assert.equal(item.publicationAfter?.seat, true);
+    assert.equal(item.publicationAfter?.fact_id, null);
+    const ledger = await sql<{ op: string }[]>`SELECT op FROM selected_ledger WHERE article_id = ${row.id} ORDER BY seq`;
+    const state = await sql<{ in_set: boolean }[]>`SELECT in_set FROM selected_state WHERE article_id = ${row.id}`;
+    const facts = await sql`SELECT fact_id FROM fact_articles WHERE article_id = ${row.id}`;
+    assert.equal(facts.length, 0);
+    if (expectSelected) {
+      assert.deepEqual(ledger.map((entry) => entry.op), ["upsert"]);
+      assert.equal(state.length, 1);
+      assert.equal(state[0]!.in_set, true);
+    } else {
+      assert.equal(ledger.length, 0);
+      assert.equal(state.length, 0);
+    }
+    replay.push({
+      id: row.id,
+      snapshotDiscoveredAt: snap.article.discovered_at,
+      originalDay: ORIGINAL_DAY,
+      discoveredAt: article!.discovered_at.toISOString(),
+      timelineAt: article!.timeline_at.toISOString(),
+      publishedAt: article!.published_at.toISOString(),
+      publicationTime: article!.publication_time,
+      eligible: publication!.eligible,
+      selected: publication!.selected,
+      seat: publication!.seat,
+      factId: publication!.fact_id,
+      score: Number(publication!.score),
+      analysisSelectedPlaceholder: placeholders.analysis_selected[row.id],
+      ledger: ledger.map((entry) => entry.op),
+      state: state[0]?.in_set ?? null,
+    });
   }
 
   for (const [id] of historical) {
@@ -326,26 +471,49 @@ test("only the four morning rows are corrected, then the window can be composed"
     ? await sql`SELECT name, state, data->>'articleId' AS article_id FROM pgboss.job WHERE name IN ('notify.selected', 'media.prepare') ORDER BY name, id`
     : [];
   assert.deepEqual(jobsAfterRepublish, jobsBeforeRepublish, "a later ordinary republish does not enqueue a push");
-  for (const id of [...historical.map(([historicalId]) => historicalId), "xaawa97ajl31a74bq0grzs0tx", outsider, peer]) {
+  for (const id of [...historical.map(([historicalId]) => historicalId), "xaawa97ajl31a74bq0grzs0tx", outsider]) {
     const left = (before.articles as unknown as Array<{ id: string }>).find((row) => row.id === id);
     const right = (after.articles as unknown as Array<{ id: string }>).find((row) => row.id === id);
     assert.deepEqual(right, left, id);
   }
-  console.log(JSON.stringify({
-    label: "ISOLATED FIXTURE not production",
-    boundary: CORRECTION_BOUNDARY,
-    productionFacts: "unavailable",
-    fixtureFact: `isolated-fixture-${T}`,
-    judgedReports: report!.content.generator.judgedReports,
-    originalDay: ORIGINAL_DAY,
-    discoveredAt: DISCOVERED.toISOString(),
-    peerSeatUnchanged: true,
-    foreignLedgerUnchanged: true,
-    laterRepublishEnqueuedPush: false,
-  }));
-
-  const second = await correctMorningUndated({ apply: true });
+  const representatives = await sql<{ n: number }[]>`
+    SELECT count(*)::int AS n FROM publications
+    WHERE article_id = ANY(${MORNING_20261125.map((row) => row.id)}::text[]) AND selected AND seat`;
+  assert.equal(representatives[0]!.n, replay.filter((row) => (row as { selected: boolean }).selected).length);
+  const cliAgain = runCli(["--apply"]);
+  assert.equal(cliAgain.status, 0, cliAgain.stderr);
+  const second = JSON.parse(cliAgain.stdout) as { items: Array<{ action: string }> };
   assert.equal(second.items.every((item) => item.action === "unchanged"), true);
+  console.log(JSON.stringify({
+    label: "ISOLATED REPLAY of the 2026-11-25 11:13:21 local snapshot. Not production. Not Neon. Body and analysis.selected are placeholders.",
+    fixture: "tests/fixtures/morning-20261125-relations.json",
+    placeholderNote: placeholders.note,
+    boundary: CORRECTION_BOUNDARY,
+    judgedReports: report!.content.generator.judgedReports,
+    items: replay,
+    conflict: {
+      label: "FAKE same-fact representative, not from the snapshot",
+      dryRunAction: refused.action,
+      dryRunReason: refused.reason,
+      applyStatus: conflictApply.status,
+      applyStderr: conflictApply.stderr.trim(),
+      peerSeatStayedTrue: true,
+      ordinaryRepresentativesAfterRefusal: 1,
+    },
+    missingLedger: {
+      label: "FAKE selected article with seat false and no fact, not from the snapshot",
+      applyStatus: missingApply.status,
+      applyStderr: missingApply.stderr.trim(),
+    },
+    cli: {
+      defaultDryRunStatus: cliDry.status,
+      unknownArgumentStatus: cliUnknown.status,
+      applyStatus: cliApply.status,
+      rerunStatus: cliAgain.status,
+      rerunActions: second.items.map((item) => item.action),
+    },
+    laterOrdinaryPublishEnqueuedNotify: false,
+  }, null, 2));
   const [republished] = await sql<{ published_at: Date; publication_time: string }[]>`
     SELECT published_at, publication_time FROM articles WHERE id = ${MORNING_20261125[0]!.id}`;
   assert.equal(republished!.published_at.toISOString(), ORIGINAL_AT.toISOString());
