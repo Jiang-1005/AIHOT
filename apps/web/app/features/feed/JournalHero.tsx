@@ -16,6 +16,7 @@ import { rowDates } from "../../lib/format";
 import { publicCopy } from "../../lib/public-copy";
 import { rememberPreview } from "../item/preview";
 import type { MastheadIssue } from "./Masthead";
+import { GroupSources } from "./ReadingGroup";
 import { SourceLine, StarButton } from "./parts";
 
 export interface HeroHotItem {
@@ -60,7 +61,7 @@ export function JournalHero({
       {/* Left 7 columns — Flagship Lead Feature Card */}
       <article
         data-hero-lead=""
-        className="group relative flex flex-col justify-between overflow-hidden rounded-[16px] border border-line bg-surface p-6 lg:col-span-7 wide:p-7"
+        className="group relative flex flex-col justify-between overflow-hidden rounded-card border border-line bg-surface p-6 lg:col-span-7 wide:p-7"
       >
         <div>
           <header className="flex items-center gap-2.5 text-[0.75rem] text-ink-4">
@@ -106,7 +107,7 @@ export function JournalHero({
             )}
 
             {reason && (
-              <div className="mt-4 rounded-xl border border-accent/15 bg-accent-softer px-4 py-3 text-[0.875rem] leading-[1.68] text-ink-2">
+              <div className="mt-4 rounded-tile border border-accent/15 bg-accent-softer px-4 py-3 text-[0.875rem] leading-[1.68] text-ink-2">
                 <span className="mr-1.5 font-semibold text-accent-ink">{ITEM_COPY.reasonLabel}</span>
                 {reason}
               </div>
@@ -115,16 +116,16 @@ export function JournalHero({
         </div>
 
         <footer className="mt-5 flex items-center justify-between gap-3 border-t border-line-soft pt-4 text-[0.8125rem]">
-          {lead.group && lead.group.reportCount > 1 ? (
-            <span className="text-ink-3">
-              共 <span className="num font-semibold text-ink">{lead.group.reportCount}</span> 篇相关报道
-            </span>
+          {lead.group && (lead.group.additionalSourceCount > 0 || lead.group.reportCount > 1) ? (
+            <div className="min-w-0 flex-1">
+              <GroupSources group={lead.group} parentId={lead.item.id} placement="hero" />
+            </div>
           ) : (
             <span className="text-ink-4">编辑部每日精选</span>
           )}
           <span
             data-hero-cta=""
-            className="inline-flex items-center gap-1 font-semibold text-accent transition-transform duration-200 group-hover:translate-x-1"
+            className="inline-flex shrink-0 items-center gap-1 font-semibold text-accent transition-transform duration-200 group-hover:translate-x-1"
           >
             阅读全文 <IconArrowRight size={14} />
           </span>
@@ -137,7 +138,7 @@ export function JournalHero({
         <section
           data-hero-daily=""
           aria-label="每日情报日报"
-          className="relative flex flex-col justify-between overflow-hidden rounded-[16px] p-5 wide:p-6"
+          className="relative flex flex-col justify-between overflow-hidden rounded-card p-5 wide:p-6"
         >
           <div className="relative z-[1]">
             <div className="flex items-center justify-between gap-2 text-[0.75rem]">
@@ -187,7 +188,7 @@ export function JournalHero({
         <section
           data-hero-hot=""
           aria-label="48 小时热点脉冲"
-          className="flex flex-1 flex-col rounded-[16px] border border-line bg-surface p-5"
+          className="flex flex-1 flex-col rounded-card border border-line bg-surface p-5"
         >
           {hot.length > 0 ? (
             <>
@@ -207,7 +208,7 @@ export function JournalHero({
                     <Link
                       viewTransition
                       to={item.to}
-                      className="group -mx-2 flex items-start gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-bg-muted"
+                      className="group -mx-2 flex items-start gap-2.5 rounded-control px-2 py-2 transition-colors hover:bg-bg-muted"
                     >
                       <span className="mono mt-0.5 shrink-0 text-[0.8125rem] font-bold text-accent">
                         {String(item.rank).padStart(2, "0")}
@@ -238,7 +239,7 @@ export function JournalHero({
                   <Link
                     key={tile.to}
                     to={tile.to}
-                    className="group flex flex-col gap-1 rounded-xl border border-line-soft bg-bg/60 p-3 transition-all duration-200 hover:-translate-y-px hover:border-line-strong hover:bg-bg-muted"
+                    className="group flex flex-col gap-1 rounded-tile border border-line-soft bg-bg/60 p-3 transition-all duration-200 hover:-translate-y-px hover:border-line-strong hover:bg-bg-muted"
                   >
                     <span className="flex items-center gap-1.5 text-[0.8125rem] font-semibold text-ink transition-colors group-hover:text-accent">
                       <tile.icon size={15} className="shrink-0 text-accent" />

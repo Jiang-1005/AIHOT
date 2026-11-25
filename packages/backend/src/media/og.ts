@@ -38,7 +38,14 @@ export function fallbackFontFiles(files: string[]): string[] {
 }
 
 /** None by default: the share images and their cache keys are then what they were without this. */
-export const FALLBACK_FONTS = fallbackFontFiles(readdirSync(FONT_DIR));
+export const FALLBACK_FONTS = (() => {
+  try {
+    return fallbackFontFiles(readdirSync(FONT_DIR));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
+})();
 
 function fonts() {
   fontsPromise ??= Promise.all([

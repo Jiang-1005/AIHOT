@@ -102,9 +102,11 @@ export function buildScoreInput(a: AnalyzeInputArticle): string {
   }
   if (!body) body = a.title;
   const at = a.publishedAt;
+  // An ISO instant starts with the day and "T". A "T" inside a parenthetical note is not one.
+  const exactInstant = /^\d{4}-\d{2}-\d{2}T/.test(a.publicationTime?.trim() ?? "");
   return [
     "请按系统规则评估以下单篇材料所代表的事件。只输出 attentionScore、focusRelevance 和 focusRelevanceReason。",
-    `【发布时间（北京时间）】\n${at ? a.publicationTime === undefined || a.publicationTime?.includes("T") ? scoreInputTime(at) : describePublicationTime(at, a.publicationTime) : "未知（收录时间不代表发布时间）"}`,
+    `【发布时间（北京时间）】\n${at ? a.publicationTime === undefined || exactInstant ? scoreInputTime(at) : describePublicationTime(at, a.publicationTime) : "未知（收录时间不代表发布时间）"}`,
     `【标题】\n${a.title.trim()}`,
     `【完整正文】\n${body.length > MAX_BODY_CHARS ? body.slice(0, MAX_BODY_CHARS) : body}`,
   ].join("\n\n");

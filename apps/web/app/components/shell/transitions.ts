@@ -9,6 +9,31 @@ import { isPhone } from "./screens";
 
 let goingBack = false;
 
+/** Windows WebKit can crash while capturing a history destination with a long list, even on a cache miss. */
+export function skipWindowsWebKitHistorySnapshots() {
+  const windowsWebKit = navigator.platform.startsWith("Win") && navigator.vendor === "Apple Computer, Inc.";
+  if (!windowsWebKit || typeof document.startViewTransition !== "function") return;
+
+  let traversalKey: string | undefined;
+  window.addEventListener("popstate", (event) => {
+    traversalKey = event.state?.key ?? "default";
+  });
+
+  // React Router starts native transitions for matching paths after popstate, even on browser back.
+  // Skip before WebKit runs the update callback. The router still commits the destination and restores scroll.
+  const start = document.startViewTransition.bind(document);
+  document.startViewTransition = (options) => {
+    const transition = start(options);
+    if (traversalKey === (history.state?.key ?? "default")) {
+      // Skipping rejects ready even when the page update succeeds.
+      void transition.ready.catch(() => {});
+      transition.skipTransition();
+    }
+    traversalKey = undefined;
+    return transition;
+  };
+}
+
 /** Called just before navigating back from the app's own controls (the bar's back button, a tab tapped deeper in). */
 export function markBack() {
   goingBack = true;

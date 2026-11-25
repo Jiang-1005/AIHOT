@@ -36,7 +36,7 @@ class RequestLogs extends LogController {
 
 /**
  * Copies the site catalogs (site_blobs) into the data folder before the API serves. The entry points
- * (main.ts, the Vercel api/index.ts) call it; buildApp does not, so building the app touches no database.
+ * (main.ts, the Vercel deploy/vercel-api.ts) call it; buildApp does not, so building the app touches no database.
  */
 export async function hydrateCatalogsAtBoot(): Promise<void> {
   try {
@@ -125,7 +125,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.get("/api/health", async (_req, reply) => {
     const started = performance.now();
     await sql`SELECT 1`;
-    return reply.header("Cache-Control", "no-store").send({ ok: true, db: "ok", ms: Math.round(performance.now() - started), release: process.env.AIHOT_RELEASE ?? "dev" });
+    return reply.header("Cache-Control", "no-store").send({
+      ok: true, db: "ok", ms: Math.round(performance.now() - started),
+      release: process.env.AIHOT_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || "dev",
+    });
   });
 
   app.get("/gate", async (req, reply) => {

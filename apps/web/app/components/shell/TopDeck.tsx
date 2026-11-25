@@ -152,7 +152,7 @@ export function TopDeck({ changelogVersion }: { changelogVersion: string | null 
                 role="menu"
                 aria-label="更多页面与外观"
                 data-top-popover=""
-                className="anim-drop-in absolute right-0 top-[calc(100%+10px)] z-50 w-[296px] rounded-2xl border border-line bg-surface p-3 shadow-[var(--shadow-overlay)]"
+                className="anim-drop-in absolute right-0 top-[calc(100%+10px)] z-50 w-[296px] rounded-panel border border-line bg-surface p-3 shadow-[var(--shadow-overlay)]"
               >
                 {archiveItems.length > 0 && (
                   <div>

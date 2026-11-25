@@ -1,0 +1,223 @@
+{
+  "snapshot_kind": "local_readonly_relations",
+  "not_neon": true,
+  "source": "本机 PostgreSQL（Docker 容器 xintian-edu-hot-db-1，库名 aihot，只读 SELECT）",
+  "collected_at_bj": "2026-11-25 11:13:21",
+  "timezone": "Asia/Shanghai",
+  "scope": "仅今早行业四条及其同 fact 关系；未订正、未写库、未连 Neon、未扩展到历史五条",
+  "whitelist_article_ids": [
+    "o8tgivmlcfbyh40rfo8fx9jtp",
+    "rgfp34e6j0adksloeptwtuk73",
+    "s8gvat6l9u3pkc2v6esdxdyuj",
+    "pa5go2ga4rcd7mj2i46y2rurc"
+  ],
+  "schema": {
+    "requested_columns_present": {
+      "articles": [
+        "id",
+        "url",
+        "published_at",
+        "publication_time",
+        "discovered_at",
+        "timeline_at",
+        "backfill",
+        "backfill_reason"
+      ],
+      "publications": [
+        "article_id",
+        "fact_id",
+        "selected",
+        "seat",
+        "eligible",
+        "score",
+        "published_at",
+        "timeline_at",
+        "backfill"
+      ],
+      "fact_articles": [
+        "article_id",
+        "role"
+      ],
+      "selected_ledger": [
+        "seq",
+        "op"
+      ],
+      "selected_state": [
+        "in_set"
+      ]
+    },
+    "missing_requested_columns": [],
+    "notes": "全部所要列均存在于本机 schema。时间戳另附 *_bj（北京时间墙钟）。timestamps 原值带 +00:00，为数据库 timestamptz 的 ISO 表示。"
+  },
+  "items": [
+    {
+      "article": {
+        "id": "o8tgivmlcfbyh40rfo8fx9jtp",
+        "url": "https://www.36kr.com/p/4083350298924162",
+        "published_at": null,
+        "publication_time": null,
+        "discovered_at": "2026-11-25T01:49:41.333+00:00",
+        "timeline_at": "2026-11-25T01:49:41.333+00:00",
+        "backfill": true,
+        "backfill_reason": "brief-2026-11-25-undated",
+        "published_at_bj": null,
+        "discovered_at_bj": "2026-11-25 09:49:41",
+        "timeline_at_bj": "2026-11-25 09:49:41"
+      },
+      "publication": {
+        "article_id": "o8tgivmlcfbyh40rfo8fx9jtp",
+        "fact_id": null,
+        "selected": false,
+        "seat": true,
+        "eligible": false,
+        "score": 60.0,
+        "published_at": null,
+        "timeline_at": "2026-11-25T01:49:41.333+00:00",
+        "backfill": true,
+        "published_at_bj": null,
+        "timeline_at_bj": "2026-11-25 09:49:41"
+      },
+      "selected_ledger": [],
+      "selected_state": null,
+      "note": "selected_ledger 无行；selected_state 无行"
+    },
+    {
+      "article": {
+        "id": "rgfp34e6j0adksloeptwtuk73",
+        "url": "https://www.the74million.org/article/teaching-kids-to-read-is-important-so-is-teaching-them-to-communicate/",
+        "published_at": null,
+        "publication_time": null,
+        "discovered_at": "2026-11-25T01:49:41.398+00:00",
+        "timeline_at": "2026-11-25T01:49:41.398+00:00",
+        "backfill": true,
+        "backfill_reason": "brief-2026-11-25-undated",
+        "published_at_bj": null,
+        "discovered_at_bj": "2026-11-25 09:49:41",
+        "timeline_at_bj": "2026-11-25 09:49:41"
+      },
+      "publication": {
+        "article_id": "rgfp34e6j0adksloeptwtuk73",
+        "fact_id": null,
+        "selected": false,
+        "seat": true,
+        "eligible": false,
+        "score": 50.0,
+        "published_at": null,
+        "timeline_at": "2026-11-25T01:49:41.398+00:00",
+        "backfill": true,
+        "published_at_bj": null,
+        "timeline_at_bj": "2026-11-25 09:49:41"
+      },
+      "selected_ledger": [],
+      "selected_state": null,
+      "note": "selected_ledger 无行；selected_state 无行"
+    },
+    {
+      "article": {
+        "id": "s8gvat6l9u3pkc2v6esdxdyuj",
+        "url": "https://www.the74million.org/article/unpacking-lessons-learned-from-summit-learning-part-2/",
+        "published_at": null,
+        "publication_time": null,
+        "discovered_at": "2026-11-25T01:49:41.417+00:00",
+        "timeline_at": "2026-11-25T01:49:41.417+00:00",
+        "backfill": true,
+        "backfill_reason": "brief-2026-11-25-undated",
+        "published_at_bj": null,
+        "discovered_at_bj": "2026-11-25 09:49:41",
+        "timeline_at_bj": "2026-11-25 09:49:41"
+      },
+      "publication": {
+        "article_id": "s8gvat6l9u3pkc2v6esdxdyuj",
+        "fact_id": null,
+        "selected": false,
+        "seat": true,
+        "eligible": false,
+        "score": 40.0,
+        "published_at": null,
+        "timeline_at": "2026-11-25T01:49:41.417+00:00",
+        "backfill": true,
+        "published_at_bj": null,
+        "timeline_at_bj": "2026-11-25 09:49:41"
+      },
+      "selected_ledger": [],
+      "selected_state": null,
+      "note": "selected_ledger 无行；selected_state 无行"
+    },
+    {
+      "article": {
+        "id": "pa5go2ga4rcd7mj2i46y2rurc",
+        "url": "https://www.edsurge.com/news/how-one-teacher-prep-program-made-its-technology-use-visible",
+        "published_at": null,
+        "publication_time": null,
+        "discovered_at": "2026-11-25T01:49:41.43+00:00",
+        "timeline_at": "2026-11-25T01:49:41.43+00:00",
+        "backfill": true,
+        "backfill_reason": "brief-2026-11-25-undated",
+        "published_at_bj": null,
+        "discovered_at_bj": "2026-11-25 09:49:41",
+        "timeline_at_bj": "2026-11-25 09:49:41"
+      },
+      "publication": {
+        "article_id": "pa5go2ga4rcd7mj2i46y2rurc",
+        "fact_id": null,
+        "selected": false,
+        "seat": true,
+        "eligible": false,
+        "score": 22.0,
+        "published_at": null,
+        "timeline_at": "2026-11-25T01:49:41.43+00:00",
+        "backfill": true,
+        "published_at_bj": null,
+        "timeline_at_bj": "2026-11-25 09:49:41"
+      },
+      "selected_ledger": [],
+      "selected_state": null,
+      "note": "selected_ledger 无行；selected_state 无行"
+    }
+  ],
+  "fact_membership": {
+    "publications_fact_id": {
+      "o8tgivmlcfbyh40rfo8fx9jtp": null,
+      "rgfp34e6j0adksloeptwtuk73": null,
+      "s8gvat6l9u3pkc2v6esdxdyuj": null,
+      "pa5go2ga4rcd7mj2i46y2rurc": null
+    },
+    "publications_story_id": {
+      "o8tgivmlcfbyh40rfo8fx9jtp": null,
+      "rgfp34e6j0adksloeptwtuk73": null,
+      "s8gvat6l9u3pkc2v6esdxdyuj": null,
+      "pa5go2ga4rcd7mj2i46y2rurc": null
+    },
+    "fact_articles_by_publication_fact_id": [],
+    "fact_articles_by_article_id": [],
+    "distinct_fact_ids": []
+  },
+  "same_fact_peers": {
+    "publications": [],
+    "selected_ledger": [],
+    "selected_state": [],
+    "observation": "四条 publications.fact_id 均为 null；按 article_id 查 fact_articles 也为 0 行。因此不存在同 fact 的 peer publication，也没有可带出的 peer ledger / selected_state 行。"
+  },
+  "representative_and_ledger": {
+    "same_fact_peer_exists": false,
+    "selected_true_count_among_four": 0,
+    "eligible_true_count_among_four": 0,
+    "seat_true_count_among_four": 4,
+    "ledger_rows_for_four": 0,
+    "state_rows_for_four": 0,
+    "observation": "四条均为 selected=false、eligible=false、seat=true，且 selected_ledger 与 selected_state 均无对应行，彼此之间没有共享 fact，因此本快照看不到同 fact 多代表或账不一致。这是当前库内关系的观察，不能用来推断日后订正或重发布是否安全。"
+  },
+  "replay_placeholders_not_in_snapshot": {
+    "note": "The 11:13 snapshot has no title, body, analyses.selected, or grouping_status. These values exist only so the publish rules can run. They are not the live analysis rows and they are not fact relations.",
+    "body": "PLACEHOLDER not from the 11:13 snapshot",
+    "title_prefix": "PLACEHOLDER",
+    "summary": "PLACEHOLDER not from the 11:13 snapshot",
+    "grouping_status": "complete",
+    "analysis_selected": {
+      "o8tgivmlcfbyh40rfo8fx9jtp": true,
+      "rgfp34e6j0adksloeptwtuk73": false,
+      "s8gvat6l9u3pkc2v6esdxdyuj": false,
+      "pa5go2ga4rcd7mj2i46y2rurc": false
+    }
+  }
+}

@@ -65,6 +65,7 @@ interface PublicationRow {
   visibility: string;
   eligible: boolean;
   selected: boolean;
+  seat: boolean;
   selection_candidate: boolean;
   title: string;
   original_title: string | null;
@@ -111,6 +112,22 @@ export interface PublishOptions {
   now?: Date;
   /** Historical import: the item was already public, so it is released at its discovery time. */
   releasedAt?: Date | null;
+  /**
+   * Date correction. Still writes this article's publication and its own selected-sync ledger row,
+   * so a later ordinary republish sees it as already selected and does not enqueue a push.
+   * Does not reseat other reports of the fact, emit hooks, or enqueue notifySelected/prepareMedia.
+   * Refuses before writing when keeping the current seat would make two ordinary representatives,
+   * or would select this article and leave it out of the ledger.
+   */
+  bounded?: boolean;
+}
+
+/** Bounded correction stopped because writing would break the one-representative ledger. */
+export class RepresentativeBoundaryError extends Error {
+  constructor(detail: string) {
+    super(`representative boundary: ${detail}`);
+    this.name = "RepresentativeBoundaryError";
+  }
 }
 
 export interface PublishResult {
@@ -216,6 +233,39 @@ async function settleSeats(tx: Tx, factId: number | null, self: string | null, n
   return own;
 }
 
+/**
+ * Bounded correction keeps every other seat. That is only safe when this article's resulting
+ * selected/seat pair is already the unique ordinary representative, or the article is not selected.
+ * Otherwise the caller must refuse the item. A no-fact article keeps its own seat.
+ */
+async function refuseBoundedRepresentative(
+  tx: Tx,
+  articleId: string,
+  sourceId: string,
+  selected: boolean,
+  seat: boolean,
+  factId: number | null,
+  visibility: string,
+): Promise<void> {
+  if (!selected || visibility !== "public" || isIndependentSelectedSource(sourceId)) return;
+  if (factId === null) {
+    if (!seat) throw new RepresentativeBoundaryError("no fact and selected, but the seat is false; refusing so the ledger is not omitted");
+    return;
+  }
+  const others = await tx<Array<{ article_id: string; seat: boolean; source_id: string; holds: boolean }>>`
+    SELECT p.article_id, p.seat, p.source_id,
+      (p.selected AND p.visibility = 'public' AND ${ownFactEvidenceCondition()}) AS holds
+    FROM publications p
+    WHERE p.fact_id = ${factId} AND p.article_id <> ${articleId} AND p.visibility = 'public'`;
+  const holders = others.filter((row) => row.holds && row.seat && !isIndependentSelectedSource(row.source_id));
+  if (seat && holders.length > 0) {
+    throw new RepresentativeBoundaryError(`fact ${factId} already has representative ${holders.map((row) => row.article_id).join(",")}; refusing a second seat`);
+  }
+  if (!seat && holders.length === 0) {
+    throw new RepresentativeBoundaryError("selected but the seat is false and no other representative holds the fact; refusing a missing ledger");
+  }
+}
+
 /** Brings one article's place in the selected sync ledger in line with its publication. */
 async function syncLedger(tx: Tx, articleId: string, now: Date): Promise<"upsert" | "remove" | null> {
   const [p] = await tx<Array<{ selected: boolean; visibility: string; seat: boolean; title: string; original_title: string | null; summary: string | null;
@@ -254,7 +304,7 @@ export async function republishTx(tx: Tx, articleId: string, options: PublishOpt
   const [previous] = await tx<{ story_id: number | null }[]>`SELECT story_id FROM publications WHERE article_id = ${articleId}`;
   const result = await publishArticleTx(tx, articleId, options);
   // Body and translation writes announce their own changes; an unchanged projection needs no purge.
-  if (previous && result?.changed) await emit("articleChanged", {
+  if (!options.bounded && previous && result?.changed) await emit("articleChanged", {
     id: articleId, reason: "republication", kind: result.changeKind, reduced: result.reduced, previousStoryIds: previous.story_id === null ? [] : [previous.story_id],
   }, tx);
   return result;
@@ -390,6 +440,12 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
   const changeKind = initial ? "detail" : "content";
   const revision = previous ? previous.revision + (changed ? 1 : 0) : 1;
 
+  if (options.bounded) {
+    await refuseBoundedRepresentative(
+      tx, articleId, source.id, selected, previous?.seat ?? true, membership?.fact_id ?? null, visibility,
+    );
+  }
+
   await tx`
     INSERT INTO publications (article_id, analysis_id, revision, visibility, eligible, selected, selection_candidate, title, original_title, summary,
       reason, category, tags, score, source_id, channel, first_party, url, published_at, discovered_at, timeline_at, backfill,
@@ -437,15 +493,21 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
 
   // Content-group push: once, for an item that arrives live and becomes selected (never for imports,
   // backfill or stale-on-discovery material).
-  if (selected && !previous?.selected && !options.releasedAt && !article.backfill && visibility === "public") {
+  // A bounded correction must not push. A later ordinary republish also does not push once
+  // selected is already true: the condition is the false-to-true edge, not the ledger.
+  if (!options.bounded && selected && !previous?.selected && !options.releasedAt && !article.backfill && visibility === "public") {
     await enqueue(QUEUES.notifySelected, { articleId }, { singletonKey: `selected:${articleId}`, startAfter: new Date(now.getTime() + 5_000) }, tx);
     // Prepare its images alongside the newly confirmed selection.
     await enqueue(QUEUES.prepareMedia, { articleId }, { singletonKey: `media:${articleId}` }, tx);
   }
 
   // Seats of the fact this article reports (and of the one it left), then its place in the sync ledger.
-  let ledger = await settleSeats(tx, membership?.fact_id ?? null, articleId, now);
-  if (previous?.fact_id && previous.fact_id !== membership?.fact_id) await settleSeats(tx, previous.fact_id, null, now);
+  // Bounded correction records only this article's ledger row and leaves every other seat alone.
+  let ledger: "upsert" | "remove" | null = null;
+  if (!options.bounded) {
+    ledger = await settleSeats(tx, membership?.fact_id ?? null, articleId, now);
+    if (previous?.fact_id && previous.fact_id !== membership?.fact_id) await settleSeats(tx, previous.fact_id, null, now);
+  }
   ledger = (await syncLedger(tx, articleId, now)) ?? ledger;
 
   const wasPublic = !!previous && previous.visibility !== "withdrawn" && previous.eligible;

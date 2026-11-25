@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# 把约定的行业 items 导入本机 API 容器。先把运维目录这份脚本拷进容器，再执行，
-# 这样 9:30 / 20:30 用的是 /workspace/edu-hot 上的代码，而不是镜像里可能过期的副本。
+# 把约定的行业 items 导入本机 API 容器。先把运维目录的 import-brief-items.ts
+# 和它依赖的 brief-dateline.ts 拷进容器，再执行，这样 9:30 / 20:30 用的是
+# /workspace/edu-hot 上的代码，而不是镜像里可能过期的副本。
 # 只传 --date 时，把宿主机 briefs 目录里的正式文件拷进容器再交给脚本；
 # 正式文件是 items.csv / items-pm.csv / items-evening.csv（以及容器内已有的
 # /data/brief-YYYYMMDD-items.csv）。items-noon.csv、items.dedup.csv 等不会被拷进去，也不会被自动发现。
@@ -9,6 +10,7 @@ export DOCKER_HOST="${DOCKER_HOST:-tcp://127.0.0.1:2375}"
 C=xintian-edu-hot-api-1
 DIR="$(cd "$(dirname "$0")" && pwd)"
 docker cp "$DIR/import-brief-items.ts" "$C:/app/scripts/import-brief-items.ts"
+docker cp "$DIR/brief-dateline.ts" "$C:/app/scripts/brief-dateline.ts"
 
 date_arg=""
 has_explicit_file=0

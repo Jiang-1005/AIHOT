@@ -91,14 +91,21 @@ after(async()=>{
 test('SSR list and visited query variants return offline without another read',async()=>{
   const context=await safari.newContext({viewport:{width:390,height:844}});
   const page=await context.newPage();
+  const reads:string[]=[];
+  page.on('request',request=>{if(new URL(request.url()).pathname.endsWith('.data'))reads.push(request.url());});
+  const backOffline=async(title:string)=>{
+    await context.setOffline(true);
+    const before=reads.length;
+    await page.goBack();
+    await expect(page.getByRole('link',{name:title,exact:true})).toBeVisible({timeout:1500});
+    assert.deepEqual(reads.slice(before),[],'returning offline must reuse the visited list without a data request');
+  };
   try{
     await visit(page,origin+'/');
     await expect(page.getByRole('link',{name:'性能检查文章',exact:true})).toBeVisible();
     await page.getByRole('link',{name:'性能检查文章',exact:true}).click();
     await expect(page.getByText('固定正文',{exact:true})).toBeVisible();
-    await context.setOffline(true);
-    await page.goBack();
-    await expect(page.getByRole('link',{name:'性能检查文章',exact:true})).toBeVisible({timeout:1500});
+    await backOffline('性能检查文章');
     await context.setOffline(false);
     // Phones pick a topic in the filter sheet; 完成 applies it as a new query.
     const pickTopic=async(name:string)=>{
@@ -112,9 +119,7 @@ test('SSR list and visited query variants return offline without another read',a
     await expect(page.getByRole('link',{name:'分类 模型',exact:true})).toBeVisible();
     await pickTopic('产品');
     await expect(page.getByRole('link',{name:'分类 产品',exact:true})).toBeVisible();
-    await context.setOffline(true);
-    await page.goBack();
-    await expect(page.getByRole('link',{name:'分类 模型',exact:true})).toBeVisible({timeout:1500});
+    await backOffline('分类 模型');
     await expect(page.locator('link[rel=canonical]')).toHaveAttribute('href',origin+'/?topic='+encodeURIComponent('模型'));
   }finally{await context.close();}
 });
@@ -243,8 +248,9 @@ test('Agent tabs finish offline with matching canonical; invalid direct tabs and
 test('phone suggestions load only on opening, use one small read, retry failures and update on reopening',async()=>{
   const context=await safari.newContext({viewport:{width:390,height:844}});const page=await context.newPage();
   try{
+    const beforeHome=hits.length;
     suggestionsVersion=1;await visit(page,origin+'/');
-    assert.equal(hits.filter(x=>x==='/api/site/search/suggestions').length,0);
+    assert.equal(hits.slice(beforeHome).filter(x=>x==='/api/site/search/suggestions').length,0);
     let start=hits.length;
     await page.getByRole('button',{name:'搜索',exact:true}).click();
     await expect(page.getByRole('link',{name:'1 建议版本 1',exact:true})).toBeVisible();
@@ -260,6 +266,7 @@ test('phone suggestions load only on opening, use one small read, retry failures
     await page.getByRole('button',{name:'取消',exact:true}).click();failing='';suggestionsVersion=3;
     await page.getByRole('button',{name:'搜索',exact:true}).click();
     await expect(page.getByRole('link',{name:'1 建议版本 3',exact:true})).toBeVisible();
+    assert.ok(!hits.slice(beforeHome).includes('/api/site/voices'),'the hidden desktop rail makes no mobile request');
   }finally{failing='';await context.close();}
 });
 
@@ -299,6 +306,8 @@ test('reader enhancements wait for visible code and update only the picture that
 test('deep reading returns to its anchor, including folded dates',async()=>{
   const context=await safari.newContext({viewport:{width:390,height:844}});
   const page=await context.newPage();
+  const errors:string[]=[];
+  page.on('pageerror',error=>errors.push(error.message));
   try{
     await visit(page,origin+'/?tag=long-reading');
     await expect(page.locator('[data-card-key]')).toHaveCount(180);
@@ -311,9 +320,23 @@ test('deep reading returns to its anchor, including folded dates',async()=>{
     });
     await page.getByRole('link',{name:'长列表文章 160',exact:true}).click();
     await expect(page.getByText('固定正文',{exact:true})).toBeVisible();
+    const expectRestored=async()=>{
+      await expect(page.locator('[data-card-key]')).toHaveCount(120);
+      await expect.poll(()=>page.locator(`[data-card-key="${before.key}"]`).evaluate((e,top)=>Math.abs(e.getBoundingClientRect().top-top),before.top)).toBeLessThan(2);
+      await expect(page.getByRole('button',{name:'展开10月4日',exact:true})).toBeVisible();
+    };
     await page.goBack();
-    await expect(page.locator('[data-card-key]')).toHaveCount(120);
-    await expect.poll(()=>page.locator(`[data-card-key="${before.key}"]`).evaluate((e,top)=>Math.abs(e.getBoundingClientRect().top-top),before.top)).toBeLessThan(2);
-    await expect(page.getByRole('button',{name:'展开10月4日',exact:true})).toBeVisible();
+    await expectRestored();
+    await page.goForward();
+    await expect(page.getByText('固定正文',{exact:true})).toBeVisible();
+    await page.getByRole('button',{name:'精选',exact:true}).click();
+    await expectRestored();
+    await page.goForward();
+    await expect(page.getByText('固定正文',{exact:true})).toBeVisible();
+    // Returning after the saved list expires renders the fresh, unfolded list.
+    await page.clock.setFixedTime(new Date(Date.now()+24*60*60*1000));
+    await page.goBack();
+    await expect(page.locator('[data-card-key]')).toHaveCount(180);
+    assert.deepEqual(errors,[]);
   }finally{await context.close();}
 });

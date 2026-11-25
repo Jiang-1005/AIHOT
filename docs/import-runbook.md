@@ -142,6 +142,31 @@ worker 从 11-14 20:41 起没在跑（本机恢复脚本故意不开它），打
 - 怎么确认它还在工作：健康检查的「本机库备份」一行，最新 local-*.dump 超过 13 小时告警，超过 25 小时 HEALTH FAIL。
 - 本机库丢了：空库时跑 `/home/box/edu-hot-local/restore-from-neon.sh`，它只读 Neon；也可以从最新的 local-*.dump 恢复，方法见 /home/box/edu-hot-local/README.md。
 
+## 落款日期（2026-11-25）
+
+三个日子不要混写：
+
+- **原发日**：CSV「落款日期」开头的真实日历日。纯 `YYYY-MM-DD`、后面带钟点（如 `2026-11-24 19:55（北京时间）`）、或带括注（如 `2026-11-24（RSS 21:30 北京时间）`）都取这一天。写入 `published_at` 为那天北京时间 00:00，整格原文写入 `publication_time`。钟点和括注是证据，不把原发日改成另一天。
+- **发现日**：`discovered_at`，稿子第一次入库的时刻。订正脚本不改它。48 小时内的新闻，时间线仍用发现日，这是原有规则。
+- **导入日**：`import-brief-items.ts --date` 的那天，只出现在回补标签 `brief-导入日` 或 `brief-导入日-undated` 里。不能写进 `published_at`。
+
+`2月30日`、`2月29日`（非闰年）、13 月、乱码、空单元格仍然无日期，不编造。已存在的原文链接再导一次不会改旧行。没有数据库迁移，打分、入选门槛、以及「窗口里没有已评判稿就拒绝出刊」都没有改。
+
+今早 4 条已经入库，要改它们只能跑一次性订正。白名单就是这 4 个 id 和 URL；行必须仍是旧错误（`published_at` 空、`publication_time` 空、`brief-YYYY-MM-DD-undated`）才改。昨晚 5 条和豆神 PDF 不在白名单里，脚本不查询它们。
+
+```bash
+node scripts/correct-brief-undated.ts
+node scripts/correct-brief-undated.ts --apply
+```
+
+默认不加 `--apply` 时，事务结束不保留订正，但这不是只读 SQL。对每一条仍是旧错误的白名单稿，脚本在同一个事务里建立保存点 `brief_boundary`，UPDATE 文章日期，再做 bounded 重新发布，然后 `ROLLBACK TO SAVEPOINT`。保存点里面会写这 4 条自己的 `publications`、`pool_search`，以及入选且席位为真时自己的 `selected_ledger` / `selected_state`。回滚之后外层事务提交，这些行版本不留下。执行账号必须能改并锁住这些行；只读事务会在 UPDATE 处失败。不要把默认命令指向生产库，也不要指向与生产共用数据库的 Preview。
+
+bounded 重新发布不调用 `settleSeats`，不 `emit`，不把 `notify.selected` 或 `media.prepare` 放进队列。`selected_ledger.seq` 用事务内的 `max(seq)+1`，不是序列。这几张表没有 serial 列，仓库迁移里也没有用户触发器。`SELECT … FOR UPDATE` 和 `pg_advisory_xact_lock` 随事务结束释放。11:13 的本机快照里这 4 条 `fact_id` 为空、`seat` 为 true，保存点内不会锁某个事实席位，也不会改其他稿。这不表示独立源 `seat=false` 或同事实已有代表已经发生在这 4 条上；那些由预检拒绝，不在这份快照里。
+
+在已经包含这次提交的检出里跑，数据库用本机隔离库，不要对着生产库。日常导入脚本会把 `brief-dateline.ts` 拷进 API 容器，落款解析本身在镜像里的 `industry/dateline.ts`；容器仍是旧镜像时，只拷脚本会找不到这个文件，要等这次提交进运行中的 API 再导入。
+
+`--apply` 在一个事务里处理白名单中仍是旧错误的稿。它写这 4 条自己的文章日期、发布投影和 `pool_search`，并写这条稿自己的 `selected_ledger` 与 `selected_state`：入选且席位为真时记入同步账，未入选则不建账。不改其他稿的席位和账，不把通知或配图放进队列。若这条稿和另一条普通稿已经同属一个事实，而订正会让它带着原来的席位变成第二个代表，或者它会入选但席位是 false、账会对不上，预检拒绝这一条，不写它，也不改对方。2026-11-25 11:13 的本机只读快照里，这 4 条 `fact_id` 都是空、按 `article_id` 查 `fact_articles` 是 0 行、自己的账和状态也是 0 行，所以没有同事实的另一条稿。之后照常跑 `score-and-compose.sh`，出刊失败就停下，不要跳过 compose，也不要先同步。订正之后的普通重新发布不会因为这次订正再排队通知；普通发布仍可能按原规则重排席位，那不是这次订正。输出里每条的 `before` 是恢复依据。不要对生产库执行。
+
 ## 红线
 - 不打印任何密钥、口令、连接串；不 pkill qodercli（只杀自己的 PID）。
 - 不写 /workspace/edu-radar/grok-posts.json（那是内容雷达的产物）。

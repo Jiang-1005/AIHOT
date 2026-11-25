@@ -173,7 +173,7 @@ function HomeRail({ hot, issue, today, todayCount }: { hot: RailHot[]; issue: Ma
             <Link
               key={item.to}
               to={item.to}
-              className="group flex flex-col gap-1 rounded-xl border border-line-soft bg-bg/65 p-2.5 transition-all duration-200 hover:-translate-y-px hover:border-line-strong hover:bg-bg-muted"
+              className="group flex flex-col gap-1 rounded-tile border border-line-soft bg-bg/65 p-2.5 transition-all duration-200 hover:-translate-y-px hover:border-line-strong hover:bg-bg-muted"
             >
               <span className="flex items-center gap-1.5 text-[0.8125rem] font-semibold text-ink transition-colors group-hover:text-accent">
                 <item.icon size={15} className="shrink-0 text-accent" />
@@ -190,8 +190,7 @@ function HomeRail({ hot, issue, today, todayCount }: { hot: RailHot[]; issue: Ma
 }
 
 /**
- * 社区在聊 under the hot list, for 刊物 and 明净／夜读. Fetched once that look is on, from this deployment's
- * own API, so the classic page never pays for the voices catalogue.
+ * 社区在聊 under the hot list, for 刊物 and 明净／夜读. Load it once the desktop rail can be shown.
  */
 function CommunityRail({ today }: { today: string }) {
   const style = useSiteStyle();
@@ -199,11 +198,21 @@ function CommunityRail({ today }: { today: string }) {
   useEffect(() => {
     if (style !== "clean" && style !== "journal") return;
     const ctl = new AbortController();
-    fetch("/api/site/voices", { headers: { accept: "application/json" }, signal: ctl.signal })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((body: unknown) => setVoices(railVoices(body, 6)))
-      .catch(() => { /* the rail just stays without it */ });
-    return () => ctl.abort();
+    const desktop = window.matchMedia("(min-width: 1176px)");
+    function loadWhenVisible() {
+      if (!desktop.matches) return;
+      desktop.removeEventListener("change", loadWhenVisible);
+      fetch("/api/site/voices", { headers: { accept: "application/json" }, signal: ctl.signal })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((body: unknown) => setVoices(railVoices(body, 6)))
+        .catch(() => { /* the rail just stays without it */ });
+    }
+    desktop.addEventListener("change", loadWhenVisible);
+    loadWhenVisible();
+    return () => {
+      desktop.removeEventListener("change", loadWhenVisible);
+      ctl.abort();
+    };
   }, [style]);
   const shown = voices.slice(0, style === "journal" ? 6 : 4);
   return (
