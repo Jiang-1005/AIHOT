@@ -124,7 +124,7 @@ python3 /workspace/edu-hot/scripts/notion-hotposts-snapshot.py check \
 
 已经在站点上的帖不被这次迁移整页覆盖。默认 `update_policy` 是 `migration-hold`：正文保留站点版本，因为写后库存里的「讨论要点」比站点摘要短；已有 `verified` 不抬升也不抹掉；已有主题和内容类型不降级。互动数仍只在 Notion 采集日严格晚于站点采样日时更新。快照里新出现的帖用 Notion 正文；内容类型对不上 grok 词表时，保留 Notion 原文并写 `content_type_status: unmapped`。发布日仍然只来自发布日期列，缺失就留空。
 
-这次 817 条快照不设置 `accept-newer-sample`，所以已有 675 条不会被改写。后续同一 URL 要能幂等接收更新，封存时加上 `--update-policy accept-newer-sample`。那时只有采集日比卡片上的采样日更晚，才会换上新的标题和摘要；核验和已有分类仍然不降级。同一份快照再跑一次，采集日不再更晚，结果不变。没有这个显式策略时，统一源不会把旧正文盖掉。
+这次 817 条快照不设置 `accept-newer-sample`。2026-11-24 对照当时的 758 条目录，已有 675 条不改写，新出现 142 条。那是那一天的差集。之后目录变过，导入员用当前 `voices.json` 干跑，按打印的 added、skipped、retained_baseline、changed、duplicates 核对，不把 142 或 675 填成应有的结果。`migration-hold` 仍不改已有正文。后续同一 URL 要能幂等接收更新，封存时加上 `--update-policy accept-newer-sample`。那时只有采集日比卡片上的采样日更晚，才会换上新的标题和摘要；核验和已有分类仍然不降级。同一份快照再跑一次，采集日不再更晚，结果不变。没有这个显式策略时，统一源不会把旧正文盖掉。
 
 ```bash
 python3 /workspace/edu-hot/scripts/scrub-xhs.py \
