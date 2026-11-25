@@ -29,7 +29,7 @@ function gitSha() {
   return execSync("git rev-parse HEAD", { cwd: ROOT, encoding: "utf8" }).trim();
 }
 
-const RELEASE = (process.env.AIHOT_RELEASE || gitSha()).trim();
+const RELEASE = (process.env.AIHOT_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || gitSha()).trim();
 process.env.AIHOT_RELEASE = RELEASE;
 const RELEASE_DEFINE = `--define:process.env.AIHOT_RELEASE=${JSON.stringify(RELEASE)}`;
 
