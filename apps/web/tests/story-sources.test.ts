@@ -55,4 +55,7 @@ test("previewApiBase: a Vercel preview reads its own api; production and local k
   assert.equal(previewApiBase({ VERCEL_ENV: "preview", VERCEL_URL: "edu-ai-abc.vercel.app" }), "https://edu-ai-abc.vercel.app");
   assert.equal(previewApiBase({ VERCEL_ENV: "production", VERCEL_URL: "edu-ai-abc.vercel.app" }), undefined);
   assert.equal(previewApiBase({}), undefined);
+  const { apiBase } = await import("../app/lib/api.server.ts");
+  assert.equal(apiBase(undefined, { VERCEL_ENV: "preview", VERCEL_URL: "candidate.vercel.app", API_BASE_URL: "https://edu-ai-hot.vercel.app" }), "https://candidate.vercel.app");
+  assert.equal(apiBase(undefined, { API_BASE_URL: "https://edu-ai-hot.vercel.app" }), "https://edu-ai-hot.vercel.app");
 });

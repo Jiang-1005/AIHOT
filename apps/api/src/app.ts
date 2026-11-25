@@ -125,7 +125,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.get("/api/health", async (_req, reply) => {
     const started = performance.now();
     await sql`SELECT 1`;
-    return reply.header("Cache-Control", "no-store").send({ ok: true, db: "ok", ms: Math.round(performance.now() - started), release: process.env.AIHOT_RELEASE ?? "dev" });
+    return reply.header("Cache-Control", "no-store").send({
+      ok: true, db: "ok", ms: Math.round(performance.now() - started),
+      release: process.env.AIHOT_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || "dev",
+    });
   });
 
   app.get("/gate", async (req, reply) => {

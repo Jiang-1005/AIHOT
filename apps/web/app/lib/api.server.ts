@@ -28,9 +28,14 @@ class ApiError extends Error {
   }
 }
 
+/** Preview pages call this deployment's API. Production and local keep API_BASE_URL. */
+export function apiBase(explicit?: string, env: Record<string, string | undefined> = process.env): string {
+  return explicit ?? previewApiBase(env) ?? (env.API_BASE_URL || "http://127.0.0.1:3001");
+}
+
 export async function apiGet<T>(path: string, init?: { signal?: AbortSignal; headers?: Record<string, string>; responseHeaders?: Headers; base?: string }): Promise<T> {
   try {
-    const res = await fetch(`${init?.base ?? API_BASE_URL}${path}`, {
+    const res = await fetch(`${apiBase(init?.base)}${path}`, {
       headers: { accept: "application/json", "x-aihot-ssr": "1", ...init?.headers },
       redirect: "manual",
       signal: init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(15_000)]) : AbortSignal.timeout(15_000),

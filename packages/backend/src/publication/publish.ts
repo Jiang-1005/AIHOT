@@ -111,6 +111,12 @@ export interface PublishOptions {
   now?: Date;
   /** Historical import: the item was already public, so it is released at its discovery time. */
   releasedAt?: Date | null;
+  /**
+   * Date correction. Still writes this article's publication and its own selected-sync ledger row,
+   * so a later ordinary republish sees it as already selected and does not enqueue a push.
+   * Does not reseat other reports of the fact, emit hooks, or enqueue notifySelected/prepareMedia.
+   */
+  bounded?: boolean;
 }
 
 export interface PublishResult {
@@ -254,7 +260,7 @@ export async function republishTx(tx: Tx, articleId: string, options: PublishOpt
   const [previous] = await tx<{ story_id: number | null }[]>`SELECT story_id FROM publications WHERE article_id = ${articleId}`;
   const result = await publishArticleTx(tx, articleId, options);
   // Body and translation writes announce their own changes; an unchanged projection needs no purge.
-  if (previous && result?.changed) await emit("articleChanged", {
+  if (!options.bounded && previous && result?.changed) await emit("articleChanged", {
     id: articleId, reason: "republication", kind: result.changeKind, reduced: result.reduced, previousStoryIds: previous.story_id === null ? [] : [previous.story_id],
   }, tx);
   return result;
@@ -437,15 +443,21 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
 
   // Content-group push: once, for an item that arrives live and becomes selected (never for imports,
   // backfill or stale-on-discovery material).
-  if (selected && !previous?.selected && !options.releasedAt && !article.backfill && visibility === "public") {
+  // A bounded correction must not push. A later ordinary republish also does not push once
+  // selected is already true: the condition is the false-to-true edge, not the ledger.
+  if (!options.bounded && selected && !previous?.selected && !options.releasedAt && !article.backfill && visibility === "public") {
     await enqueue(QUEUES.notifySelected, { articleId }, { singletonKey: `selected:${articleId}`, startAfter: new Date(now.getTime() + 5_000) }, tx);
     // Prepare its images alongside the newly confirmed selection.
     await enqueue(QUEUES.prepareMedia, { articleId }, { singletonKey: `media:${articleId}` }, tx);
   }
 
   // Seats of the fact this article reports (and of the one it left), then its place in the sync ledger.
-  let ledger = await settleSeats(tx, membership?.fact_id ?? null, articleId, now);
-  if (previous?.fact_id && previous.fact_id !== membership?.fact_id) await settleSeats(tx, previous.fact_id, null, now);
+  // Bounded correction records only this article's ledger row and leaves every other seat alone.
+  let ledger: "upsert" | "remove" | null = null;
+  if (!options.bounded) {
+    ledger = await settleSeats(tx, membership?.fact_id ?? null, articleId, now);
+    if (previous?.fact_id && previous.fact_id !== membership?.fact_id) await settleSeats(tx, previous.fact_id, null, now);
+  }
   ledger = (await syncLedger(tx, articleId, now)) ?? ledger;
 
   const wasPublic = !!previous && previous.visibility !== "withdrawn" && previous.eligible;

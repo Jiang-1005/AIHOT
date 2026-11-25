@@ -6,13 +6,13 @@ import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { beijingMidnight } from "@aihot/contracts/time";
 import { LEGACY_EXACT_DATELINE, parseOriginalDateline } from "@aihot/industry/dateline";
+import { publishArticle } from "@aihot/backend/publication/publish";
 import { featuredDatelineDay, featuredSlot } from "@aihot/industry/selection";
 import { closeDb, sql } from "@aihot/backend/db";
 import { STALE_ON_DISCOVERY_MS, decideTimeline, upsertMaterial } from "@aihot/backend/content/materials";
 import { stopBoss } from "@aihot/backend/jobs/queue";
 import { buildScoreInput } from "@aihot/backend/editorial/analyze";
 import type { AnalyzeInputArticle } from "@aihot/backend/editorial/input";
-import { publishArticle } from "@aihot/backend/publication/publish";
 import { composeDaily } from "@aihot/backend/reports/compose";
 import { BRIEF_STALE_MS, importOneBriefItem, planBriefPublication } from "../scripts/brief-dateline.ts";
 import { CORRECTION_BOUNDARY, MORNING_20261125, OUT_OF_SCOPE_IDS, correctMorningUndated } from "../scripts/correct-brief-undated.ts";
@@ -239,7 +239,7 @@ test("only the four morning rows are corrected, then the window can be composed"
   });
   const before = await watched();
   const preview = await correctMorningUndated({ apply: false });
-  assert.equal(preview.boundary.republishTx, "not called");
+  assert.equal(preview.boundary.notifySelected.includes("not enqueued"), true);
   assert.deepEqual(await watched(), before, "dry-run writes nothing");
   await assert.rejects(correctMorningUndated({ apply: true, injectFailureAfter: 1 }), /injected failure before commit/);
   assert.deepEqual(await watched(), before, "a failure during projection rolls the batch back");
@@ -315,10 +315,17 @@ test("only the four morning rows are corrected, then the window can be composed"
   const allowed = new Set<string>(MORNING_20261125.map((row) => row.id));
   const pubs = (rows: unknown) => (rows as Array<{ article_id: string }>).filter((row) => !allowed.has(row.article_id));
   assert.deepEqual(pubs(after.publications), pubs(before.publications));
-  assert.deepEqual(after.ledger, before.ledger);
-  assert.deepEqual(after.state, before.state);
+  const foreign = (rows: unknown) => (rows as Array<{ article_id: string }>).filter((row) => !allowed.has(row.article_id));
+  assert.deepEqual(foreign(after.ledger), foreign(before.ledger));
+  assert.deepEqual(foreign(after.state), foreign(before.state));
   assert.deepEqual(after.facts, before.facts);
   assert.deepEqual(after.jobs, before.jobs);
+  const jobsBeforeRepublish = after.jobs;
+  await publishArticle(MORNING_20261125[0]!.id);
+  const jobsAfterRepublish = (await sql<{ present: string | null }[]>`SELECT to_regclass('pgboss.job') AS present`)[0]?.present
+    ? await sql`SELECT name, state, data->>'articleId' AS article_id FROM pgboss.job WHERE name IN ('notify.selected', 'media.prepare') ORDER BY name, id`
+    : [];
+  assert.deepEqual(jobsAfterRepublish, jobsBeforeRepublish, "a later ordinary republish does not enqueue a push");
   for (const id of [...historical.map(([historicalId]) => historicalId), "xaawa97ajl31a74bq0grzs0tx", outsider, peer]) {
     const left = (before.articles as unknown as Array<{ id: string }>).find((row) => row.id === id);
     const right = (after.articles as unknown as Array<{ id: string }>).find((row) => row.id === id);
@@ -333,8 +340,8 @@ test("only the four morning rows are corrected, then the window can be composed"
     originalDay: ORIGINAL_DAY,
     discoveredAt: DISCOVERED.toISOString(),
     peerSeatUnchanged: true,
-    ledgerUnchanged: true,
-    notifyJobsUnchanged: true,
+    foreignLedgerUnchanged: true,
+    laterRepublishEnqueuedPush: false,
   }));
 
   const second = await correctMorningUndated({ apply: true });
