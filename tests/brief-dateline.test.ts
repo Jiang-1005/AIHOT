@@ -15,7 +15,7 @@ import type { AnalyzeInputArticle } from "@aihot/backend/editorial/input";
 import { publishArticle } from "@aihot/backend/publication/publish";
 import { composeDaily } from "@aihot/backend/reports/compose";
 import { BRIEF_STALE_MS, importOneBriefItem, planBriefPublication } from "../scripts/brief-dateline.ts";
-import { MORNING_20261125, OUT_OF_SCOPE_IDS, correctMorningUndated } from "../scripts/correct-brief-undated.ts";
+import { CORRECTION_BOUNDARY, MORNING_20261125, OUT_OF_SCOPE_IDS, correctMorningUndated } from "../scripts/correct-brief-undated.ts";
 
 const T = tag();
 const SOURCE = `test-brief-dateline-${T}`;
@@ -207,11 +207,42 @@ test("only the four morning rows are corrected, then the window can be composed"
   await sql`UPDATE articles SET grouping_status = 'complete' WHERE id = ${outsider}`;
   await publishArticle(outsider, { releasedAt: outsiderAt });
 
+  const peer = `peerfactoutside${T.slice(0, 12)}`;
+  await upsertMaterial({
+    id: peer, sourceId: SOURCE, url: `https://example.com/brief-dateline/${T}/peer`, title: "同事实范围外",
+    via: "import", publishedAt: beijingMidnight("2026-11-20"), discoveredAt: new Date("2026-11-20T02:00:00.000Z"),
+    bodyText: "范围外同事实", bodyStatus: "ok",
+  });
+  await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, score, selected)
+    VALUES (${peer}, 1, 'rule', 'pass', 'industry', '范围外同事实', '摘要', 70, true)`;
+  await sql`UPDATE articles SET grouping_status = 'complete' WHERE id = ${peer}`;
+  await publishArticle(peer, { releasedAt: new Date("2026-11-20T02:00:00.000Z") });
+  const [fact] = await sql<{ id: number }[]>`
+    INSERT INTO facts (public_id, title) VALUES (${`isolated-fixture-${T}`}, 'ISOLATED FIXTURE not a production fact') RETURNING id`;
+  await sql`INSERT INTO fact_articles (fact_id, article_id, role) VALUES (${fact!.id}, ${MORNING_20261125[0]!.id}, 'primary'), (${fact!.id}, ${peer}, 'report')`;
+  await sql`UPDATE publications SET fact_id = ${fact!.id}, selected = true, seat = true, eligible = true WHERE article_id = ${peer}`;
+  await sql`UPDATE publications SET fact_id = ${fact!.id} WHERE article_id = ${MORNING_20261125[0]!.id}`;
+
   await assert.rejects(composeDaily(IMPORT_DAY, "featured-updated"), /nothing judged/);
   await assert.rejects(composeDaily("2098-08-01", "featured-updated"), /nothing judged/);
   await assert.rejects(composeDaily("2098-08-02", "featured-updated"), /nothing judged/);
 
+  const watched = async () => ({
+    articles: await sql`SELECT id, published_at, publication_time, discovered_at, timeline_at, backfill, backfill_reason FROM articles ORDER BY id`,
+    publications: await sql`SELECT article_id, published_at, timeline_at, backfill, eligible, selected, seat, score, fact_id FROM publications ORDER BY article_id`,
+    ledger: await sql`SELECT article_id, op FROM selected_ledger ORDER BY seq, article_id`,
+    state: await sql`SELECT article_id, in_set FROM selected_state ORDER BY article_id`,
+    facts: await sql`SELECT fact_id, article_id, role FROM fact_articles ORDER BY fact_id, article_id`,
+    jobs: (await sql<{ present: string | null }[]>`SELECT to_regclass('pgboss.job') AS present`)[0]?.present
+      ? await sql`SELECT name, state, data->>'articleId' AS article_id FROM pgboss.job WHERE name IN ('notify.selected', 'media.prepare') ORDER BY name, id`
+      : [],
+  });
+  const before = await watched();
   const preview = await correctMorningUndated({ apply: false });
+  assert.equal(preview.boundary.republishTx, "not called");
+  assert.deepEqual(await watched(), before, "dry-run writes nothing");
+  await assert.rejects(correctMorningUndated({ apply: true, injectFailureAfter: 1 }), /injected failure before commit/);
+  assert.deepEqual(await watched(), before, "a failure during projection rolls the batch back");
   assert.equal(preview.mode, "dry-run");
   assert.equal(preview.items.filter((item) => item.action === "would-update").length, 4);
   for (const item of preview.items) {
@@ -279,6 +310,32 @@ test("only the four morning rows are corrected, then the window can be composed"
   assert.equal(report!.content.generator.judgedReports, 4);
   await assert.rejects(composeDaily("2098-08-01", "featured-updated"), /nothing judged/);
   await assert.rejects(composeDaily("2098-08-02", "featured-updated"), /nothing judged/);
+
+  const after = await watched();
+  const allowed = new Set<string>(MORNING_20261125.map((row) => row.id));
+  const pubs = (rows: unknown) => (rows as Array<{ article_id: string }>).filter((row) => !allowed.has(row.article_id));
+  assert.deepEqual(pubs(after.publications), pubs(before.publications));
+  assert.deepEqual(after.ledger, before.ledger);
+  assert.deepEqual(after.state, before.state);
+  assert.deepEqual(after.facts, before.facts);
+  assert.deepEqual(after.jobs, before.jobs);
+  for (const id of [...historical.map(([historicalId]) => historicalId), "xaawa97ajl31a74bq0grzs0tx", outsider, peer]) {
+    const left = (before.articles as unknown as Array<{ id: string }>).find((row) => row.id === id);
+    const right = (after.articles as unknown as Array<{ id: string }>).find((row) => row.id === id);
+    assert.deepEqual(right, left, id);
+  }
+  console.log(JSON.stringify({
+    label: "ISOLATED FIXTURE not production",
+    boundary: CORRECTION_BOUNDARY,
+    productionFacts: "unavailable",
+    fixtureFact: `isolated-fixture-${T}`,
+    judgedReports: report!.content.generator.judgedReports,
+    originalDay: ORIGINAL_DAY,
+    discoveredAt: DISCOVERED.toISOString(),
+    peerSeatUnchanged: true,
+    ledgerUnchanged: true,
+    notifyJobsUnchanged: true,
+  }));
 
   const second = await correctMorningUndated({ apply: true });
   assert.equal(second.items.every((item) => item.action === "unchanged"), true);

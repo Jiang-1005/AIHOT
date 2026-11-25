@@ -86,7 +86,7 @@
       "includeFiles": "{apps,packages,site,industry,modules,database}/**"
     },
     "api/ssr.ts": {
-      "includeFiles": "apps/web/build/**"
+      "includeFiles": "{apps/web/build,packages/contracts,site,industry}/**"
     }
   },
   "regions": [

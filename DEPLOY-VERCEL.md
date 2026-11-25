@@ -69,7 +69,7 @@ Worker 和导入脚本只要把 `DATABASE_URL` 指向 Neon，就会直接写云�
 
 - 网页：`npm run build -w @aihot/web`（本地已验证）。
 - Vercel 用仓库根目录的 `api/index.ts`（API）和 `api/ssr.ts`（SSR）。`@vercel/react-router` 对 React Router 8 的官方预设若仍不兼容，不要打开，以免改掉本地 Docker 的 web 构建产物。
-- 运行时需要 **Node 24**（与仓库 `engines` 一致），以便直接跑 TypeScript 源码。
+- 运行时需要 **Node 24**（`package.json` 的 `engines` 是 `>=24.22.1 <25`，与项目设置的 24.x 一致）。不要写成没有上界的 `>=24`：Vercel 会因此改用更新的主版本。2026-11-25 的预览在 Node 26 上启动即 500，`api/ssr.js` 找不到 `@aihot/contracts/src/http-policy.ts`。SSR 函数同时带上 `packages/contracts`、`site` 和 `industry` 的源码。
 
 ## 仍需你本人完成的登录
 

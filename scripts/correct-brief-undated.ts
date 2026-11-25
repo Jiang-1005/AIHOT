@@ -14,7 +14,8 @@ import { LEGACY_EXACT_DATELINE, parseOriginalDateline } from "@aihot/industry/da
 import { closeDb, sql, type Sql, type Tx } from "@aihot/backend/db";
 import { stopBoss } from "@aihot/backend/jobs/queue";
 import { decideTimeline, type TimelineDecision } from "@aihot/backend/content/materials";
-import { republishTx } from "@aihot/backend/publication/publish";
+import { featuredDatelineDay, featuredSlot } from "@aihot/industry/selection";
+import { isIndexable, isPoolEligible, isSelectable } from "@aihot/backend/publication/rules";
 
 export const MORNING_20261125 = [
   {
@@ -105,11 +106,29 @@ export interface CorrectionReport {
   mode: "dry-run" | "apply";
   whitelist: Array<{ id: string; url: string }>;
   excludedIds: readonly string[];
+  boundary: typeof CORRECTION_BOUNDARY;
   items: CorrectionItem[];
   recovery: string;
 }
 
-const RECOVERY = "Restore only from each item's before snapshot: published_at, published_at_claim, publication_time, timeline_at, backfill, backfill_reason, updated_at. Do not copy discovered_at or the import day into published_at. Then republish that article. This script does not restore, does not scan other rows, and does not change scores.";
+const RECOVERY = "Restore only from each item's before snapshot: published_at, published_at_claim, publication_time, timeline_at, backfill, backfill_reason, updated_at, and that article's own publication columns. Do not copy discovered_at or the import day into published_at. This script does not restore, does not call republishTx, and does not change scores.";
+
+/**
+ * Normal publish (republishTx) also reseats every other report of the same fact, appends their
+ * selected-sync ledger rows, and, when a backfill becomes selected, enqueues notifySelected and
+ * prepareMedia. Those steps can write or notify outside the four rows. This correction does not
+ * take them. It writes the whitelist article and that article's own publication (and its own
+ * pool_search row). Another report's seat, ledger, and every queue stay as they were. A later
+ * ordinary publish is what reseats a fact and sends a notification.
+ */
+export const CORRECTION_BOUNDARY = {
+  republishTx: "not called",
+  notifySelected: "not enqueued",
+  prepareMedia: "not enqueued",
+  otherPublications: "not updated",
+  selectedLedger: "not written",
+  productionFacts: "not read; this run has no production fact snapshot",
+} as const;
 
 function instant(value: Date | null | undefined): string | null {
   return value ? value.toISOString() : null;
@@ -177,6 +196,54 @@ function publicationMatches(row: PublicationRow | undefined, decision: TimelineD
 
 const ARTICLE_COLUMNS = sql`id, url, published_at, published_at_claim, publication_time, discovered_at, timeline_at, backfill, backfill_reason, updated_at`;
 
+/** Projects the whitelist article's own publication. Does not reseat, ledger, or enqueue. */
+async function projectOwnPublication(tx: Tx, articleId: string, now: Date): Promise<void> {
+  const [row] = await tx<{
+    published_at: Date | null; timeline_at: Date; backfill: boolean; grouping_status: string;
+    selection_adds_value: boolean | null; url: string; publication_time: string | null;
+    participation_mode: string; tier: string; relevance: string | null; title_zh: string | null;
+    summary_zh: string | null; reason_zh: string | null; judged_selected: boolean | null;
+    visible_after: Date | null; seo_indexed_at: Date | null; seo_excluded_at: Date | null;
+    summary: string | null; title: string | null;
+  }[]>`
+    SELECT a.published_at, a.timeline_at, a.backfill, a.grouping_status, a.selection_adds_value,
+      a.url, a.publication_time, s.participation_mode, s.tier,
+      an.relevance, an.title_zh, an.summary_zh, an.reason_zh, an.selected AS judged_selected,
+      p.visible_after, p.seo_indexed_at, p.seo_excluded_at, p.summary, p.title
+    FROM articles a
+    JOIN sources s ON s.id = a.source_id
+    JOIN publications p ON p.article_id = a.id
+    LEFT JOIN analyses an ON an.article_id = a.id
+    WHERE a.id = ${articleId}
+    ORDER BY an.input_revision DESC NULLS LAST, an.id DESC NULLS LAST
+    LIMIT 1`;
+  if (!row) throw new Error(`no publication to project for ${articleId}`);
+  const eligible = isPoolEligible({
+    participationMode: row.participation_mode, relevance: row.relevance, title: row.title_zh ?? row.title, summary: row.summary_zh ?? row.summary,
+  }) && (!row.backfill || row.published_at !== null);
+  const selectionCandidate = isSelectable(eligible, row.judged_selected, row.tier);
+  const dateline = featuredDatelineDay({ url: row.url, publicationTime: row.publication_time, publishedAt: row.published_at });
+  const selected = selectionCandidate && row.grouping_status === "complete" && row.selection_adds_value !== false && featuredSlot(dateline, now) !== "无";
+  const visibleAfter = selected ? (row.visible_after ?? now) : null;
+  const indexable = isIndexable({
+    visibility: "public", sourceMode: row.participation_mode, hasSummary: !!(row.summary_zh ?? row.summary), selected,
+    seoIndexedAt: row.seo_indexed_at, seoExcludedAt: row.seo_excluded_at,
+  });
+  const reason = selected ? row.reason_zh : null;
+  await tx`UPDATE publications SET published_at = ${row.published_at}, timeline_at = ${row.timeline_at}, backfill = ${row.backfill},
+    eligible = ${eligible}, selected = ${selected}, selection_candidate = ${selectionCandidate}, reason = ${reason},
+    visible_after = ${visibleAfter}, sort_at = ${row.timeline_at}, indexable = ${indexable}, updated_at = now()
+    WHERE article_id = ${articleId}`;
+  if (eligible) {
+    const direct = [row.title_zh ?? row.title, row.summary_zh ?? row.summary].filter(Boolean).join(" ").toLowerCase();
+    await tx`INSERT INTO pool_search (article_id, direct, body) VALUES (${articleId}, ${direct}, '')
+      ON CONFLICT (article_id) DO UPDATE SET direct = EXCLUDED.direct, body = EXCLUDED.body
+      WHERE pool_search.direct IS DISTINCT FROM EXCLUDED.direct OR pool_search.body IS DISTINCT FROM EXCLUDED.body`;
+  } else {
+    await tx`DELETE FROM pool_search WHERE article_id = ${articleId}`;
+  }
+}
+
 async function loadArticles(tx: Tx, ids: readonly string[], lock: boolean): Promise<ArticleRow[]> {
   if (lock) {
     return tx<ArticleRow[]>`SELECT ${ARTICLE_COLUMNS} FROM articles WHERE id = ANY(${ids}::text[]) ORDER BY id FOR UPDATE`;
@@ -184,7 +251,7 @@ async function loadArticles(tx: Tx, ids: readonly string[], lock: boolean): Prom
   return tx<ArticleRow[]>`SELECT ${ARTICLE_COLUMNS} FROM articles WHERE id = ANY(${ids}::text[]) ORDER BY id`;
 }
 
-export async function correctMorningUndated(options: { apply: boolean; db?: Sql }): Promise<CorrectionReport> {
+export async function correctMorningUndated(options: { apply: boolean; db?: Sql; injectFailureAfter?: number }): Promise<CorrectionReport> {
   assertMorningWhitelist();
   const db = options.db ?? sql;
   const ids = MORNING_20261125.map((row) => row.id);
@@ -226,11 +293,11 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql 
         continue;
       }
       if (plannedArticle && !plannedPublication) {
-        if (options.apply) await republishTx(tx, entry.id);
+        if (options.apply) await projectOwnPublication(tx, entry.id, new Date());
         items.push(item(
           entry,
           options.apply ? "republished" : "would-republish",
-          "article already has the original day; publication does not",
+          "article already has the original day; own publication projected, no peer or notification",
           dates, before, before, publication, options.apply ? null : publication,
         ));
         continue;
@@ -257,7 +324,10 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql 
             AND backfill_reason ~ '^brief-[0-9]{4}-[0-9]{2}-[0-9]{2}-undated$'
           RETURNING id`;
         if (updated.length !== 1) throw new Error(`refused to update ${entry.id}: it no longer matches the old undated error`);
-        await republishTx(tx, entry.id);
+        await projectOwnPublication(tx, entry.id, new Date());
+        if (options.injectFailureAfter !== undefined && items.filter((row) => row.action === "updated").length + 1 === options.injectFailureAfter) {
+          throw new Error("injected failure before commit");
+        }
       }
       items.push(item(
         entry,
@@ -305,6 +375,7 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql 
       mode: options.apply ? "apply" : "dry-run",
       whitelist: MORNING_20261125.map((row) => ({ id: row.id, url: row.url })),
       excludedIds: OUT_OF_SCOPE_IDS,
+      boundary: CORRECTION_BOUNDARY,
       items,
       recovery: RECOVERY,
     } satisfies CorrectionReport;

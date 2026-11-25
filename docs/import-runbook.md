@@ -155,7 +155,7 @@ node scripts/correct-brief-undated.ts
 node scripts/correct-brief-undated.ts --apply
 ```
 
-在已经包含这次提交的检出里跑，数据库用本机库，不要对着生产库。日常导入脚本会把 `brief-dateline.ts` 拷进 API 容器，落款解析本身在镜像里的 `industry/dateline.ts`；容器仍是旧镜像时，只拷脚本会找不到这个文件，要等这次提交进运行中的 API 再导入。`--apply` 之后照常跑 `score-and-compose.sh`，出刊失败就停下，不要跳过 compose，也不要先同步。输出里每条的 `before` 是恢复依据。
+在已经包含这次提交的检出里跑，数据库用本机库，不要对着生产库。日常导入脚本会把 `brief-dateline.ts` 拷进 API 容器，落款解析本身在镜像里的 `industry/dateline.ts`；容器仍是旧镜像时，只拷脚本会找不到这个文件，要等这次提交进运行中的 API 再导入。`--apply` 只改这 4 条稿和它们自己的发布投影，不调用完整重新发布：不改同事实其他稿的席位、不写精选同步账、不把通知或配图放进队列。正常发布会做这三件事；这次订正停在授权内，所以不会。之后照常跑 `score-and-compose.sh`，出刊失败就停下，不要跳过 compose，也不要先同步。输出里每条的 `before` 是恢复依据。生产上这 4 条的事实关系本次没有读取。
 
 ## 红线
 - 不打印任何密钥、口令、连接串；不 pkill qodercli（只杀自己的 PID）。
