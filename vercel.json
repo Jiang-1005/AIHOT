@@ -83,7 +83,7 @@
   ],
   "functions": {
     "api/index.ts": {
-      "includeFiles": "{apps,packages,site,industry,modules,database}/**"
+      "includeFiles": "{apps,packages,site,industry,modules,database,assets,node_modules/harfbuzzjs,node_modules/satori}/**"
     },
     "api/ssr.ts": {
       "includeFiles": "{apps/web/build,packages/contracts,site,industry}/**"
