@@ -68,8 +68,8 @@ Worker 和导入脚本只要把 `DATABASE_URL` 指向 Neon，就会直接写云�
 ## 构建与入口
 
 - 网页：`npm run build -w @aihot/web`（本地已验证）。
-- Vercel 用仓库根目录的 `api/index.ts`（API）和 `api/ssr.ts`（SSR）。`@vercel/react-router` 对 React Router 8 的官方预设若仍不兼容，不要打开，以免改掉本地 Docker 的 web 构建产物。
-- 运行时需要 **Node 24**（`package.json` 的 `engines` 是 `>=24.22.1 <25`，与项目设置的 24.x 一致）。不要写成没有上界的 `>=24`：Vercel 会因此改用更新的主版本。2026-11-25 的预览在 Node 26 上启动即 500，`api/ssr.js` 找不到 `@aihot/contracts/src/http-policy.ts`。SSR 函数同时带上 `packages/contracts`、`site` 和 `industry` 的源码。预览页的服务端请求走本部署的 `VERCEL_URL`，不走 `API_BASE_URL`。API 函数里 `sanitize-html` 不能 `require` 纯 ESM 的 `htmlparser2@12`（Vercel 的加载器会 `ERR_REQUIRE_ESM`），所以把它固定在带 CommonJS 构建的 `10.1.0`。
+- Vercel 从 Git 构建时运行 `node scripts/build-vercel-output.mjs`，将 `deploy/vercel-api.ts` 与 React Router 的 SSR 产物分别打包成函数，并生成 `.vercel/output`。不再使用 `api/index.ts` 和 `api/ssr.ts` 两条函数路由。
+- 运行时需要 **Node 24**（`package.json` 的 `engines` 是 `>=24.22.1 <25`）。不要写成没有上界的 `>=24`：Vercel 会因此改用更新的主版本。预览页的服务端请求走本部署的 `VERCEL_URL`，不走 `API_BASE_URL`。`sanitize-html` 的 `htmlparser2` 固定在带 CommonJS 构建的 `10.1.0`。
 
 ## 仍需你本人完成的登录
 

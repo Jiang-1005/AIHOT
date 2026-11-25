@@ -36,7 +36,7 @@ class RequestLogs extends LogController {
 
 /**
  * Copies the site catalogs (site_blobs) into the data folder before the API serves. The entry points
- * (main.ts, the Vercel api/index.ts) call it; buildApp does not, so building the app touches no database.
+ * (main.ts, the Vercel deploy/vercel-api.ts) call it; buildApp does not, so building the app touches no database.
  */
 export async function hydrateCatalogsAtBoot(): Promise<void> {
   try {
