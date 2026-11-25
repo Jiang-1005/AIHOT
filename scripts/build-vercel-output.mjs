@@ -145,7 +145,7 @@ const apiRoot = path.join(OUT, "functions/api.func");
 const apiFile = path.join(apiRoot, "packages/backend/src/index.js");
 mkdirSync(path.dirname(apiFile), { recursive: true });
 console.log("bundling API…");
-bundle(path.join(ROOT, "api/index.ts"), apiFile, {
+bundle(path.join(ROOT, "deploy/vercel-api.ts"), apiFile, {
   format: "esm",
   minify: true,
   extra: [

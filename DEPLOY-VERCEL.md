@@ -68,7 +68,7 @@ Worker 和导入脚本只要把 `DATABASE_URL` 指向 Neon，就会直接写云�
 ## 构建与入口
 
 - 网页：`npm run build -w @aihot/web`（本地已验证）。
-- Vercel 用仓库根目录的 `api/index.ts`（API）和 `api/ssr.ts`（SSR）。`@vercel/react-router` 对 React Router 8 的官方预设若仍不兼容，不要打开，以免改掉本地 Docker 的 web 构建产物。
+- Vercel 从 Git 构建时运行 `node scripts/build-vercel-output.mjs`，将 `deploy/vercel-api.ts` 与 React Router 的 SSR 产物分别打包成函数，并生成 `.vercel/output`。
 - 运行时需要 **Node 24**（与仓库 `engines` 一致），以便直接跑 TypeScript 源码。
 
 ## 仍需你本人完成的登录
