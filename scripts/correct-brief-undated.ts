@@ -229,6 +229,7 @@ async function probeBounded(
   decision: TimelineDecision,
   evidence: string,
   writeDates: boolean,
+  discoveredAt: Date,
 ): Promise<string | null> {
   await tx`SAVEPOINT brief_boundary`;
   try {
@@ -236,7 +237,7 @@ async function probeBounded(
       const updated = await writeCorrectedArticle(tx, entry, decision, evidence);
       if (updated !== 1) throw new Error(`refused to update ${entry.id}: it no longer matches the old undated error`);
     }
-    await republishTx(tx, entry.id, { bounded: true });
+    await republishTx(tx, entry.id, { bounded: true, releasedAt: discoveredAt });
     await tx`ROLLBACK TO SAVEPOINT brief_boundary`;
     await tx`RELEASE SAVEPOINT brief_boundary`;
     return null;
@@ -299,13 +300,13 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql;
         continue;
       }
       if (plannedArticle && !plannedPublication) {
-        const refusal = await probeBounded(tx, entry, decision, parsed.evidence, false);
+        const refusal = await probeBounded(tx, entry, decision, parsed.evidence, false, article.discovered_at);
         if (refusal) {
           if (options.apply) throw new Error(refusal);
           items.push(item(entry, "refused", refusal, dates, before, before, publication, publication));
           continue;
         }
-        if (options.apply) await republishTx(tx, entry.id, { bounded: true });
+        if (options.apply) await republishTx(tx, entry.id, { bounded: true, releasedAt: article.discovered_at });
         items.push(item(
           entry,
           options.apply ? "republished" : "would-republish",
@@ -318,7 +319,7 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql;
         items.push({ ...skipped(entry, "not the old undated error", before, publication), dates });
         continue;
       }
-      const refusal = await probeBounded(tx, entry, decision, parsed.evidence, true);
+      const refusal = await probeBounded(tx, entry, decision, parsed.evidence, true, article.discovered_at);
       if (refusal) {
         if (options.apply) throw new Error(refusal);
         items.push(item(entry, "refused", refusal, dates, before, before, publication, publication));
@@ -327,7 +328,9 @@ export async function correctMorningUndated(options: { apply: boolean; db?: Sql;
       if (options.apply) {
         const updated = await writeCorrectedArticle(tx, entry, decision, parsed.evidence);
         if (updated !== 1) throw new Error(`refused to update ${entry.id}: it no longer matches the old undated error`);
-        await republishTx(tx, entry.id, { bounded: true });
+        // visible_after follows the discovery instant. Stamping the operator's clock
+        // drops a selected row out of its own Beijing day once that day has ended.
+        await republishTx(tx, entry.id, { bounded: true, releasedAt: article.discovered_at });
         if (options.injectFailureAfter !== undefined && items.filter((row) => row.action === "updated").length + 1 === options.injectFailureAfter) {
           throw new Error("injected failure before commit");
         }
