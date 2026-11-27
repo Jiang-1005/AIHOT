@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Idempotent DeepSeek tagger for media backlog and 小红书 notes.
 
-X posts are NOT tagged here: import-voices.py reads grok-posts.json, then the
-bak file, and only calls DeepSeek for new posts missing in both.
+X posts are not tagged here. 小红书 text comes from the scrubbed Notion snapshot
+copy (.data/xhs-scrubbed.json), never from feishu-edu.
 
-Daily (after the voices importer):
+Daily (after scrub-xhs.py and import-voices.py):
 
   python3 /workspace/edu-hot/scripts/tag-content.py
 
@@ -177,14 +177,14 @@ def load_media(path: Path) -> list[dict]:
     return data if isinstance(data, list) else data.get("items") or []
 
 
-def load_xhs():
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("import_voices", SCRIPT_DIR / "import-voices.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    rows = mod.load_all_xhs(Path("/workspace/research/feishu-edu"))
+def load_xhs(path: Path):
+    if "feishu-edu" in str(path):
+        raise SystemExit("小红书打标不再读飞书目录。先跑 scrub-xhs.py --snapshot。")
+    if not path.exists():
+        raise SystemExit(f"缺少小红书清洗副本 {path}。先跑 scrub-xhs.py --snapshot。")
+    data = json.loads(path.read_text(encoding="utf-8"))
     out = []
-    for r in rows:
+    for r in data.get("items") or []:
         out.append({
             "id": r.get("url") or "",
             "article_id": r.get("url") or "",
@@ -199,6 +199,7 @@ def main():
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--media", default="/tmp/media-for-tags.json")
+    ap.add_argument("--xhs-scrubbed", default=str(REPO / ".data" / "xhs-scrubbed.json"))
     ap.add_argument("--only", choices=["media", "xhs", "all"], default="all")
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--limit", type=int, default=0)
@@ -220,7 +221,7 @@ def main():
     if args.only in ("media", "all"):
         jobs.append(("media", load_media(Path(args.media))))
     if args.only in ("xhs", "all"):
-        jobs.append(("xhs", load_xhs()))
+        jobs.append(("xhs", load_xhs(Path(args.xhs_scrubbed))))
 
     total_new = 0
     for kind, rows in jobs:

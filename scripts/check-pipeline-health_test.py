@@ -2,6 +2,7 @@
 """Observable behavior of check-pipeline-health.py: radar checklist vs extra names, and empty hot board."""
 import importlib.util
 import datetime as dt
+import json
 import os
 import tempfile
 import unittest
@@ -53,29 +54,26 @@ class RadarInputs(unittest.TestCase):
         self.touch("x-posts-feishu-new-20261117-noon.csv", t)
         self.touch("x-posts-feishu-new-2026-11-17-am.csv", t)
         rows = self.run_inputs(at("2026-11-17T15:34:00"), "pm")
-        levels = {msg: lv for lv, _, msg in rows}
-        missing = [msg for msg in levels if "x-posts-feishu-new-20261117-pm.csv 还没到" in msg]
-        self.assertEqual(len(missing), 1, rows)
-        self.assertEqual(levels[missing[0]], "WARN")
-        self.assertTrue(all(lv != "FAIL" for lv, _, msg in rows))
-        self.assertTrue(any(lv == "WARN" and "noon.csv" in msg and "不计入缺件" in msg for lv, _, msg in rows))
-        self.assertTrue(any(lv == "WARN" and "2026-11-17-am.csv" in msg and "不计入缺件" in msg for lv, _, msg in rows))
+        self.assertFalse(any("还没到" in msg for _, _, msg in rows), rows)
+        self.assertTrue(all(lv != "FAIL" for lv, _, msg in rows), rows)
+        self.assertTrue(any(lv == "WARN" and "noon.csv" in msg and "已不读它" in msg for lv, _, msg in rows))
+        self.assertTrue(any(lv == "WARN" and "2026-11-17-am.csv" in msg and "已不读它" in msg for lv, _, msg in rows))
 
-    def test_missing_pm_after_due_is_fail_and_misnamed_stays_warn(self):
+    def test_missing_pm_after_due_does_not_fail_on_feishu_csv(self):
         self.touch("x-posts-feishu-new-20261117-noon.csv", at("2026-11-17T13:26:00"))
         rows = self.run_inputs(at("2026-11-17T19:40:00"), "pm")
         radar = [(lv, msg) for lv, _, msg in rows]
-        self.assertTrue(any(lv == "FAIL" and "x-posts-feishu-new-20261117-pm.csv 还没到" in msg for lv, msg in radar), radar)
-        self.assertTrue(any(lv == "WARN" and "noon.csv" in msg for lv, msg in radar), radar)
-        self.assertFalse(any("文件名不合约定" in msg and lv == "FAIL" for lv, msg in radar))
+        self.assertFalse(any(lv == "FAIL" for lv, msg in radar), radar)
+        self.assertTrue(any(lv == "WARN" and "noon.csv" in msg and "已不读它" in msg for lv, msg in radar), radar)
 
     def test_canonical_present_extras_are_warn_not_fail(self):
         t = at("2026-11-17T09:00:00")
         self.touch("x-posts-feishu-new-20261117-am.csv", t)
         self.touch("x-posts-feishu-new-2026-11-17-am.csv", t)
         rows = self.run_inputs(at("2026-11-17T10:00:00"), "am")
-        self.assertTrue(any(lv == "OK" and "x-posts-feishu-new-20261117-am.csv 在" in msg for lv, _, msg in rows), rows)
-        self.assertTrue(any(lv == "WARN" and "2026-11-17-am.csv" in msg for lv, _, msg in rows), rows)
+        self.assertFalse(any(lv == "OK" and "在" in msg for lv, _, msg in rows), rows)
+        self.assertTrue(any(lv == "WARN" and "20261117-am.csv" in msg and "已不读它" in msg for lv, _, msg in rows), rows)
+        self.assertTrue(any(lv == "WARN" and "2026-11-17-am.csv" in msg and "已不读它" in msg for lv, _, msg in rows), rows)
         self.assertFalse(any(lv == "FAIL" for lv, _, _ in rows), rows)
 
 
@@ -309,6 +307,74 @@ class CdnStaleness(unittest.TestCase):
         self.assertEqual(h.parse_as_of("11 月 17 日 20:44 北京时间", 2026), at("2026-11-17T20:44:00"))
         self.assertEqual(h.parse_as_of("11月17日 20:42", 2026), at("2026-11-17T20:42:00"))
         self.assertIsNone(h.parse_as_of("", 2026))
+
+
+class NotionHotpostInputs(unittest.TestCase):
+    def setUp(self):
+        h.results.clear()
+        self.tmp = tempfile.TemporaryDirectory()
+        self.radar = Path(self.tmp.name) / "radar"
+        self.briefs = Path(self.tmp.name) / "briefs"
+        self.radar.mkdir()
+        self.briefs.mkdir()
+        import notion_hotposts
+        bundle = json.loads((Path(__file__).parent / "fixtures/notion-hotposts/connector-pages.json").read_text(encoding="utf-8"))
+        self.snap = notion_hotposts.seal_pages(bundle)
+        self.snap_path = Path(self.tmp.name) / "snapshot.json"
+        self.stamp_path = Path(self.tmp.name) / "import-stamp.json"
+        self.snap_path.write_text(json.dumps(self.snap), encoding="utf-8")
+        self.stamp_path.write_text(json.dumps({
+            "ok": True,
+            "snapshot_sha256": self.snap["integrity"]["rows_sha256"],
+        }), encoding="utf-8")
+        ts = at("2026-11-17T09:00:00").timestamp()
+        os.utime(self.snap_path, (ts, ts))
+        os.utime(self.stamp_path, (ts, ts))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def check(self, when):
+        h.results.clear()
+        h.check_inputs(
+            when, "am",
+            radar_dir=str(self.radar),
+            briefs=str(self.briefs),
+            hotposts_snapshot=str(self.snap_path),
+            hotposts_stamp=str(self.stamp_path),
+        )
+        return [(lv, msg) for lv, ck, msg in h.results if ck == "inputs" and "热帖" in msg]
+
+    def test_complete_snapshot_and_stamp_are_ok(self):
+        rows = self.check(at("2026-11-17T10:00:00"))
+        self.assertTrue(any(lv == "OK" and "完整" in msg for lv, msg in rows), rows)
+        self.assertTrue(any(lv == "OK" and "戳记与快照哈希一致" in msg for lv, msg in rows), rows)
+        self.assertFalse(any(lv == "FAIL" for lv, msg in rows), rows)
+
+    def test_missing_snapshot_after_due_fails(self):
+        self.snap_path.unlink()
+        rows = self.check(at("2026-11-17T10:00:00"))
+        self.assertTrue(any(lv == "FAIL" and "热帖快照" in msg and "还没到" in msg for lv, msg in rows), rows)
+
+    def test_missing_snapshot_before_due_warns(self):
+        self.snap_path.unlink()
+        rows = self.check(at("2026-11-17T08:00:00"))
+        self.assertTrue(any(lv == "WARN" and "热帖快照" in msg for lv, msg in rows), rows)
+        self.assertFalse(any(lv == "FAIL" for lv, msg in rows), rows)
+
+    def test_incomplete_snapshot_fails(self):
+        broken = json.loads(self.snap_path.read_text(encoding="utf-8"))
+        broken["pagination"]["complete"] = False
+        self.snap_path.write_text(json.dumps(broken), encoding="utf-8")
+        os.utime(self.snap_path, (at("2026-11-17T08:00:00").timestamp(),) * 2)
+        rows = self.check(at("2026-11-17T08:30:00"))
+        self.assertTrue(any(lv == "FAIL" and "不完整" in msg for lv, msg in rows), rows)
+
+    def test_stamp_hash_mismatch_fails(self):
+        self.stamp_path.write_text(json.dumps({"ok": True, "snapshot_sha256": "0" * 64}), encoding="utf-8")
+        os.utime(self.stamp_path, (at("2026-11-17T09:00:00").timestamp(),) * 2)
+        rows = self.check(at("2026-11-17T10:00:00"))
+        self.assertTrue(any(lv == "FAIL" and "不能进入同步" in msg for lv, msg in rows), rows)
 
 
 if __name__ == "__main__":

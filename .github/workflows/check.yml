@@ -71,6 +71,13 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
       - name: Web tests
         run: npm run test:web
+      - name: Web test traces
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-test-traces
+          path: apps/web/tests/test-results
+          if-no-files-found: ignore
 
       # Each test file runs on its own copy of aihot_ci (tests/databases.ts), which the run migrates and
       # leaves empty; the smoke check then reads that empty database.

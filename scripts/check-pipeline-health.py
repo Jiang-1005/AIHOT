@@ -3,7 +3,8 @@
 
 导入员每轮在 sync-to-neon.sh 之后跑一次；任何 bot 动过本机栈（重启、恢复、换分支）后也跑一次。
 它不看「脚本跑没跑」，只看结果对不对：
-  inputs   清单里的输入文件按时到位（雷达 x-posts-feishu-new-YYYYMMDD-am|pm.csv，行业 daily-YYYY-MM-DD/items.csv|items-pm.csv）；清单外的文件名只提示，不算缺件
+  inputs   清单里的输入文件按时到位（热帖 Notion 快照与导入戳记，行业 daily-YYYY-MM-DD/items.csv|items-pm.csv）。
+           x-posts-feishu-new-*.csv 只提示，不再作为热帖导入门。清单外的文件名只提示，不算缺件
   db       本机库在、不空
   scoring  导进来的稿子 3 小时内打完分（worker 关着时靠 score-and-compose.sh）
   issue    最新日报不早于昨天（有新稿却没出刊 = 失败）
@@ -54,8 +55,9 @@ FRESHNESS = [
 BACKUP_DIR = "/home/box/edu-hot-local/backups"
 OPS_SCRIPTS = ["scripts/sync-to-neon.sh", "scripts/export-to-neon.sh", "scripts/resolve-neon-urls.py",
                "scripts/reset-sequences.sql", "scripts/env-exports.py", "scripts/import-voices.py",
+               "scripts/notion-hotposts-snapshot.py", "scripts/scrub-xhs.py",
                "scripts/import-brief-items.ts", "scripts/import-brief-items.sh", "scripts/score-and-compose.sh", "scripts/score-and-compose.ts",
-               "scripts/check-pipeline-health.py", "docs/import-runbook.md"]
+               "scripts/check-pipeline-health.py", "docs/import-runbook.md", "docs/notion-hotposts.md"]
 
 results = []  # (level, check, message)
 def add(level, check, msg): results.append((level, check, msg))
@@ -72,24 +74,43 @@ def existed(path, as_of):
     return os.path.exists(path) and dt.datetime.fromtimestamp(os.path.getmtime(path), TZ) <= as_of
 
 # ---------- inputs ----------
-def check_inputs(as_of, slot, radar_dir=None, briefs=None):
-    # 缺不缺只按清单里的文件算：雷达要 x-posts-feishu-new-YYYYMMDD-am|pm.csv。
-    # 清单外的同日文件只 WARN，不能因为它们在就把「清单文件还没到」升级成 FAIL。
+def check_notion_hotposts(as_of, slot, snapshot, stamp):
+    """热帖导入门：完整快照 + 与快照哈希一致的 ok 戳记。文件不存在时跟雷达同一截止时间。"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+    import notion_hotposts
+    due = slot_due(as_of, slot, "radar")
+    if not existed(snapshot, as_of):
+        add("FAIL" if due else "WARN", "inputs", f"热帖快照 {os.path.basename(snapshot)} 还没到")
+        return
+    try:
+        snap = notion_hotposts.load_snapshot(snapshot)
+    except notion_hotposts.GateError as exc:
+        add("FAIL", "inputs", f"热帖快照不完整或哈希不符：{exc}")
+        return
+    add("OK", "inputs", f"热帖快照 {snap['integrity']['rows_sha256'][:12]} 完整，{snap['pagination']['row_count']} 条")
+    if not existed(stamp, as_of):
+        add("FAIL" if due else "WARN", "inputs", "热帖导入戳记还没到，不能进入同步")
+        return
+    try:
+        notion_hotposts.assert_sync_allowed(snapshot, stamp)
+    except notion_hotposts.GateError as exc:
+        add("FAIL", "inputs", f"热帖导入戳记未通过，不能进入同步：{exc}")
+        return
+    add("OK", "inputs", "热帖导入戳记与快照哈希一致")
+
+
+def check_inputs(as_of, slot, radar_dir=None, briefs=None, hotposts_snapshot=None, hotposts_stamp=None):
+    # 热帖权威是 Notion 快照。旧的 x-posts-feishu-new-*.csv 在也不算到齐，不在也不算缺件。
     radar_dir = radar_dir or RADAR_DIR
     briefs = briefs or BRIEFS
-    day = as_of.date(); ymd = day.strftime("%Y%m%d"); iso = day.isoformat()
-    want = f"{radar_dir}/x-posts-feishu-new-{ymd}-{slot}.csv"
-    bad_pat = re.compile(r"^x-posts-feishu-new-(?!\d{8}-(am|pm)\.csv$).+\.csv$")
-    misnamed = [os.path.basename(p) for p in glob.glob(f"{radar_dir}/x-posts-feishu-new-*.csv")
-                if bad_pat.match(os.path.basename(p)) and existed(p, as_of)
-                and (iso in p or ymd in p)]
-    if existed(want, as_of):
-        add("OK", "inputs", f"雷达 {os.path.basename(want)} 在")
-    else:
-        add("FAIL" if slot_due(as_of, slot, "radar") else "WARN", "inputs", f"雷达 {os.path.basename(want)} 还没到")
-    for m in misnamed:
-        if m != os.path.basename(want):
-            add("WARN", "inputs", f"雷达目录里还有不合约定的同日文件 {m}（不计入缺件；以后请直接按约定命名）")
+    day = as_of.date(); iso = day.isoformat()
+    if hotposts_snapshot:
+        check_notion_hotposts(as_of, slot, hotposts_snapshot, hotposts_stamp or "")
+    legacy = [os.path.basename(p) for p in glob.glob(f"{radar_dir}/x-posts-feishu-new-*.csv") if existed(p, as_of)]
+    for name in legacy:
+        add("WARN", "inputs", f"雷达 {name} 是旧飞书清单，热帖导入已不读它")
     ddir = f"{briefs}/daily-{iso}"
     canon = f"{ddir}/{'items.csv' if slot == 'am' else 'items-pm.csv'}"
     if existed(canon, as_of):
@@ -540,7 +561,12 @@ def main():
     replay = a.as_of is not None and abs((now - as_of).total_seconds()) > 300
     slot = a.slot or ("am" if as_of.hour < 15 else "pm")
     run = lambda k: a.only in (None, k)
-    if run("inputs"): check_inputs(as_of, slot)
+    if run("inputs"):
+        check_inputs(
+            as_of, slot,
+            hotposts_snapshot=f"{REPO}/.data/notion-hotposts/snapshot.json",
+            hotposts_stamp=f"{REPO}/.data/notion-hotposts/import-stamp.json",
+        )
     latest = None
     if run("db") or run("live"):
         latest = check_db(as_of) if (run("db") or not replay) else None

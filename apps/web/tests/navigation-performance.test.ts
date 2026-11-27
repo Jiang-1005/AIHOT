@@ -90,6 +90,7 @@ after(async()=>{
 // pointer behaviour such as hover and mouse presses. The router and caches are the same code in both.
 test('SSR list and visited query variants return offline without another read',async()=>{
   const context=await safari.newContext({viewport:{width:390,height:844}});
+  await context.tracing.start({screenshots:true,snapshots:true});
   const page=await context.newPage();
   const reads:string[]=[];
   page.on('request',request=>{if(new URL(request.url()).pathname.endsWith('.data'))reads.push(request.url());});
@@ -97,7 +98,13 @@ test('SSR list and visited query variants return offline without another read',a
     await context.setOffline(true);
     const before=reads.length;
     await page.goBack();
-    await expect(page.getByRole('link',{name:title,exact:true})).toBeVisible({timeout:1500});
+    // Measured on WebKit 390: goBack resolves in about 10–20ms, the history URL is already
+    // the list, and the article (固定正文) is still the document. The view transition that
+    // commits the list starts after that. Waiting out a fixed 1500ms from goBack's return
+    // therefore races the transition. Wait until the list link is in the document, then
+    // require that this return did not read a .data document.
+    await page.waitForFunction((name:string)=>!location.pathname.startsWith('/items/')&&[...document.querySelectorAll('a')].some(a=>a.textContent===name),title);
+    await expect(page.getByRole('link',{name:title,exact:true})).toBeVisible({timeout:1000});
     assert.deepEqual(reads.slice(before),[],'returning offline must reuse the visited list without a data request');
   };
   try{
@@ -121,6 +128,10 @@ test('SSR list and visited query variants return offline without another read',a
     await expect(page.getByRole('link',{name:'分类 产品',exact:true})).toBeVisible();
     await backOffline('分类 模型');
     await expect(page.locator('link[rel=canonical]')).toHaveAttribute('href',origin+'/?topic='+encodeURIComponent('模型'));
+    await context.tracing.stop();
+  }catch(error){
+    await context.tracing.stop({path:new URL('./test-results/offline-back.zip',import.meta.url).pathname});
+    throw error;
   }finally{await context.close();}
 });
 
