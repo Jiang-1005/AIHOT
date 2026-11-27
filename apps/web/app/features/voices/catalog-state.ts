@@ -49,3 +49,35 @@ export function voicesMatchCount(opts: {
   }
   return opts.filteredLength;
 }
+
+/** 近 7 天最热 includes a post only when its age is within 7 days. A missing age stays outside. */
+export function inVoicesHotWindow(ageDays: number | null | undefined): boolean {
+  return (ageDays ?? 99) <= 7;
+}
+
+/**
+ * The hot list is empty because nothing in the current filters falls inside 7 days, while older
+ * posts with those same filters still exist. The action drops only the window.
+ */
+export function voicesHotWindowEmpty(input: {
+  sort: "latest" | "hot";
+  platform: string;
+  narrowed: boolean;
+  windowCount: number;
+  allTimeCount: number;
+}): { title: string; count: number; action: string } | null {
+  if (input.sort !== "hot" || input.windowCount > 0 || input.allTimeCount <= 0) return null;
+  const platform = input.platform !== "all" ? input.platform : "";
+  const title = platform
+    ? (input.narrowed ? `近7天无符合筛选的${platform}帖子` : `近7天无${platform}帖子`)
+    : (input.narrowed ? "近7天无符合筛选的帖子" : "近7天无帖子");
+  return { title, count: input.allTimeCount, action: `查看全部时间${input.allTimeCount}条` };
+}
+
+/**
+ * 清空 drops platform, source, verify and facet chips. It does not leave 近 7 天最热, so that
+ * label says the window stays.
+ */
+export function voicesClearFiltersLabel(sort: "latest" | "hot"): string {
+  return sort === "hot" ? "清空筛选，仍看近 7 天" : "清空筛选";
+}
